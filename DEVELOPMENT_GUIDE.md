@@ -58,11 +58,14 @@ Required public variables:
 ```env
 EXPO_PUBLIC_SUPABASE_URL=
 EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+EXPO_PUBLIC_MOCK_OTP=false
 ```
 
 `EXPO_PUBLIC_SUPABASE_ANON_KEY` remains supported as a compatibility fallback by the environment adapter, but new local configuration should use the publishable key name.
 
 Never commit `.env`, real credentials, service-role keys, private API keys, or generated secrets. The mobile application must never use a service-role key.
+
+`EXPO_PUBLIC_MOCK_OTP=true` is development-only and is additionally gated by Expo's `__DEV__` flag. It skips SMS delivery and accepts any six-digit numeric code through an in-memory development auth state. It must be `false` or unset when real Supabase SMS is enabled. Mock authentication does not create database users or roles; role selection remains backed by the existing Supabase `user_roles` data.
 
 ## Run Commands
 

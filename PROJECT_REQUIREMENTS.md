@@ -30,7 +30,7 @@ Returning flow:
 Splash is a state-restoration surface, not a business-logic screen.
 
 ## 6. Authentication
-Authentication uses Supabase Auth for phone sign-up/login through SMS OTP, logout, session restoration, and auth state changes. OTPs are sent only to Supabase Auth and are not stored by the application. The existing backend trigger creates the application user record; the client does not duplicate that insert. SMS delivery requires project-owner Supabase provider configuration.
+Authentication uses Supabase Auth for phone sign-up/login through SMS OTP, logout, session restoration, and auth state changes. OTPs are sent only to Supabase Auth and are not stored by the application. The existing backend trigger creates the application user record; the client does not duplicate that insert. SMS delivery requires project-owner Supabase provider configuration. A temporary `EXPO_PUBLIC_MOCK_OTP=true` development mode exists for UI testing only; it creates no Supabase session or database record.
 
 ## 7. Language
 The initial supported language is `en`. Before authentication, the language is stored locally through AsyncStorage. After authentication, it synchronizes with `user_preferences.language_code`. The supported-language registry is designed for future additions.

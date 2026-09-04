@@ -48,6 +48,8 @@ npm install
 
 Copy `.env.example` to `.env` and configure the public Supabase URL and publishable key.
 
+For temporary local UI testing before SMS is configured, set `EXPO_PUBLIC_MOCK_OTP=true`. This development-only mode accepts any six-digit OTP without calling Supabase OTP APIs, creates no database records, and must be disabled for real SMS testing.
+
 ## Run
 
 ```powershell

@@ -8,6 +8,7 @@ export interface AuthContextValue {
   authenticated: boolean;
   user: User | null;
   session: Session | null;
+  authMode: 'supabase' | 'development-mock';
   error: AuthServiceError | null;
   requestOtp: (phone: string) => Promise<{ phone: string }>;
   verifyOtp: (phone: string, token: string) => Promise<{

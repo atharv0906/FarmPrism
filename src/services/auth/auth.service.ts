@@ -6,6 +6,11 @@ import {
   type OtpRequestResult,
   type OtpVerificationResult,
 } from './auth.types';
+import {
+  DevelopmentMockOtpStrategy,
+  isDevelopmentMockOtpEnabled,
+  type OtpStrategy,
+} from './otp.strategy';
 
 export function normalizeIndianPhone(value: string): string {
   const digits = value.replace(/\D/g, '');
@@ -99,8 +104,12 @@ export const authService = {
   async requestOtp(phone: string): Promise<OtpRequestResult> {
     try {
       const normalizedPhone = normalizeIndianPhone(phone);
-      const { error } = await supabase.auth.signInWithOtp({ phone: normalizedPhone });
-      throwOnError(error);
+      if (isDevelopmentMockOtpEnabled()) {
+        await otpStrategy.request(normalizedPhone);
+      } else {
+        const { error } = await supabase.auth.signInWithOtp({ phone: normalizedPhone });
+        throwOnError(error);
+      }
 
       return { phone: normalizedPhone };
     } catch (error) {
@@ -111,21 +120,17 @@ export const authService = {
   async verifyOtp(phone: string, token: string): Promise<OtpVerificationResult> {
     try {
       const normalizedPhone = normalizeIndianPhone(phone);
+      if (isDevelopmentMockOtpEnabled()) {
+        return await otpStrategy.verify(normalizedPhone, token);
+      }
+
       if (!/^\d{6}$/.test(token)) {
         throw new AuthServiceError('invalid_otp', 'Enter the 6-digit OTP sent to your phone.');
       }
 
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone: normalizedPhone,
-        token,
-        type: 'sms',
-      });
+      const { data, error } = await supabase.auth.verifyOtp({ phone: normalizedPhone, token, type: 'sms' });
       throwOnError(error);
-
-      return {
-        user: data.user,
-        session: data.session,
-      };
+      return { user: data.user, session: data.session, isMockAuth: false };
     } catch (error) {
       throw toAuthServiceError(error);
     }
@@ -133,6 +138,11 @@ export const authService = {
 
   async logout(): Promise<void> {
     try {
+      if (isDevelopmentMockOtpEnabled()) {
+        await otpStrategy.logout();
+        return;
+      }
+
       const { error } = await supabase.auth.signOut();
       throwOnError(error);
     } catch (error) {
@@ -154,5 +164,7 @@ export const authService = {
     }
   },
 };
+
+const otpStrategy: OtpStrategy = new DevelopmentMockOtpStrategy();
 
 export { toAuthServiceError };

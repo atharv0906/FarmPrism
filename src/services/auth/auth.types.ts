@@ -35,4 +35,5 @@ export interface OtpRequestResult {
 export interface OtpVerificationResult {
   user: User | null;
   session: Session | null;
+  isMockAuth: boolean;
 }
