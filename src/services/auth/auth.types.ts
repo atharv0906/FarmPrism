@@ -1,8 +1,10 @@
 import type { Session, User } from '@supabase/supabase-js';
 
 export type AuthServiceErrorCode =
-  | 'invalid_credentials'
-  | 'email_not_confirmed'
+  | 'invalid_phone'
+  | 'invalid_otp'
+  | 'otp_expired'
+  | 'otp_not_sent'
   | 'network_error'
   | 'session_expired'
   | 'supabase_error'
@@ -26,21 +28,11 @@ export class AuthServiceError extends Error {
   }
 }
 
-export interface AuthCredentials {
-  email: string;
-  password: string;
-  fullName?: string;
+export interface OtpRequestResult {
+  phone: string;
 }
 
-export interface AuthUserResult {
+export interface OtpVerificationResult {
   user: User | null;
   session: Session | null;
-}
-
-export interface SignUpResult extends AuthUserResult {
-  requiresEmailVerification: boolean;
-}
-
-export interface PasswordResetOptions {
-  redirectTo?: string;
 }

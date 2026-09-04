@@ -1,6 +1,8 @@
 import type { PropsWithChildren, ReactNode } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,12 +15,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export function ScreenLayout({ children }: PropsWithChildren) {
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        {children}
-      </ScrollView>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboard}>
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+          {children}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -26,9 +27,7 @@ export function ScreenLayout({ children }: PropsWithChildren) {
 export function BrandMark() {
   return (
     <View style={styles.brandRow}>
-      <View style={styles.brandMark}>
-        <View style={styles.brandLeaf} />
-      </View>
+      <View accessibilityLabel="FarmPrism logo" style={styles.brandMark}><Text style={styles.brandLeaf}>⌁</Text></View>
       <Text style={styles.brandName}>FarmPrism</Text>
     </View>
   );
@@ -102,7 +101,7 @@ export function Field({
   onChangeText: (value: string) => void;
   placeholder: string;
   secureTextEntry?: boolean;
-  keyboardType?: 'default' | 'email-address';
+  keyboardType?: 'default' | 'email-address' | 'phone-pad' | 'number-pad';
   autoCapitalize?: 'none' | 'sentences';
 }) {
   return (
@@ -136,6 +135,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F7F9F4',
   },
+  keyboard: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
@@ -150,19 +150,12 @@ const styles = StyleSheet.create({
   brandMark: {
     alignItems: 'center',
     backgroundColor: '#DCE9D4',
-    borderRadius: 16,
+    borderRadius: 21,
     height: 42,
     justifyContent: 'center',
     width: 42,
   },
-  brandLeaf: {
-    backgroundColor: '#2E7042',
-    borderBottomLeftRadius: 14,
-    borderTopRightRadius: 14,
-    height: 20,
-    transform: [{ rotate: '-28deg' }],
-    width: 13,
-  },
+  brandLeaf: { color: '#2E7042', fontSize: 25, fontWeight: '700' },
   brandName: {
     color: '#23412D',
     fontSize: 25,

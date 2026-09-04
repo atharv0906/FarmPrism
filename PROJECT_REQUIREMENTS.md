@@ -30,7 +30,7 @@ Returning flow:
 Splash is a state-restoration surface, not a business-logic screen.
 
 ## 6. Authentication
-Authentication uses Supabase Auth for sign-up, login, logout, session restoration, auth state changes, password reset, and email verification handling. Passwords are sent only to Supabase Auth and are not stored by the application. The existing backend trigger creates the application user record; the client does not duplicate that insert.
+Authentication uses Supabase Auth for phone sign-up/login through SMS OTP, logout, session restoration, and auth state changes. OTPs are sent only to Supabase Auth and are not stored by the application. The existing backend trigger creates the application user record; the client does not duplicate that insert. SMS delivery requires project-owner Supabase provider configuration.
 
 ## 7. Language
 The initial supported language is `en`. Before authentication, the language is stored locally through AsyncStorage. After authentication, it synchronizes with `user_preferences.language_code`. The supported-language registry is designed for future additions.
@@ -123,4 +123,4 @@ The current phase excludes:
 - Keep documentation aligned with the actual repository.
 
 ## 23. Current Development Phase
-Phase 1B foundation is complete: common flow routing, Supabase Auth integration, language persistence, role persistence, reusable common UI, protected placeholder destinations, and project documentation. Farmer, buyer, and logistics business modules are not implemented.
+Phase 1C common UI is in progress: approved common-flow layouts, phone OTP authentication UI and service integration, language persistence, role persistence, protected placeholder destinations, and the Farmer Personal/Farm Details/Review/Submitted navigation flow. Farmer business functionality, Buyer business functionality, and Logistics business functionality are not implemented.

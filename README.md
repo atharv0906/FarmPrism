@@ -4,13 +4,13 @@ FarmPrism is a mobile agricultural marketplace connecting farmers, buyers, and l
 
 ## Current Phase
 
-Phase 1B foundation is complete:
+Phase 1C common UI is in progress:
 
 - Splash and common first-time/returning flow
-- Supabase Auth integration
+- Supabase phone OTP Auth integration
 - Local and Supabase language persistence
 - Assigned-role loading and `last_role_id` persistence
-- Protected Farmer, Buyer, and Logistics placeholder destinations
+- Farmer onboarding flow and protected Buyer/Logistics placeholder destinations
 - Reusable common UI components
 
 Business dashboards and workflows are not implemented yet.

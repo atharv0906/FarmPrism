@@ -1,6 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import { RoleSelectionScreen } from '../screens/FlowPlaceholderScreens';
+import { RoleSelectionScreen } from '../screens/AuthScreens';
 
 export type OnboardingStackParamList = {
   RoleSelection: undefined;

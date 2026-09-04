@@ -9,17 +9,12 @@ export interface AuthContextValue {
   user: User | null;
   session: Session | null;
   error: AuthServiceError | null;
-  signUp: (email: string, password: string, fullName?: string) => Promise<{
-    user: User | null;
-    session: Session | null;
-    requiresEmailVerification: boolean;
-  }>;
-  login: (email: string, password: string) => Promise<{
+  requestOtp: (phone: string) => Promise<{ phone: string }>;
+  verifyOtp: (phone: string, token: string) => Promise<{
     user: User | null;
     session: Session | null;
   }>;
   logout: () => Promise<void>;
-  requestPasswordReset: (email: string, redirectTo?: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);

@@ -3,11 +3,20 @@ import type { AuthError, Session, User } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase/client';
 import {
   AuthServiceError,
-  type AuthCredentials,
-  type AuthUserResult,
-  type PasswordResetOptions,
-  type SignUpResult,
+  type OtpRequestResult,
+  type OtpVerificationResult,
 } from './auth.types';
+
+export function normalizeIndianPhone(value: string): string {
+  const digits = value.replace(/\D/g, '');
+  const withoutCountryCode = digits.startsWith('91') && digits.length === 12 ? digits.slice(2) : digits;
+
+  if (!/^[6-9]\d{9}$/.test(withoutCountryCode)) {
+    throw new AuthServiceError('invalid_phone', 'Enter a valid 10-digit Indian mobile number.');
+  }
+
+  return `+91${withoutCountryCode}`;
+}
 
 function toAuthServiceError(error: unknown): AuthServiceError {
   if (error instanceof AuthServiceError) {
@@ -18,22 +27,31 @@ function toAuthServiceError(error: unknown): AuthServiceError {
   const message = authError?.message ?? 'An unexpected authentication error occurred.';
   const normalizedMessage = message.toLowerCase();
 
-  if (normalizedMessage.includes('invalid login credentials')) {
-    return new AuthServiceError('invalid_credentials', 'The email or password is incorrect.', {
+  if (normalizedMessage.includes('invalid phone')) {
+    return new AuthServiceError('invalid_phone', 'Enter a valid Indian mobile number.', {
       status: authError?.status,
       cause: error,
     });
   }
 
   if (
-    normalizedMessage.includes('email not confirmed') ||
-    normalizedMessage.includes('email_not_confirmed')
+    normalizedMessage.includes('invalid') &&
+    (normalizedMessage.includes('otp') || normalizedMessage.includes('token'))
   ) {
-    return new AuthServiceError(
-      'email_not_confirmed',
-      'Please verify your email address before signing in.',
-      { status: authError?.status, cause: error },
-    );
+    return new AuthServiceError('invalid_otp', 'That OTP is invalid. Check the code and try again.', {
+      status: authError?.status,
+      cause: error,
+    });
+  }
+
+  if (
+    normalizedMessage.includes('expired') &&
+    (normalizedMessage.includes('otp') || normalizedMessage.includes('token'))
+  ) {
+    return new AuthServiceError('otp_expired', 'That OTP has expired. Request a new one.', {
+      status: authError?.status,
+      cause: error,
+    });
   }
 
   if (
@@ -78,28 +96,30 @@ function throwOnError(error: AuthError | null): void {
 }
 
 export const authService = {
-  async signUp({ email, password, fullName }: AuthCredentials): Promise<SignUpResult> {
+  async requestOtp(phone: string): Promise<OtpRequestResult> {
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: fullName ? { data: { full_name: fullName } } : undefined,
-      });
+      const normalizedPhone = normalizeIndianPhone(phone);
+      const { error } = await supabase.auth.signInWithOtp({ phone: normalizedPhone });
       throwOnError(error);
 
-      return {
-        user: data.user,
-        session: data.session,
-        requiresEmailVerification: Boolean(data.user && !data.session),
-      };
+      return { phone: normalizedPhone };
     } catch (error) {
       throw toAuthServiceError(error);
     }
   },
 
-  async login({ email, password }: AuthCredentials): Promise<AuthUserResult> {
+  async verifyOtp(phone: string, token: string): Promise<OtpVerificationResult> {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const normalizedPhone = normalizeIndianPhone(phone);
+      if (!/^\d{6}$/.test(token)) {
+        throw new AuthServiceError('invalid_otp', 'Enter the 6-digit OTP sent to your phone.');
+      }
+
+      const { data, error } = await supabase.auth.verifyOtp({
+        phone: normalizedPhone,
+        token,
+        type: 'sms',
+      });
       throwOnError(error);
 
       return {
@@ -114,17 +134,6 @@ export const authService = {
   async logout(): Promise<void> {
     try {
       const { error } = await supabase.auth.signOut();
-      throwOnError(error);
-    } catch (error) {
-      throw toAuthServiceError(error);
-    }
-  },
-
-  async requestPasswordReset(email: string, options?: PasswordResetOptions): Promise<void> {
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: options?.redirectTo,
-      });
       throwOnError(error);
     } catch (error) {
       throw toAuthServiceError(error);

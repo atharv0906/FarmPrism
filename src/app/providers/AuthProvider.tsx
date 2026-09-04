@@ -70,22 +70,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
       user,
       session,
       error,
-      signUp: async (email, password, fullName) => {
-        const result = await authService.signUp({ email, password, fullName });
+      requestOtp: async (phone) => {
+        const result = await authService.requestOtp(phone);
         setError(null);
         return result;
       },
-      login: async (email, password) => {
-        const result = await authService.login({ email, password });
+      verifyOtp: async (phone, token) => {
+        const result = await authService.verifyOtp(phone, token);
         setError(null);
         return result;
       },
       logout: async () => {
         await authService.logout();
-        setError(null);
-      },
-      requestPasswordReset: async (email, redirectTo) => {
-        await authService.requestPasswordReset(email, { redirectTo });
         setError(null);
       },
     }),

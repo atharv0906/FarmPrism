@@ -112,7 +112,7 @@ The app uses explicit React Navigation. The Expo package may mention an optional
 
 ## Supabase Configuration
 
-Supabase is already provisioned separately. Do not create tables, migrations, SQL, or RLS changes from this repository. Use the existing service layer and the authenticated Supabase client. The frontend relies on Supabase Auth, `user_preferences`, `roles`, and `user_roles` for the current foundation.
+Supabase is already provisioned separately. Do not create tables, migrations, SQL, or RLS changes from this repository. Use the existing service layer and the authenticated Supabase client. The frontend relies on Supabase Auth, `user_preferences`, `roles`, and `user_roles` for the current foundation. Phone OTP also requires an SMS provider configured by the project owner in the Supabase Dashboard.
 
 ## Branch Workflow
 
