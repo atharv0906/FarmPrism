@@ -1,4 +1,8 @@
-import type { PostgrestError, User as SupabaseAuthUser } from '@supabase/supabase-js';
+import type {
+  AuthError,
+  PostgrestError,
+  User as SupabaseAuthUser,
+} from '@supabase/supabase-js';
 
 import { supabase } from './client';
 import type { ApplicationRole, AuthSession, UserRole } from './types';
@@ -47,9 +51,25 @@ function collectApplicationRoles(value: unknown, roles: Set<ApplicationRole>) {
 
 export async function getUserApplicationRoles(): Promise<{
   data: ApplicationRole[];
-  error: PostgrestError | null;
+  error: AuthError | PostgrestError | null;
 }> {
-  const { data, error } = await supabase.from('user_roles').select('*, roles(*)');
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    return { data: [], error: userError };
+  }
+
+  if (!user) {
+    return { data: [], error: null };
+  }
+
+  const { data, error } = await supabase
+    .from('user_roles')
+    .select('*, roles(*)')
+    .eq('user_id', user.id);
 
   if (error) {
     return { data: [], error };
