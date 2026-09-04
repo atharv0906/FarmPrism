@@ -20,6 +20,8 @@ import type { ApplicationRole } from '../types/role';
 import { useRole } from '../hooks/useRole';
 
 export function GetStartedScreen({ navigation }: NativeStackScreenProps<AuthStackParamList, 'GetStarted'>) {
+  const { error } = useAuth();
+
   return (
     <ScreenLayout>
       <BrandMark />
@@ -29,6 +31,7 @@ export function GetStartedScreen({ navigation }: NativeStackScreenProps<AuthStac
         <Benefit title="Manage your crops with ease" description="Track, update, and grow your produce." />
         <Benefit title="Join a trusted community" description="Together for a prosperous tomorrow." />
       </View>
+      {error && <InlineMessage tone="info">Supabase is not configured. Mock OTP can run without it; real authentication needs public Supabase credentials.</InlineMessage>}
       <PrimaryButton label="Continue" onPress={() => navigation.navigate('LanguageSelection')} />
       <TextButton label="Skip" onPress={() => navigation.navigate('LanguageSelection')} />
     </ScreenLayout>

@@ -1,3 +1,4 @@
+MADE BY ME(AK)
 # FarmPrism
 
 FarmPrism is a mobile agricultural marketplace connecting farmers, buyers, and logistics partners. Supabase is the backend and source of truth.

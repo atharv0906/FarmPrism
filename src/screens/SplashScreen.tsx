@@ -1,9 +1,11 @@
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { BrandMark } from '../components/PhaseOneUI';
 
 export function SplashScreen() {
   return (
     <View style={styles.container}>
+      <StatusBar style="light" />
       <BrandMark />
       <Text style={styles.title}>Growing{`\n`}A Better Tomorrow</Text>
       <Text style={styles.leaf}>⌁</Text>

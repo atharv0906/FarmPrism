@@ -1,7 +1,7 @@
 import type { PostgrestError } from '@supabase/supabase-js';
 
 import { isApplicationRole } from '../../config/roles';
-import { supabase } from '../../lib/supabase/client';
+import { requireSupabaseClient } from '../../lib/supabase/client';
 import type { ApplicationRole, AvailableRole, RoleState } from '../../types/role';
 
 type RoleRow = {
@@ -46,7 +46,7 @@ function toRole(row: RoleRow): AvailableRole | null {
 }
 
 async function getAssignedRoleIds(userId: string): Promise<string[]> {
-  const { data, error } = await supabase
+  const { data, error } = await requireSupabaseClient()
     .from('user_roles')
     .select('role_id')
     .eq('user_id', userId);
@@ -65,7 +65,7 @@ async function getRolesByIds(roleIds: string[]): Promise<AvailableRole[]> {
     return [];
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await requireSupabaseClient()
     .from('roles')
     .select('id, code')
     .in('id', roleIds);
@@ -84,7 +84,7 @@ async function getRolesByIds(roleIds: string[]): Promise<AvailableRole[]> {
 }
 
 async function getLastRoleId(userId: string): Promise<string | null> {
-  const { data, error } = await supabase
+  const { data, error } = await requireSupabaseClient()
     .from('user_preferences')
     .select('last_role_id')
     .eq('user_id', userId)
@@ -98,7 +98,7 @@ async function getLastRoleId(userId: string): Promise<string | null> {
 }
 
 async function verifyRoleAssignment(userId: string, roleId: string): Promise<AvailableRole> {
-  const { data: roleData, error: roleError } = await supabase
+  const { data: roleData, error: roleError } = await requireSupabaseClient()
     .from('roles')
     .select('id, code')
     .eq('id', roleId)
@@ -113,7 +113,7 @@ async function verifyRoleAssignment(userId: string, roleId: string): Promise<Ava
     throw new RoleServiceError('unknown_role', 'The selected role is not recognized.');
   }
 
-  const { data: assignment, error: assignmentError } = await supabase
+  const { data: assignment, error: assignmentError } = await requireSupabaseClient()
     .from('user_roles')
     .select('role_id')
     .eq('user_id', userId)
@@ -132,7 +132,7 @@ async function verifyRoleAssignment(userId: string, roleId: string): Promise<Ava
 }
 
 async function persistLastRole(userId: string, roleId: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await requireSupabaseClient()
     .from('user_preferences')
     .upsert(
       {

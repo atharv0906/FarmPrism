@@ -20,7 +20,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     let mounted = true;
     const mockAuthEnabled = isDevelopmentMockOtpEnabled();
 
-    const subscription = mockAuthEnabled
+    const subscription = mockAuthEnabled || !supabase
       ? null
       : supabase.auth.onAuthStateChange((_event, nextSession) => {
           if (!mounted) {

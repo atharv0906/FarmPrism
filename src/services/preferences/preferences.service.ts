@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { PostgrestError } from '@supabase/supabase-js';
 
-import { supabase } from '../../lib/supabase/client';
+import { requireSupabaseClient } from '../../lib/supabase/client';
 
 export const DEFAULT_LANGUAGE_CODE = 'en' as const;
 export const SUPPORTED_LANGUAGE_CODES = [DEFAULT_LANGUAGE_CODE] as const;
@@ -68,7 +68,7 @@ async function storeLanguage(language: LanguageCode): Promise<PreferencesService
 
 async function readAuthenticatedLanguage(userId: string): Promise<LanguagePreferenceResult> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await requireSupabaseClient()
       .from('user_preferences')
       .select('language_code')
       .eq('user_id', userId)
@@ -109,7 +109,7 @@ async function persistAuthenticatedLanguage(
   language: LanguageCode,
 ): Promise<PreferencesServiceError | null> {
   try {
-    const { error } = await supabase
+    const { error } = await requireSupabaseClient()
       .from('user_preferences')
       .upsert(
         {

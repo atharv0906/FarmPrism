@@ -1,6 +1,6 @@
 import type { AuthError, Session, User } from '@supabase/supabase-js';
 
-import { supabase } from '../../lib/supabase/client';
+import { requireSupabaseClient } from '../../lib/supabase/client';
 import {
   AuthServiceError,
   type OtpRequestResult,
@@ -107,7 +107,7 @@ export const authService = {
       if (isDevelopmentMockOtpEnabled()) {
         await otpStrategy.request(normalizedPhone);
       } else {
-        const { error } = await supabase.auth.signInWithOtp({ phone: normalizedPhone });
+        const { error } = await requireSupabaseClient().auth.signInWithOtp({ phone: normalizedPhone });
         throwOnError(error);
       }
 
@@ -128,7 +128,7 @@ export const authService = {
         throw new AuthServiceError('invalid_otp', 'Enter the 6-digit OTP sent to your phone.');
       }
 
-      const { data, error } = await supabase.auth.verifyOtp({ phone: normalizedPhone, token, type: 'sms' });
+      const { data, error } = await requireSupabaseClient().auth.verifyOtp({ phone: normalizedPhone, token, type: 'sms' });
       throwOnError(error);
       return { user: data.user, session: data.session, isMockAuth: false };
     } catch (error) {
@@ -143,7 +143,7 @@ export const authService = {
         return;
       }
 
-      const { error } = await supabase.auth.signOut();
+      const { error } = await requireSupabaseClient().auth.signOut();
       throwOnError(error);
     } catch (error) {
       throw toAuthServiceError(error);
@@ -152,7 +152,7 @@ export const authService = {
 
   async restoreSession(): Promise<{ session: Session | null; user: User | null }> {
     try {
-      const { data, error } = await supabase.auth.getSession();
+      const { data, error } = await requireSupabaseClient().auth.getSession();
       throwOnError(error);
 
       return {

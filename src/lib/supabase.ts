@@ -1,4 +1,4 @@
-export { supabase } from './supabase/client';
+export { requireSupabaseClient, supabase } from './supabase/client';
 export type {
   ApplicationRole,
   AuthSession,

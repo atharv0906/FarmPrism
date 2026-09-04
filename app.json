@@ -5,6 +5,10 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "splash": {
+      "backgroundColor": "#2D5B35",
+      "resizeMode": "contain"
+    },
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true

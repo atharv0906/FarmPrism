@@ -4,14 +4,14 @@ import type {
   User as SupabaseAuthUser,
 } from '@supabase/supabase-js';
 
-import { supabase } from './client';
+import { requireSupabaseClient } from './client';
 import type { ApplicationRole, AuthSession, UserRole } from './types';
 
 export async function getCurrentAuthenticatedUser(): Promise<{
   data: SupabaseAuthUser | null;
   error: Error | null;
 }> {
-  const { data, error } = await supabase.auth.getUser();
+  const { data, error } = await requireSupabaseClient().auth.getUser();
 
   return {
     data: data.user,
@@ -23,7 +23,7 @@ export async function getCurrentSession(): Promise<{
   data: AuthSession | null;
   error: Error | null;
 }> {
-  const { data, error } = await supabase.auth.getSession();
+  const { data, error } = await requireSupabaseClient().auth.getSession();
 
   return {
     data: data.session,
@@ -56,7 +56,7 @@ export async function getUserApplicationRoles(): Promise<{
   const {
     data: { user },
     error: userError,
-  } = await supabase.auth.getUser();
+  } = await requireSupabaseClient().auth.getUser();
 
   if (userError) {
     return { data: [], error: userError };
@@ -66,7 +66,7 @@ export async function getUserApplicationRoles(): Promise<{
     return { data: [], error: null };
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await requireSupabaseClient()
     .from('user_roles')
     .select('*, roles(*)')
     .eq('user_id', user.id);

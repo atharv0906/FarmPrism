@@ -1,4 +1,4 @@
-export { supabase, initializeAuthSessionRefresh } from './client';
+export { requireSupabaseClient, supabase, initializeAuthSessionRefresh } from './client';
 export { getCurrentAuthenticatedUser, getCurrentSession, getUserApplicationRoles } from './helpers';
 export type {
   ApplicationRole,
