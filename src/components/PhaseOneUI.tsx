@@ -27,7 +27,11 @@ export function ScreenLayout({ children }: PropsWithChildren) {
 export function BrandMark() {
   return (
     <View style={styles.brandRow}>
-      <View accessibilityLabel="FarmPrism logo" style={styles.brandMark}><Text style={styles.brandLeaf}>⌁</Text></View>
+      <View accessibilityLabel="FarmPrism logo" style={styles.brandMark}>
+        <View style={styles.brandStem} />
+        <View style={[styles.brandLeaf, styles.brandLeafLeft]} />
+        <View style={[styles.brandLeaf, styles.brandLeafRight]} />
+      </View>
       <Text style={styles.brandName}>FarmPrism</Text>
     </View>
   );
@@ -155,7 +159,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 42,
   },
-  brandLeaf: { color: '#2E7042', fontSize: 25, fontWeight: '700' },
+  brandStem: { backgroundColor: '#2E7042', height: 22, position: 'absolute', width: 2 },
+  brandLeaf: { backgroundColor: '#2E7042', borderBottomLeftRadius: 10, borderTopRightRadius: 10, height: 11, position: 'absolute', width: 7 },
+  brandLeafLeft: { left: 12, top: 10, transform: [{ rotate: '-32deg' }] },
+  brandLeafRight: { right: 12, top: 17, transform: [{ rotate: '32deg' }] },
   brandName: {
     color: '#23412D',
     fontSize: 25,

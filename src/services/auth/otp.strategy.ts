@@ -15,25 +15,6 @@ export interface OtpStrategy {
   logout(): Promise<void>;
 }
 
-function createDevelopmentMockUser(phone: string): User {
-  return {
-    id: '00000000-0000-4000-8000-000000000001',
-    aud: 'authenticated',
-    role: 'authenticated',
-    email: '',
-    phone,
-    app_metadata: { provider: 'phone', providers: ['phone'] },
-    user_metadata: { development_mock_auth: true },
-    identities: [],
-    created_at: '1970-01-01T00:00:00.000Z',
-    confirmed_at: '1970-01-01T00:00:00.000Z',
-    last_sign_in_at: '1970-01-01T00:00:00.000Z',
-    phone_confirmed_at: '1970-01-01T00:00:00.000Z',
-    is_anonymous: false,
-    is_sso_user: false,
-  };
-}
-
 export class DevelopmentMockOtpStrategy implements OtpStrategy {
   // Temporary development-only OTP mock. Disable this before enabling real Supabase SMS.
   async request(): Promise<void> {
@@ -46,7 +27,7 @@ export class DevelopmentMockOtpStrategy implements OtpStrategy {
     }
 
     return {
-      user: createDevelopmentMockUser(phone),
+      user: null,
       session: null,
       isMockAuth: true,
     };

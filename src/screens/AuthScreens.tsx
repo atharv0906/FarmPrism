@@ -13,6 +13,7 @@ import {
   SecondaryButton,
   TextButton,
 } from '../components/PhaseOneUI';
+import { AgriculturalBackdrop } from '../components/AgriculturalBackdrop';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../hooks/useLanguage';
 import type { AuthStackParamList } from '../navigation/AuthNavigator';
@@ -41,7 +42,7 @@ export function GetStartedScreen({ navigation }: NativeStackScreenProps<AuthStac
 function Benefit({ title, description }: { title: string; description: string }) {
   return (
     <View style={styles.benefit}>
-      <View style={styles.benefitIcon}><Text style={styles.leaf}>✦</Text></View>
+      <View style={styles.benefitIcon}><View style={styles.leaf} /></View>
       <View style={styles.benefitCopy}><Text style={styles.benefitTitle}>{title}</Text><Text style={styles.benefitDescription}>{description}</Text></View>
     </View>
   );
@@ -135,6 +136,7 @@ function PhoneAuthScreen({ navigation, mode }: { navigation: NavigationProp<Auth
 
   return (
     <View style={styles.authBackground}>
+      <AgriculturalBackdrop dim />
       <ScreenLayout>
         <View style={styles.authCard}>
           <BrandMark />
@@ -211,7 +213,11 @@ export function RoleSelectionScreen() {
 
 function RoleCard({ role, onPress, loading = false, disabled = false }: { role: ApplicationRole | 'fpo'; onPress?: () => void; loading?: boolean; disabled?: boolean }) {
   const labels = { farmer: 'Farmer', buyer: 'Buyer Marketplace', logistics: 'Logistics Console', fpo: 'FPO Dashboard' };
-  return <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled || loading} onPress={onPress} style={[styles.roleCard, disabled && styles.roleCardDisabled]}><Text style={styles.roleIcon}>{role === 'fpo' ? '◌' : '◈'}</Text><Text style={styles.roleTitle}>{labels[role]}</Text><Text style={styles.roleDescription}>{disabled ? 'Coming Soon' : loading ? 'Opening your workspace...' : 'Select role  →'}</Text></Pressable>;
+  return <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled || loading} onPress={onPress} style={[styles.roleCard, disabled && styles.roleCardDisabled]}><RoleGlyph role={role} /><Text style={styles.roleTitle}>{labels[role]}</Text><Text style={styles.roleDescription}>{disabled ? 'Coming Soon' : loading ? 'Opening your workspace...' : 'Select role'}</Text></Pressable>;
+}
+
+function RoleGlyph({ role }: { role: ApplicationRole | 'fpo' }) {
+  return <View style={styles.roleGlyph}><View style={[styles.roleGlyphShape, role === 'fpo' && styles.roleGlyphFuture]} /><View style={styles.roleGlyphStem} /></View>;
 }
 
 export function RoleDashboardPlaceholder({ role }: { role: ApplicationRole }) {
@@ -223,7 +229,7 @@ const styles = StyleSheet.create({
   benefitList: { gap: 12, marginBottom: 28 },
   benefit: { alignItems: 'center', backgroundColor: '#FFFFFF', borderColor: '#E3E6D8', borderRadius: 14, borderWidth: 1, flexDirection: 'row', padding: 14 },
   benefitIcon: { alignItems: 'center', backgroundColor: '#EEF3DF', borderRadius: 26, height: 52, justifyContent: 'center', width: 52 },
-  leaf: { color: '#39733C', fontSize: 24 },
+  leaf: { backgroundColor: '#39733C', borderBottomLeftRadius: 15, borderTopRightRadius: 15, height: 22, transform: [{ rotate: '-35deg' }], width: 12 },
   benefitCopy: { flex: 1, marginLeft: 14 },
   benefitTitle: { color: '#23412D', fontSize: 16, fontWeight: '700' },
   benefitDescription: { color: '#53645A', fontSize: 14, marginTop: 4 },
@@ -247,7 +253,10 @@ const styles = StyleSheet.create({
   roleGrid: { gap: 14 },
   roleCard: { backgroundColor: '#FFFFFF', borderColor: '#D6E0D5', borderRadius: 14, borderWidth: 1, padding: 18 },
   roleCardDisabled: { backgroundColor: '#F3F4EC', opacity: 0.8 },
-  roleIcon: { color: '#39733C', fontSize: 26 },
+  roleGlyph: { height: 32, position: 'relative', width: 32 },
+  roleGlyphShape: { backgroundColor: '#39733C', borderRadius: 12, height: 22, left: 3, position: 'absolute', top: 2, transform: [{ rotate: '45deg' }], width: 22 },
+  roleGlyphFuture: { backgroundColor: '#A7B7A9', borderRadius: 16, borderWidth: 3, borderColor: '#7B927D' },
+  roleGlyphStem: { backgroundColor: '#39733C', bottom: 0, height: 14, left: 15, position: 'absolute', width: 2 },
   roleTitle: { color: '#23412D', fontSize: 19, fontWeight: '700', marginTop: 8 },
   roleDescription: { color: '#39733C', fontSize: 14, fontWeight: '700', marginTop: 6 },
 });
