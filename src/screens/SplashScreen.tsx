@@ -3,7 +3,7 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const splashVideo = require('../../assets/Splash screen animation.mp4');
+const splashVideo = require('../../assets/2. Splash screen animation.mp4');
 const VIDEO_ASPECT_RATIO = 392 / 850;
 
 export function SplashScreen() {
