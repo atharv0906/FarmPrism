@@ -11,10 +11,10 @@ import type { AuthStackParamList } from '../navigation/AuthNavigator';
 import type { ApplicationRole } from '../types/role';
 
 const getStartedSlides = [
-  require('../../assets/2.1 intro fp.png'),
-  require('../../assets/2.2 intro fp.png'),
-  require('../../assets/2.3intro fp.png'),
-  require('../../assets/2.4 intro fp.png'),
+  require('../../assets/2a_intro.png'),
+  require('../../assets/2b_intro.png'),
+  require('../../assets/2c_intro.png'),
+  require('../../assets/2d_intro.png'),
 ] as const;
 const onboardingPageStyle = { flex: 1, backgroundColor: '#FAFDF8', overflow: 'hidden' as const };
 const onboardingImageStyle = { width: '100%', height: '100%' } as const;
