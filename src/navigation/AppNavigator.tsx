@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../hooks/useLanguage';
 import { useRole } from '../hooks/useRole';
 import { RoleDashboardPlaceholder } from '../screens/AuthScreens';
-import { SplashScreen } from '../screens/SplashScreen';
+import { SplashScreen, useSplashVideoCompleted } from '../screens/SplashScreen';
 import type { ApplicationRole } from '../types/role';
 import { AuthNavigator } from './AuthNavigator';
 import { FarmerNavigator } from './FarmerNavigator';
@@ -46,8 +46,9 @@ export function AppNavigator() {
   const { authenticated, loading: authLoading } = useAuth();
   const { loading: languageLoading } = useLanguage();
   const { loading: roleLoading, selectedRole } = useRole();
+  const splashVideoCompleted = useSplashVideoCompleted();
 
-  if (authLoading || languageLoading || roleLoading) {
+  if (authLoading || languageLoading || roleLoading || !splashVideoCompleted) {
     return <SplashScreen />;
   }
 
