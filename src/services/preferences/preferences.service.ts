@@ -4,7 +4,7 @@ import type { PostgrestError } from '@supabase/supabase-js';
 import { requireSupabaseClient } from '../../lib/supabase/client';
 
 export const DEFAULT_LANGUAGE_CODE = 'en' as const;
-export const SUPPORTED_LANGUAGE_CODES = [DEFAULT_LANGUAGE_CODE] as const;
+export const SUPPORTED_LANGUAGE_CODES = ['en', 'hi', 'mr'] as const;
 export type LanguageCode = (typeof SUPPORTED_LANGUAGE_CODES)[number];
 
 const LOCAL_LANGUAGE_KEY = '@farmprism/preferences/language-code';

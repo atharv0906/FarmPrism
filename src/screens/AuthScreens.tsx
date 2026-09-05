@@ -22,10 +22,31 @@ const languageSelectorImage = require('../../assets/1a.lang sel.png');
 const languageSelectorImageStyle = { width: '100%', height: '100%' } as const;
 const languageSelectorStyles = StyleSheet.create({
  languageBackHit:{position:'absolute',left:'6%',top:'74%',width:'34%',height:'6%'},
- languageOptions:{position:'absolute',left:'6%',right:'6%',top:'32%',height:'34%',gap:12},
- languageOptionHit:{flex:1},
- englishHit:{flex:1},
+ languageEnglishHit:{position:'absolute',left:'6%',right:'6%',top:'31.5%',height:'10.5%'},
+ languageHindiHit:{position:'absolute',left:'6%',right:'6%',top:'43.5%',height:'10.5%'},
+ languageMarathiHit:{position:'absolute',left:'6%',right:'6%',top:'55.5%',height:'10.5%'},
  languageContinueHit:{position:'absolute',right:'6%',top:'74%',width:'50%',height:'6%'},
+});
+const languageRowMaskStyles = StyleSheet.create({
+ englishTop:{position:'absolute',left:'6.5%',right:'6.5%',top:'32.2%',height:'0.25%',backgroundColor:'#F7FAF1'},
+ englishBottom:{position:'absolute',left:'6.5%',right:'6.5%',top:'42.0%',height:'0.25%',backgroundColor:'#F7FAF1'},
+ englishLeft:{position:'absolute',left:'6.5%',top:'32.2%',width:'0.25%',height:'10%',backgroundColor:'#F7FAF1'},
+ englishRight:{position:'absolute',right:'6.5%',top:'32.2%',width:'0.25%',height:'10%',backgroundColor:'#F7FAF1'},
+ radioEnglish:{position:'absolute',right:'9.5%',top:'35.0%',width:'6.5%',aspectRatio:1,borderRadius:999,backgroundColor:'#F7FAF1',alignItems:'center',justifyContent:'center'},
+ radioHindi:{position:'absolute',right:'9.5%',top:'47.0%',width:'6.5%',aspectRatio:1,borderRadius:999,backgroundColor:'#FFFFFF',alignItems:'center',justifyContent:'center'},
+ radioMarathi:{position:'absolute',right:'9.5%',top:'59.0%',width:'6.5%',aspectRatio:1,borderRadius:999,backgroundColor:'#FFFFFF',alignItems:'center',justifyContent:'center'},
+ selectedRadio:{borderWidth:3,borderColor:'#146A34'},
+ unselectedRadio:{borderWidth:3,borderColor:'#8A949A'},
+ radioDot:{width:'56%',height:'56%',borderRadius:999,backgroundColor:'#146A34'},
+});
+const getStartedActionStyles = StyleSheet.create({
+ actionLayer:{position:'absolute',left:0,right:0,bottom:0,height:'12.5%',backgroundColor:'#FFFFFF',borderTopLeftRadius:48,borderTopRightRadius:48,zIndex:2},
+ actionDots:{position:'absolute',left:'38%',right:'38%',top:'8%',height:'13%',flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
+ dot:{width:14,height:14,borderRadius:999,backgroundColor:'#C4D4C1'},
+ activeDot:{backgroundColor:'#146A34'},
+ fixedContinue:{position:'absolute',left:'5.5%',right:'5.5%',top:'32%',height:'43%',borderRadius:26,backgroundColor:'#207A35',alignItems:'center',justifyContent:'center'},
+ fixedContinueLabel:{color:'#FFFFFF',fontSize:20,fontWeight:'600'},
+ fixedContinueArrow:{color:'#FFFFFF',fontSize:34,lineHeight:34,marginLeft:10},
 });
 const loginImage = require('../../assets/3.mainlogin.png');
 const roleImage = require('../../assets/4.select role.png');
@@ -36,25 +57,36 @@ function BackButton({onPress}:{onPress:()=>void}){return <Pressable accessibilit
 
 export function GetStartedScreen({navigation}:NativeStackScreenProps<AuthStackParamList,'GetStarted'>){
  const {width,height}=useWindowDimensions();
+ const pagerRef=useRef<FlatList<number>>(null);
+ const [page,setPage]=useState(0);
+ const continueFromPage=()=>{if(page===getStartedSlides.length-1){navigation.navigate('PhoneLogin');return}pagerRef.current?.scrollToIndex({index:page+1,animated:true})};
  return <View style={styles.canvas}><StatusBar hidden/><FlatList
+   ref={pagerRef}
    data={getStartedSlides}
    horizontal
    pagingEnabled
    showsHorizontalScrollIndicator={false}
    keyExtractor={(_,index)=>String(index)}
    getItemLayout={(_,index)=>({length:width,offset:width*index,index})}
+   onMomentumScrollEnd={event=>setPage(Math.round(event.nativeEvent.contentOffset.x/width))}
    renderItem={({item})=><View style={[onboardingPageStyle,{width,height}]}> 
       <Image source={item} resizeMode="cover" style={onboardingImageStyle}/>
-    <Pressable style={styles.welcomeContinue} onPress={()=>navigation.navigate('PhoneLogin')} accessibilityRole="button" accessibilityLabel="Get Started"/>
     <Pressable style={styles.welcomeSkip} onPress={()=>navigation.navigate('PhoneLogin')} accessibilityRole="button" accessibilityLabel="Skip"/>
    </View>}
- /></View>
+   />
+   <View pointerEvents="box-none" style={getStartedActionStyles.actionLayer}>
+     <View style={getStartedActionStyles.actionDots} pointerEvents="none">{getStartedSlides.map((_,index)=><View key={index} style={[getStartedActionStyles.dot,index===page&&getStartedActionStyles.activeDot]}/>)}</View>
+     <Pressable style={getStartedActionStyles.fixedContinue} onPress={continueFromPage} accessibilityRole="button" accessibilityLabel="Continue">
+       <View style={{flexDirection:'row',alignItems:'center'}}><Text style={getStartedActionStyles.fixedContinueLabel}>Get Started</Text><Text style={getStartedActionStyles.fixedContinueArrow}>→</Text></View>
+     </Pressable>
+   </View>
+ </View>
 }
 
 export function LanguageSelectionScreen({navigation}:NativeStackScreenProps<AuthStackParamList,'LanguageSelection'>){
  const {language,setLanguage,supportedLanguages}=useLanguage();
  const saveAndContinue=async()=>{await setLanguage(language);navigation.navigate('GetStarted')};
- return <View style={styles.canvas}><StatusBar hidden/><Image source={languageSelectorImage} resizeMode="cover" style={languageSelectorImageStyle}/><Pressable style={languageSelectorStyles.languageBackHit} onPress={()=>navigation.goBack()} accessibilityRole="button" accessibilityLabel="Back"/><View style={languageSelectorStyles.languageOptions}>{supportedLanguages.map(code=><Pressable key={code} style={code==='en'?languageSelectorStyles.englishHit:languageSelectorStyles.languageOptionHit} onPress={()=>void setLanguage(code)} accessibilityRole="radio" accessibilityState={{selected:language===code}} accessibilityLabel={code==='en'?'English':code}/>)}</View><Pressable style={languageSelectorStyles.languageContinueHit} onPress={()=>void saveAndContinue()} accessibilityRole="button" accessibilityLabel="Save and Continue"/></View>
+ return <View style={styles.canvas}><StatusBar hidden/><Image source={languageSelectorImage} resizeMode="cover" style={languageSelectorImageStyle}/><View pointerEvents="none" style={StyleSheet.absoluteFill}><View style={languageRowMaskStyles.englishTop}/><View style={languageRowMaskStyles.englishBottom}/><View style={languageRowMaskStyles.englishLeft}/><View style={languageRowMaskStyles.englishRight}/><View style={[languageRowMaskStyles.radioEnglish,language==='en'?languageRowMaskStyles.selectedRadio:languageRowMaskStyles.unselectedRadio]}>{language==='en'&&<View style={languageRowMaskStyles.radioDot}/>}</View><View style={[languageRowMaskStyles.radioHindi,language==='hi'?languageRowMaskStyles.selectedRadio:languageRowMaskStyles.unselectedRadio]}>{language==='hi'&&<View style={languageRowMaskStyles.radioDot}/>}</View><View style={[languageRowMaskStyles.radioMarathi,language==='mr'?languageRowMaskStyles.selectedRadio:languageRowMaskStyles.unselectedRadio]}>{language==='mr'&&<View style={languageRowMaskStyles.radioDot}/>}</View></View><Pressable style={languageSelectorStyles.languageBackHit} onPress={()=>navigation.goBack()} accessibilityRole="button" accessibilityLabel="Back"/><Pressable style={languageSelectorStyles.languageEnglishHit} onPress={()=>void setLanguage('en')} accessibilityRole="radio" accessibilityState={{selected:language==='en'}} accessibilityLabel="English"/><Pressable style={languageSelectorStyles.languageHindiHit} onPress={()=>void setLanguage('hi')} accessibilityRole="radio" accessibilityState={{selected:language==='hi'}} accessibilityLabel="Hindi"/><Pressable style={languageSelectorStyles.languageMarathiHit} onPress={()=>void setLanguage('mr')} accessibilityRole="radio" accessibilityState={{selected:language==='mr'}} accessibilityLabel="Marathi"/><Pressable style={languageSelectorStyles.languageContinueHit} onPress={()=>void saveAndContinue()} accessibilityRole="button" accessibilityLabel="Save and Continue"/></View>
 }
 
 export function PhoneLoginScreen({navigation}:NativeStackScreenProps<AuthStackParamList,'PhoneLogin'>){return <PhoneAuthScreen navigation={navigation} mode="login"/>}
