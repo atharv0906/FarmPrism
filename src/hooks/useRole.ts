@@ -9,6 +9,7 @@ export interface RoleContextValue {
   selectedRole: AvailableRole | null;
   error: RoleServiceError | null;
   selectRole: (roleId: string) => Promise<void>;
+  clearSelectedRole: () => void;
   reloadRoles: () => Promise<void>;
 }
 

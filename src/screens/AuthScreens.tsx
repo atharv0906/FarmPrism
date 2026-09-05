@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, ImageBackground, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { Alert, ImageBackground, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { NavigationProp } from '@react-navigation/native';
@@ -10,17 +10,19 @@ import { useRole } from '../hooks/useRole';
 import type { AuthStackParamList } from '../navigation/AuthNavigator';
 import type { ApplicationRole } from '../types/role';
 
-const mockImage = require('../../assets/farmprism-ui/welcome_reference.jpg');
-const loginImage = require('../../assets/farmprism-ui/login_interactive_shell.jpg');
-const roleImage = require('../../assets/farmprism-ui/role_reference.jpg');
+const mockImage = require('../../assets/welcome_reference.png');
+const loginImage = require('../../assets/login_interactive_shell.jpg');
+const roleImage = require('../../assets/role_reference.jpg');
 
-function DesignImage({source,children}:{source:any;children:React.ReactNode}){return <View style={styles.canvas}><StatusBar hidden/><ImageBackground source={source} resizeMode="stretch" style={styles.background}>{children}</ImageBackground></View>}
+function DesignImage({source,children}:{source:any;children:React.ReactNode}){return <View style={styles.canvas}><StatusBar hidden/><ImageBackground source={source} resizeMode="cover" fadeDuration={0} style={styles.background}>{children}</ImageBackground></View>}
+
+function BackButton({onPress}:{onPress:()=>void}){return <Pressable accessibilityRole="button" accessibilityLabel="Go back" hitSlop={12} onPress={onPress} style={styles.backButton}><Text style={styles.backButtonLabel}>‹</Text></Pressable>}
 
 export function GetStartedScreen({navigation}:NativeStackScreenProps<AuthStackParamList,'GetStarted'>){return <DesignImage source={mockImage}><Pressable style={styles.welcomeContinue} onPress={()=>navigation.navigate('LanguageSelection')} accessibilityRole="button"/><Pressable style={styles.welcomeSkip} onPress={()=>navigation.navigate('LanguageSelection')} accessibilityRole="button"/></DesignImage>}
 
 export function LanguageSelectionScreen({navigation}:NativeStackScreenProps<AuthStackParamList,'LanguageSelection'>){
  const {language,setLanguage,supportedLanguages}=useLanguage();
- return <ScreenLayout><BrandMark/><ScreenIntro title="Choose your language" description="Select your preferred language to continue."/><View style={{gap:12,marginBottom:24}}>{supportedLanguages.map(code=><Pressable key={code} onPress={()=>void setLanguage(code)} style={[styles.langOption,language===code&&styles.langSelected]}><View style={[styles.radio,language===code&&styles.radioActive]}/><Text style={styles.langText}>{code==='en'?'English':code}</Text></Pressable>)}</View><PrimaryButton label="Continue" onPress={()=>navigation.navigate('PhoneLogin')}/></ScreenLayout>
+ return <ScreenLayout><BackButton onPress={()=>navigation.goBack()}/><BrandMark/><ScreenIntro title="Choose your language" description="Select your preferred language to continue."/><View style={{gap:12,marginBottom:24}}>{supportedLanguages.map(code=><Pressable key={code} onPress={()=>void setLanguage(code)} style={[styles.langOption,language===code&&styles.langSelected]}><View style={[styles.radio,language===code&&styles.radioActive]}/><Text style={styles.langText}>{code==='en'?'English':code}</Text></Pressable>)}</View><PrimaryButton label="Continue" onPress={()=>navigation.navigate('PhoneLogin')}/></ScreenLayout>
 }
 
 export function PhoneLoginScreen({navigation}:NativeStackScreenProps<AuthStackParamList,'PhoneLogin'>){return <PhoneAuthScreen navigation={navigation} mode="login"/>}
@@ -34,6 +36,7 @@ function PhoneAuthScreen({navigation,mode}:{navigation:NavigationProp<AuthStackP
  const updateDigit=(index:number,value:string)=>{const digits=value.replace(/\D/g,''); if(digits.length>1){const six=digits.slice(0,6);setOtp(six);refs.current[Math.min(5,six.length-1)]?.focus();return} const next=otp.padEnd(6,' ').split('');next[index]=digits||' ';setOtp(next.join('').trimEnd());if(digits&&index<5)refs.current[index+1]?.focus()};
  return <DesignImage source={loginImage}>
    <View style={styles.phoneOverlay} pointerEvents="box-none">
+    <BackButton onPress={()=>navigation.goBack()}/>
     <TextInput value={phone} onChangeText={v=>setPhone(v.replace(/\D/g,'').slice(0,10))} keyboardType="phone-pad" style={styles.phoneInput} placeholder="" maxLength={10}/>
     <Pressable style={styles.sendHit} onPress={()=>void send()} disabled={busy}/>
     {sent && <>
@@ -48,11 +51,11 @@ function PhoneAuthScreen({navigation,mode}:{navigation:NavigationProp<AuthStackP
 }
 
 export function RoleSelectionScreen(){
- const {availableRoles,selectRole}=useRole(); const [loading,setLoading]=useState(false);
+ const {availableRoles,selectRole}=useRole(); const {logout}=useAuth(); const [loading,setLoading]=useState(false);
  const choose=async(code:ApplicationRole)=>{const role=availableRoles.find(r=>r.code===code);if(!role){Alert.alert('Coming Soon','FPO Dashboard will be added in a future FarmPrism release.');return}setLoading(true);await selectRole(role.id);setLoading(false)};
- return <DesignImage source={roleImage}><View style={styles.roleHits}>{(['farmer','buyer','logistics'] as ApplicationRole[]).map((r,i)=><Pressable key={r} disabled={loading} onPress={()=>void choose(r)} style={[styles.roleHit, i===0?styles.r1:i===1?styles.r2:styles.r3]}/>) }<Pressable style={styles.fpoHit} onPress={()=>Alert.alert('FPO Dashboard','Coming Soon')}/></View></DesignImage>
+ return <DesignImage source={roleImage}><BackButton onPress={()=>void logout()}/><View style={styles.roleHits}>{(['farmer','buyer','logistics'] as ApplicationRole[]).map((r,i)=><Pressable key={r} disabled={loading} onPress={()=>void choose(r)} style={[styles.roleHit, i===0?styles.r1:i===1?styles.r2:styles.r3]}/>) }<Pressable style={styles.fpoHit} onPress={()=>Alert.alert('FPO Dashboard','Coming Soon')}/></View></DesignImage>
 }
 
 export function RoleDashboardPlaceholder({role}:{role:ApplicationRole}){const {logout}=useAuth();return <ScreenLayout><BrandMark/><ScreenIntro title={`${role[0].toUpperCase()}${role.slice(1)} workspace`} description="Your role-specific FarmPrism experience will appear here."/><SecondaryButton label="Log out" onPress={()=>void logout()}/></ScreenLayout>}
 
-const styles=StyleSheet.create({canvas:{flex:1,backgroundColor:'#f5f1e8'},background:{flex:1,width:'100%',height:'100%'},welcomeContinue:{position:'absolute',left:'14%',right:'14%',bottom:'2.5%',height:'7%'},welcomeSkip:{position:'absolute',right:'7%',top:'3%',width:'16%',height:'5%'},phoneOverlay:{...StyleSheet.absoluteFillObject},phoneInput:{position:'absolute',left:'20%',top:'42.0%',width:'58%',height:'4.7%',fontSize:16,color:'#24372A',paddingHorizontal:8,backgroundColor:'transparent'},sendHit:{position:'absolute',left:'20%',top:'47.1%',width:'60%',height:'5.1%'},otpOverlay:{position:'absolute',left:'20%',top:'59.8%',width:'60%',height:'5.2%',flexDirection:'row',justifyContent:'space-between'},otpBox:{width:'15.5%',height:'100%',textAlign:'center',fontSize:18,fontWeight:'700',color:'#24372A',backgroundColor:'transparent'},loginHit:{position:'absolute',left:'20%',top:'70.8%',width:'60%',height:'5.3%'},resendHit:{position:'absolute',left:'29%',top:'66.0%',width:'43%',height:'4%'},signupHit:{position:'absolute',left:'25%',right:'25%',bottom:'1.5%',height:'5%'},message:{position:'absolute',left:'20%',right:'20%',top:'77%',backgroundColor:'rgba(255,253,247,.95)',padding:8,borderRadius:8},roleHits:{...StyleSheet.absoluteFillObject},roleHit:{position:'absolute',width:'36%',height:'22%'},r1:{left:'13%',top:'32%'},r2:{left:'53%',top:'32%'},r3:{left:'53%',top:'58%'},fpoHit:{position:'absolute',left:'13%',top:'58%',width:'36%',height:'22%'},langOption:{height:58,borderWidth:1,borderColor:'#D6E0D5',borderRadius:10,backgroundColor:'#fff',flexDirection:'row',alignItems:'center',paddingHorizontal:16},langSelected:{borderColor:'#2F7A3E',borderWidth:2},radio:{height:20,width:20,borderRadius:10,borderWidth:2,borderColor:'#A7B7A9',marginRight:12},radioActive:{backgroundColor:'#2F7A3E',borderColor:'#2F7A3E'},langText:{fontSize:16,fontWeight:'600',color:'#24442D'}});
+const styles=StyleSheet.create({canvas:{flex:1,backgroundColor:'#f5f1e8'},background:{flex:1,width:'100%',height:'100%'},welcomeContinue:{position:'absolute',left:'14%',right:'14%',bottom:'2.5%',height:'7%'},welcomeSkip:{position:'absolute',right:'7%',top:'3%',width:'16%',height:'5%'},backButton:{position:'absolute',zIndex:3,top:54,left:22,width:42,height:42,borderRadius:21,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(255,255,255,.95)',borderWidth:1,borderColor:'#D6E0D5',shadowColor:'#1D4527',shadowOpacity:.14,shadowRadius:8,elevation:2},backButtonLabel:{fontSize:34,lineHeight:38,color:'#245B2A',fontWeight:'500',marginTop:-4},phoneOverlay:{...StyleSheet.absoluteFill},phoneInput:{position:'absolute',left:'20%',top:'42.0%',width:'58%',height:'4.7%',fontSize:16,color:'#24372A',paddingHorizontal:8,backgroundColor:'transparent'},sendHit:{position:'absolute',left:'20%',top:'47.1%',width:'60%',height:'5.1%'},otpOverlay:{position:'absolute',left:'20%',top:'59.8%',width:'60%',height:'5.2%',flexDirection:'row',justifyContent:'space-between'},otpBox:{width:'15.5%',height:'100%',textAlign:'center',fontSize:18,fontWeight:'700',color:'#24372A',backgroundColor:'transparent'},loginHit:{position:'absolute',left:'20%',top:'70.8%',width:'60%',height:'5.3%'},resendHit:{position:'absolute',left:'29%',top:'66.0%',width:'43%',height:'4%'},signupHit:{position:'absolute',left:'25%',right:'25%',bottom:'1.5%',height:'5%'},message:{position:'absolute',left:'20%',right:'20%',top:'77%',backgroundColor:'rgba(255,253,247,.95)',padding:8,borderRadius:8},roleHits:{...StyleSheet.absoluteFill},roleHit:{position:'absolute',width:'36%',height:'22%'},r1:{left:'13%',top:'32%'},r2:{left:'53%',top:'32%'},r3:{left:'53%',top:'58%'},fpoHit:{position:'absolute',left:'13%',top:'58%',width:'36%',height:'22%'},langOption:{height:58,borderWidth:1,borderColor:'#D6E0D5',borderRadius:10,backgroundColor:'#fff',flexDirection:'row',alignItems:'center',paddingHorizontal:16},langSelected:{borderColor:'#2F7A3E',borderWidth:2},radio:{height:20,width:20,borderRadius:10,borderWidth:2,borderColor:'#A7B7A9',marginRight:12},radioActive:{backgroundColor:'#2F7A3E',borderColor:'#2F7A3E'},langText:{fontSize:16,fontWeight:'600',color:'#24442D'}});
