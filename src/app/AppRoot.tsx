@@ -19,7 +19,6 @@ export function AppRoot() {
           </RoleProvider>
         </LanguageProvider>
       </AuthProvider>
-      <StatusBar style="dark" />
     </SafeAreaProvider>
   );
 }
