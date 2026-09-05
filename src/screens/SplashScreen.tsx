@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -8,20 +8,21 @@ const VIDEO_ASPECT_RATIO = 392 / 850;
 
 export function SplashScreen() {
   const insets = useSafeAreaInsets();
+  const player = useVideoPlayer(splashVideo, (player) => {
+    player.loop = false;
+    player.muted = true;
+    player.play();
+  });
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       <StatusBar style="light" />
       <View style={styles.videoFrame}>
-        <Video
-          source={splashVideo}
-          shouldPlay
-          isMuted
-          isLooping={false}
-          useNativeControls={false}
-          resizeMode={ResizeMode.COVER}
+        <VideoView
+          player={player}
           style={styles.video}
-          accessibilityIgnoresInvertColors
+          contentFit="cover"
+          nativeControls={false}
         />
       </View>
     </View>
