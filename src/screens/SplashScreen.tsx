@@ -1,4 +1,4 @@
-    import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   Animated,
   Easing,
@@ -14,65 +14,91 @@ const DESIGN_HEIGHT = 2340;
 const DESIGN_ASPECT_RATIO = DESIGN_WIDTH / DESIGN_HEIGHT;
 
 export function SplashScreen() {
-  const shimmer = useRef(new Animated.Value(0)).current;
+  const backgroundOpacity = useRef(new Animated.Value(0)).current;
+  const backgroundScale = useRef(new Animated.Value(1.03)).current;
+  const loaderSweep = useRef(new Animated.Value(-1)).current;
 
   useEffect(() => {
-    const animation = Animated.loop(
+    const backgroundAnimation = Animated.parallel([
+      Animated.timing(backgroundOpacity, {
+        toValue: 1,
+        duration: 550,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(backgroundScale, {
+        toValue: 1,
+        duration: 550,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]);
+
+    const loaderAnimation = Animated.loop(
       Animated.sequence([
-        Animated.timing(shimmer, {
+        Animated.timing(loaderSweep, {
           toValue: 1,
-          duration: 700,
-          easing: Easing.inOut(Easing.ease),
+          duration: 850,
+          easing: Easing.linear,
           useNativeDriver: true,
         }),
-        Animated.timing(shimmer, {
-          toValue: 0,
-          duration: 700,
-          easing: Easing.inOut(Easing.ease),
+        Animated.timing(loaderSweep, {
+          toValue: -1,
+          duration: 0,
           useNativeDriver: true,
         }),
       ]),
     );
 
-    animation.start();
+    const timeline = Animated.sequence([
+      backgroundAnimation,
+      Animated.delay(250),
+    ]);
+
+    timeline.start();
+    loaderAnimation.start();
 
     return () => {
-      animation.stop();
+      timeline.stop();
+      loaderAnimation.stop();
     };
-  }, [shimmer]);
+  }, [backgroundOpacity, backgroundScale, loaderSweep]);
+
+  const loaderTranslate = loaderSweep.interpolate({
+    inputRange: [-1, 1],
+    outputRange: [-110, 110],
+  });
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       <View style={styles.frame}>
-        <ImageBackground
-          source={splashImage}
-          resizeMode="cover"
-          fadeDuration={0}
-          style={styles.image}
+        <Animated.View
+          style={[
+            styles.imageWrap,
+            {
+              opacity: backgroundOpacity,
+              transform: [{ scale: backgroundScale }],
+            },
+          ]}
         >
-          <View pointerEvents="none" style={styles.loaderRegion}>
-            <Animated.View
-              style={[
-                styles.loaderHighlight,
-                {
-                  opacity: shimmer.interpolate({
-                    inputRange: [0, 0.5, 1],
-                    outputRange: [0.12, 0.6, 0.12],
-                  }),
-                  transform: [
-                    {
-                      translateX: shimmer.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-30, 30],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            />
-          </View>
-        </ImageBackground>
+          <ImageBackground
+            source={splashImage}
+            resizeMode="cover"
+            fadeDuration={0}
+            style={styles.image}
+          />
+
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.loaderSweep,
+              {
+                transform: [{ translateX: loaderTranslate }],
+              },
+            ]}
+          />
+        </Animated.View>
       </View>
     </View>
   );
@@ -91,23 +117,23 @@ const styles = StyleSheet.create({
     aspectRatio: DESIGN_ASPECT_RATIO,
     overflow: 'hidden',
   },
+  imageWrap: {
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden',
+  },
   image: {
     width: '100%',
     height: '100%',
   },
-  loaderRegion: {
+  loaderSweep: {
     position: 'absolute',
-    left: '26%',
-    right: '26%',
-    bottom: '11%',
+    left: '24%',
+    right: '24%',
+    bottom: '9.5%',
     height: 12,
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  loaderHighlight: {
-    width: '26%',
-    height: '100%',
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.22)',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    opacity: 0.42,
   },
 });
