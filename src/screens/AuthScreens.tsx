@@ -10,9 +10,9 @@ import { useRole } from '../hooks/useRole';
 import type { AuthStackParamList } from '../navigation/AuthNavigator';
 import type { ApplicationRole } from '../types/role';
 
-const mockImage = require('../../assets/welcome_reference.png');
-const loginImage = require('../../assets/login_interactive_shell.jpg');
-const roleImage = require('../../assets/role_reference.jpg');
+const mockImage = require('../../assets/2.intro fp.png');
+const loginImage = require('../../assets/3.mainlogin.png');
+const roleImage = require('../../assets/4.select role.png');
 
 function DesignImage({source,children}:{source:any;children:React.ReactNode}){return <View style={styles.canvas}><StatusBar hidden/><ImageBackground source={source} resizeMode="cover" fadeDuration={0} style={styles.background}>{children}</ImageBackground></View>}
 
