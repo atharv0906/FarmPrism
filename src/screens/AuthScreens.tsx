@@ -35,7 +35,7 @@ export function GetStartedScreen({navigation}:NativeStackScreenProps<AuthStackPa
    keyExtractor={(_,index)=>String(index)}
    getItemLayout={(_,index)=>({length:width,offset:width*index,index})}
    renderItem={({item})=><View style={[onboardingPageStyle,{width,height}]}> 
-     <Image source={item} resizeMode="contain" style={onboardingImageStyle}/>
+      <Image source={item} resizeMode="cover" style={onboardingImageStyle}/>
      <Pressable style={styles.welcomeContinue} onPress={()=>navigation.navigate('LanguageSelection')} accessibilityRole="button" accessibilityLabel="Get Started"/>
      <Pressable style={styles.welcomeSkip} onPress={()=>navigation.navigate('LanguageSelection')} accessibilityRole="button" accessibilityLabel="Skip"/>
    </View>}
