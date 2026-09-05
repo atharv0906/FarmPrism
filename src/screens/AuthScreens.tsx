@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, ImageBackground, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Image, ImageBackground, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { NavigationProp } from '@react-navigation/native';
@@ -10,7 +10,14 @@ import { useRole } from '../hooks/useRole';
 import type { AuthStackParamList } from '../navigation/AuthNavigator';
 import type { ApplicationRole } from '../types/role';
 
-const mockImage = require('../../assets/2.intro fp.png');
+const getStartedSlides = [
+  require('../../assets/2.1 intro fp.png'),
+  require('../../assets/2.2 intro fp.png'),
+  require('../../assets/2.3intro fp.png'),
+  require('../../assets/2.4 intro fp.png'),
+] as const;
+const onboardingPageStyle = { flex: 1, backgroundColor: '#FAFDF8', overflow: 'hidden' as const };
+const onboardingImageStyle = { width: '100%', height: '100%' } as const;
 const loginImage = require('../../assets/3.mainlogin.png');
 const roleImage = require('../../assets/4.select role.png');
 
@@ -18,7 +25,22 @@ function DesignImage({source,children}:{source:any;children:React.ReactNode}){re
 
 function BackButton({onPress}:{onPress:()=>void}){return <Pressable accessibilityRole="button" accessibilityLabel="Go back" hitSlop={12} onPress={onPress} style={styles.backButton}><Text style={styles.backButtonLabel}>‹</Text></Pressable>}
 
-export function GetStartedScreen({navigation}:NativeStackScreenProps<AuthStackParamList,'GetStarted'>){return <DesignImage source={mockImage}><Pressable style={styles.welcomeContinue} onPress={()=>navigation.navigate('LanguageSelection')} accessibilityRole="button"/><Pressable style={styles.welcomeSkip} onPress={()=>navigation.navigate('LanguageSelection')} accessibilityRole="button"/></DesignImage>}
+export function GetStartedScreen({navigation}:NativeStackScreenProps<AuthStackParamList,'GetStarted'>){
+ const {width,height}=useWindowDimensions();
+ return <View style={styles.canvas}><StatusBar hidden/><FlatList
+   data={getStartedSlides}
+   horizontal
+   pagingEnabled
+   showsHorizontalScrollIndicator={false}
+   keyExtractor={(_,index)=>String(index)}
+   getItemLayout={(_,index)=>({length:width,offset:width*index,index})}
+   renderItem={({item})=><View style={[onboardingPageStyle,{width,height}]}> 
+     <Image source={item} resizeMode="contain" style={onboardingImageStyle}/>
+     <Pressable style={styles.welcomeContinue} onPress={()=>navigation.navigate('LanguageSelection')} accessibilityRole="button" accessibilityLabel="Get Started"/>
+     <Pressable style={styles.welcomeSkip} onPress={()=>navigation.navigate('LanguageSelection')} accessibilityRole="button" accessibilityLabel="Skip"/>
+   </View>}
+ /></View>
+}
 
 export function LanguageSelectionScreen({navigation}:NativeStackScreenProps<AuthStackParamList,'LanguageSelection'>){
  const {language,setLanguage,supportedLanguages}=useLanguage();
