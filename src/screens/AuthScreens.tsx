@@ -18,6 +18,15 @@ const getStartedSlides = [
 ] as const;
 const onboardingPageStyle = { flex: 1, backgroundColor: '#FAFDF8', overflow: 'hidden' as const };
 const onboardingImageStyle = { width: '100%', height: '100%' } as const;
+const languageSelectorImage = require('../../assets/1a.lang sel.png');
+const languageSelectorImageStyle = { width: '100%', height: '100%' } as const;
+const languageSelectorStyles = StyleSheet.create({
+ languageBackHit:{position:'absolute',left:'6%',top:'74%',width:'34%',height:'6%'},
+ languageOptions:{position:'absolute',left:'6%',right:'6%',top:'32%',height:'34%',gap:12},
+ languageOptionHit:{flex:1},
+ englishHit:{flex:1},
+ languageContinueHit:{position:'absolute',right:'6%',top:'74%',width:'50%',height:'6%'},
+});
 const loginImage = require('../../assets/3.mainlogin.png');
 const roleImage = require('../../assets/4.select role.png');
 
@@ -36,15 +45,16 @@ export function GetStartedScreen({navigation}:NativeStackScreenProps<AuthStackPa
    getItemLayout={(_,index)=>({length:width,offset:width*index,index})}
    renderItem={({item})=><View style={[onboardingPageStyle,{width,height}]}> 
       <Image source={item} resizeMode="cover" style={onboardingImageStyle}/>
-     <Pressable style={styles.welcomeContinue} onPress={()=>navigation.navigate('LanguageSelection')} accessibilityRole="button" accessibilityLabel="Get Started"/>
-     <Pressable style={styles.welcomeSkip} onPress={()=>navigation.navigate('LanguageSelection')} accessibilityRole="button" accessibilityLabel="Skip"/>
+    <Pressable style={styles.welcomeContinue} onPress={()=>navigation.navigate('PhoneLogin')} accessibilityRole="button" accessibilityLabel="Get Started"/>
+    <Pressable style={styles.welcomeSkip} onPress={()=>navigation.navigate('PhoneLogin')} accessibilityRole="button" accessibilityLabel="Skip"/>
    </View>}
  /></View>
 }
 
 export function LanguageSelectionScreen({navigation}:NativeStackScreenProps<AuthStackParamList,'LanguageSelection'>){
  const {language,setLanguage,supportedLanguages}=useLanguage();
- return <ScreenLayout><BackButton onPress={()=>navigation.goBack()}/><BrandMark/><ScreenIntro title="Choose your language" description="Select your preferred language to continue."/><View style={{gap:12,marginBottom:24}}>{supportedLanguages.map(code=><Pressable key={code} onPress={()=>void setLanguage(code)} style={[styles.langOption,language===code&&styles.langSelected]}><View style={[styles.radio,language===code&&styles.radioActive]}/><Text style={styles.langText}>{code==='en'?'English':code}</Text></Pressable>)}</View><PrimaryButton label="Continue" onPress={()=>navigation.navigate('PhoneLogin')}/></ScreenLayout>
+ const saveAndContinue=async()=>{await setLanguage(language);navigation.navigate('GetStarted')};
+ return <View style={styles.canvas}><StatusBar hidden/><Image source={languageSelectorImage} resizeMode="cover" style={languageSelectorImageStyle}/><Pressable style={languageSelectorStyles.languageBackHit} onPress={()=>navigation.goBack()} accessibilityRole="button" accessibilityLabel="Back"/><View style={languageSelectorStyles.languageOptions}>{supportedLanguages.map(code=><Pressable key={code} style={code==='en'?languageSelectorStyles.englishHit:languageSelectorStyles.languageOptionHit} onPress={()=>void setLanguage(code)} accessibilityRole="radio" accessibilityState={{selected:language===code}} accessibilityLabel={code==='en'?'English':code}/>)}</View><Pressable style={languageSelectorStyles.languageContinueHit} onPress={()=>void saveAndContinue()} accessibilityRole="button" accessibilityLabel="Save and Continue"/></View>
 }
 
 export function PhoneLoginScreen({navigation}:NativeStackScreenProps<AuthStackParamList,'PhoneLogin'>){return <PhoneAuthScreen navigation={navigation} mode="login"/>}
