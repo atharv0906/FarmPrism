@@ -3,9 +3,7 @@ import { useState } from 'react';
 import {
   Alert,
   Image,
-  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -24,10 +22,8 @@ type LanguageCode = 'en' | 'hi' | 'mr';
 type LanguageOption = {
   code: LanguageCode;
   title: string;
-  nativeTitle: string;
   helper: string;
   symbol: string;
-  tone: 'green' | 'orange' | 'purple';
   comingSoon?: boolean;
 };
 
@@ -61,30 +57,35 @@ const languageOptions: LanguageOption[] = [
   {
     code: 'en',
     title: 'English',
-    nativeTitle: 'English',
     helper: 'Continue in English',
-    symbol: 'A',
-    tone: 'green',
+    symbol: 'globe',
   },
   {
     code: 'hi',
-    title: 'Hindi',
-    nativeTitle: 'हिन्दी',
-    helper: 'हिन्दी में जारी रखें',
-    symbol: 'अ',
-    tone: 'orange',
+    title: 'हिंदी',
+    helper: 'हिंदी में जारी रखें',
+    symbol: 'हि',
     comingSoon: true,
   },
   {
     code: 'mr',
-    title: 'Marathi',
-    nativeTitle: 'मराठी',
+    title: 'मराठी',
     helper: 'मराठीत सुरू ठेवा',
     symbol: 'म',
-    tone: 'purple',
     comingSoon: true,
   },
 ];
+
+function GlobeIcon() {
+  return (
+    <View style={styles.globe}>
+      <View style={styles.globeVertical} />
+      <View style={styles.globeHorizontal} />
+      <View style={styles.globeUpperArc} />
+      <View style={styles.globeLowerArc} />
+    </View>
+  );
+}
 
 export function LanguageSelectionScreen({
   navigation,
@@ -93,29 +94,31 @@ export function LanguageSelectionScreen({
   'LanguageSelection'
 >) {
   const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
 
   const {
-    language,
     setLanguage,
     error,
   } = useLanguage();
 
-  /*
-   * Hindi and Marathi are displayed in the approved UI,
-   * but their full translated app experience is not ready yet.
-   */
+  const scale = Math.max(
+    0.9,
+    Math.min(
+      1.04,
+      Math.min(width / 392, height / 850),
+    ),
+  );
+
   const [selectedLanguage, setSelectedLanguage] =
-    useState<LanguageCode>(
-      language === 'en' ? language : 'en',
-    );
+    useState<LanguageCode>('en');
 
   const [saving, setSaving] = useState(false);
 
-  const compact = height < 760;
-  const canGoBack = navigation.canGoBack();
+  const landscapeHeight = 166 * scale;
 
-  const selectLanguage = (option: LanguageOption) => {
+  const selectLanguage = (
+    option: LanguageOption,
+  ) => {
     if (option.comingSoon) {
       Alert.alert(
         'Coming Soon',
@@ -148,64 +151,126 @@ export function LanguageSelectionScreen({
 
   return (
     <View style={styles.root}>
-      <StatusBar style="dark" />
+      <StatusBar hidden />
 
-      {/* Decorative top artwork */}
+      {/* Top decorative leaves */}
       <Image
         pointerEvents="none"
         source={artwork.topLeftLeaves}
         resizeMode="contain"
-        style={styles.topLeftLeaves}
+        style={[
+          styles.topLeftLeaves,
+          {
+            width: 128 * scale,
+            height: 108 * scale,
+          },
+        ]}
       />
 
       <Image
         pointerEvents="none"
         source={artwork.topRightLeaves}
         resizeMode="contain"
-        style={styles.topRightLeaves}
+        style={[
+          styles.topRightLeaves,
+          {
+            width: 118 * scale,
+            height: 104 * scale,
+          },
+        ]}
       />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        bounces={false}
-        contentContainerStyle={[
-          styles.scrollContent,
+      <View
+        style={[
+          styles.content,
           {
             paddingTop:
-              insets.top + (compact ? 10 : 18),
+              Math.max(insets.top, 4) +
+              6 * scale,
 
             paddingBottom:
-              Math.max(insets.bottom, 12) + 12,
+              landscapeHeight +
+              Math.max(insets.bottom, 0),
           },
         ]}
       >
-        {/* Approved FarmPrism logo */}
+        {/* Logo */}
         <Image
           source={artwork.logo}
           resizeMode="contain"
           fadeDuration={0}
           accessibilityLabel="FarmPrism"
-          style={[
-            styles.logo,
-            compact && styles.logoCompact,
-          ]}
+          style={{
+            width: 92 * scale,
+            height: 92 * scale,
+          }}
         />
 
+        {/* Title */}
         <Text
           style={[
             styles.heading,
-            compact && styles.headingCompact,
+            {
+              fontSize: 30 * scale,
+              lineHeight: 35 * scale,
+            },
           ]}
         >
-          Choose Your Language
+          <Text style={styles.headingDark}>
+            Choose Your{' '}
+          </Text>
+
+          <Text style={styles.headingGreen}>
+            Language
+          </Text>
         </Text>
 
-        <Text style={styles.subtitle}>
-          Select the language you’re most comfortable with
+        <Text
+          style={[
+            styles.subtitle,
+            {
+              fontSize: 14 * scale,
+              lineHeight: 19 * scale,
+            },
+          ]}
+        >
+          {'Select your preferred language.\nYou can change it anytime from Profile.'}
         </Text>
+
+        {/* Top divider */}
+        <View
+          style={[
+            styles.headerDivider,
+            {
+              marginTop: 8 * scale,
+            },
+          ]}
+        >
+          <View style={styles.headerDividerLine} />
+
+          <Image
+            source={artwork.dividerSprout}
+            resizeMode="contain"
+            style={{
+              width: 48 * scale,
+              height: 28 * scale,
+              marginHorizontal: 10 * scale,
+            }}
+          />
+
+          <View style={styles.headerDividerLine} />
+        </View>
 
         {/* Language cards */}
-        <View style={styles.languageList}>
+        <View
+          style={[
+            styles.languageList,
+            {
+              marginTop: 8 * scale,
+              gap: 10 * scale,
+            },
+          ]}
+        >
           {languageOptions.map((option) => {
             const selected =
               selectedLanguage === option.code;
@@ -214,95 +279,142 @@ export function LanguageSelectionScreen({
               <Pressable
                 key={option.code}
                 accessibilityRole="radio"
-                accessibilityLabel={`${option.title} ${option.nativeTitle}`}
-                accessibilityHint={
-                  option.comingSoon
-                    ? 'This language is coming soon'
-                    : 'Select English'
-                }
+                accessibilityLabel={option.title}
                 accessibilityState={{
                   selected,
                 }}
-                onPress={() => selectLanguage(option)}
+                accessibilityHint={
+                  option.comingSoon
+                    ? 'This language is coming soon'
+                    : undefined
+                }
+                onPress={() =>
+                  selectLanguage(option)
+                }
                 style={({ pressed }) => [
                   styles.languageCard,
+
+                  {
+                    minHeight: 82 * scale,
+                    paddingHorizontal:
+                      16 * scale,
+                    borderRadius:
+                      13 * scale,
+                  },
 
                   selected &&
                     styles.languageCardSelected,
 
                   pressed &&
-                    styles.languageCardPressed,
+                    styles.pressed,
                 ]}
               >
                 <View
                   style={[
                     styles.languageIcon,
-
-                    option.tone === 'green' &&
-                      styles.languageIconGreen,
-
-                    option.tone === 'orange' &&
-                      styles.languageIconOrange,
-
-                    option.tone === 'purple' &&
-                      styles.languageIconPurple,
+                    {
+                      width: 54 * scale,
+                      height: 54 * scale,
+                      borderRadius:
+                        27 * scale,
+                      marginRight:
+                        15 * scale,
+                    },
                   ]}
+                >
+                  {option.symbol ===
+                  'globe' ? (
+                    <GlobeIcon />
+                  ) : (
+                    <Text
+                      style={[
+                        styles.languageSymbol,
+                        {
+                          fontSize:
+                            option.code ===
+                            'hi'
+                              ? 24 *
+                                scale
+                              : 27 *
+                                scale,
+                        },
+                      ]}
+                    >
+                      {option.symbol}
+                    </Text>
+                  )}
+                </View>
+
+                <View
+                  style={
+                    styles.languageTextArea
+                  }
                 >
                   <Text
                     style={[
-                      styles.languageSymbol,
+                      styles.languageTitle,
+                      {
+                        fontSize:
+                          17 * scale,
 
-                      option.tone === 'orange' &&
-                        styles.languageSymbolOrange,
-
-                      option.tone === 'purple' &&
-                        styles.languageSymbolPurple,
+                        lineHeight:
+                          22 * scale,
+                      },
                     ]}
                   >
-                    {option.symbol}
+                    {option.title}
                   </Text>
-                </View>
 
-                <View style={styles.languageTextArea}>
-                  <View style={styles.languageTitleRow}>
-                    <Text style={styles.languageTitle}>
-                      {option.title}
-                    </Text>
+                  <Text
+                    style={[
+                      styles.languageHelper,
+                      {
+                        fontSize:
+                          13 * scale,
 
-                    {option.nativeTitle !==
-                      option.title && (
-                      <Text
-                        style={
-                          styles.languageNativeTitle
-                        }
-                      >
-                        {option.nativeTitle}
-                      </Text>
-                    )}
-                  </View>
-
-                  <Text style={styles.languageHelper}>
+                        lineHeight:
+                          18 * scale,
+                      },
+                    ]}
+                  >
                     {option.helper}
                   </Text>
-
-                  {option.comingSoon && (
-                    <Text style={styles.comingSoon}>
-                      Coming soon
-                    </Text>
-                  )}
                 </View>
 
                 <View
                   style={[
                     styles.radioOuter,
 
+                    {
+                      width: 27 * scale,
+                      height:
+                        27 * scale,
+
+                      borderRadius:
+                        14 * scale,
+                    },
+
                     selected
-                      ? styles.radioOuterSelected
-                      : styles.radioOuterIdle,
+                      ? styles.radioSelected
+                      : styles.radioIdle,
                   ]}
                 >
                   {selected && (
-                    <View style={styles.radioInner} />
+                    <View
+                      style={[
+                        styles.radioInner,
+                        {
+                          width:
+                            15 * scale,
+
+                          height:
+                            15 * scale,
+
+                          borderRadius:
+                            8 * scale,
+                        },
+                      ]}
+                    />
                   )}
                 </View>
               </Pressable>
@@ -310,133 +422,202 @@ export function LanguageSelectionScreen({
           })}
         </View>
 
-        {/* Info box */}
-        <View style={styles.infoCard}>
-          <Image
-            source={artwork.infoLeaf}
-            resizeMode="contain"
-            style={styles.infoLeaf}
-          />
+        {/* Information banner */}
+        <View
+          style={[
+            styles.infoCard,
+            {
+              minHeight: 66 * scale,
+              marginTop: 13 * scale,
 
-          <View style={styles.infoTextArea}>
-            <Text style={styles.infoTitle}>
-              You can change this later
-            </Text>
+              borderRadius:
+                12 * scale,
 
-            <Text style={styles.infoText}>
-              Your language preference can be updated anytime
-              from Settings.
-            </Text>
-          </View>
-        </View>
+              paddingHorizontal:
+                14 * scale,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.infoIcon,
+              {
+                width: 38 * scale,
+                height: 38 * scale,
 
-        {error && (
-          <Text accessibilityRole="alert" style={styles.errorText}>
-            We couldn’t save your previous language preference.
-            You can still continue.
-          </Text>
-        )}
-
-        {/* Actions */}
-        <View style={styles.actions}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Back"
-            accessibilityState={{
-              disabled: !canGoBack,
-            }}
-            disabled={!canGoBack || saving}
-            onPress={() => {
-              if (canGoBack) {
-                navigation.goBack();
-              }
-            }}
-            style={({ pressed }) => [
-              styles.backButton,
-
-              !canGoBack &&
-                styles.backButtonDisabled,
-
-              pressed &&
-                canGoBack &&
-                styles.buttonPressed,
+                borderRadius:
+                  19 * scale,
+              },
             ]}
           >
             <Text
               style={[
-                styles.backButtonText,
-
-                !canGoBack &&
-                  styles.backButtonTextDisabled,
+                styles.infoIconText,
+                {
+                  fontSize: 24 * scale,
+                },
               ]}
             >
-              ←  Back
+              i
             </Text>
-          </Pressable>
+          </View>
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Save and Continue"
-            accessibilityState={{
-              disabled: saving,
-              busy: saving,
-            }}
-            disabled={saving}
-            onPress={() => {
-              void saveAndContinue();
-            }}
-            style={({ pressed }) => [
-              styles.continueButton,
+          <Text
+            style={[
+              styles.infoText,
+              {
+                fontSize:
+                  13.5 * scale,
 
-              saving &&
-                styles.continueButtonDisabled,
-
-              pressed &&
-                !saving &&
-                styles.buttonPressed,
+                lineHeight:
+                  19 * scale,
+              },
             ]}
           >
-            <Text style={styles.continueButtonText}>
-              {saving
-                ? 'Saving...'
-                : 'Save & Continue'}
-            </Text>
+            Your language preference will be
+            {'\n'}
+            applied across the app.
+          </Text>
 
-            {!saving && (
-              <Text style={styles.continueArrow}>
-                →
-              </Text>
-            )}
-          </Pressable>
+          <Image
+            source={artwork.infoLeaf}
+            resizeMode="contain"
+            style={{
+              width: 42 * scale,
+              height: 42 * scale,
+            }}
+          />
         </View>
 
-        {/* Divider */}
-        <View style={styles.divider}>
-          <View style={styles.dividerLine} />
+        {error && (
+          <Text
+            accessibilityRole="alert"
+            style={styles.errorText}
+          >
+            We couldn’t save the previous
+            preference. You can still continue.
+          </Text>
+        )}
+
+        {/* No Back button — Language is first page */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Save and Continue"
+          accessibilityState={{
+            disabled: saving,
+            busy: saving,
+          }}
+          disabled={saving}
+          onPress={() =>
+            void saveAndContinue()
+          }
+          style={({ pressed }) => [
+            styles.continueButton,
+
+            {
+              minHeight: 54 * scale,
+              marginTop: 14 * scale,
+
+              borderRadius:
+                12 * scale,
+            },
+
+            saving &&
+              styles.continueButtonDisabled,
+
+            pressed &&
+              !saving &&
+              styles.pressed,
+          ]}
+        >
+          <Text
+            style={[
+              styles.continueButtonText,
+              {
+                fontSize:
+                  17 * scale,
+              },
+            ]}
+          >
+            {saving
+              ? 'Saving...'
+              : 'Save & Continue'}
+          </Text>
+
+          {!saving && (
+            <Text
+              style={[
+                styles.continueArrow,
+                {
+                  fontSize:
+                    25 * scale,
+                },
+              ]}
+            >
+              →
+            </Text>
+          )}
+        </Pressable>
+      </View>
+
+      {/* Footer quote */}
+      <View
+        pointerEvents="none"
+        style={[
+          styles.footerOverlay,
+          {
+            bottom:
+              landscapeHeight -
+              2 * scale,
+          },
+        ]}
+      >
+        <View style={styles.footerDivider}>
+          <View style={styles.footerLine} />
 
           <Image
             source={artwork.dividerSprout}
             resizeMode="contain"
-            style={styles.dividerSprout}
+            style={{
+              width: 46 * scale,
+              height: 27 * scale,
+              marginHorizontal:
+                10 * scale,
+            }}
           />
 
-          <View style={styles.dividerLine} />
+          <View style={styles.footerLine} />
         </View>
 
-        <Text style={styles.footerQuote}>
-          Rooted in tradition. Growing with technology.
+        <Text
+          style={[
+            styles.footerQuote,
+            {
+              fontSize:
+                13 * scale,
+
+              lineHeight:
+                16 * scale,
+            },
+          ]}
+        >
+          {'“Better Farmers\nBrighter Tomorrows”'}
         </Text>
+      </View>
 
-        {/* Bottom decorative artwork */}
-        <View style={styles.landscapeFrame}>
-          <Image
-            source={artwork.bottomLandscape}
-            resizeMode="cover"
-            fadeDuration={0}
-            style={styles.landscape}
-          />
-        </View>
-      </ScrollView>
+      {/* Bottom farm artwork */}
+      <Image
+        pointerEvents="none"
+        source={artwork.bottomLandscape}
+        resizeMode="cover"
+        fadeDuration={0}
+        style={[
+          styles.bottomLandscape,
+          {
+            height: landscapeHeight,
+          },
+        ]}
+      />
     </View>
   );
 }
@@ -444,336 +625,92 @@ export function LanguageSelectionScreen({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#F7F9EF',
+    backgroundColor: '#FCFBF5',
+    overflow: 'hidden',
   },
 
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 22,
+  content: {
+    flex: 1,
+    zIndex: 2,
     alignItems: 'center',
+    paddingHorizontal: 26,
   },
 
   topLeftLeaves: {
     position: 'absolute',
-    top: -12,
-    left: -20,
-    width: 118,
-    height: 118,
-    opacity: 0.95,
+    top: -10,
+    left: -15,
     zIndex: 1,
+    opacity: 0.96,
   },
 
   topRightLeaves: {
     position: 'absolute',
-    top: -16,
-    right: -18,
-    width: 120,
-    height: 120,
-    opacity: 0.9,
+    top: -6,
+    right: -17,
     zIndex: 1,
-  },
-
-  logo: {
-    width: 92,
-    height: 92,
-    marginBottom: 14,
-  },
-
-  logoCompact: {
-    width: 78,
-    height: 78,
-    marginBottom: 8,
+    opacity: 0.58,
   },
 
   heading: {
-    color: '#174D2A',
-    fontSize: 29,
-    lineHeight: 36,
-    fontWeight: '700',
-
-    fontFamily: Platform.select({
-      ios: 'Georgia',
-      android: 'serif',
-      default: 'serif',
-    }),
+    width: '100%',
+    marginTop: 3,
 
     textAlign: 'center',
+    fontFamily: 'serif',
+    fontWeight: '700',
   },
 
-  headingCompact: {
-    fontSize: 26,
-    lineHeight: 32,
+  headingDark: {
+    color: '#102E35',
+  },
+
+  headingGreen: {
+    color: '#176B35',
   },
 
   subtitle: {
-    marginTop: 7,
-    paddingHorizontal: 18,
+    marginTop: 5,
 
-    color: '#667064',
-    fontSize: 14,
-    lineHeight: 20,
+    color: '#66717A',
     textAlign: 'center',
+  },
+
+  headerDivider: {
+    width: '56%',
+
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  headerDividerLine: {
+    flex: 1,
+    height: 1,
+
+    backgroundColor: '#BFD1B4',
   },
 
   languageList: {
     width: '100%',
-    marginTop: 24,
-    gap: 13,
   },
 
   languageCard: {
-    minHeight: 78,
+    width: '100%',
 
     flexDirection: 'row',
     alignItems: 'center',
 
-    paddingHorizontal: 15,
-    paddingVertical: 12,
+    paddingVertical: 9,
 
     backgroundColor: '#FFFFFF',
 
-    borderWidth: 1.3,
-    borderColor: '#D7DFD0',
-    borderRadius: 17,
-
-    shadowColor: '#1A3D27',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-
-    elevation: 2,
-  },
-
-  languageCardSelected: {
-    backgroundColor: '#F2F8EC',
-    borderColor: '#24733D',
-    borderWidth: 2,
-  },
-
-  languageCardPressed: {
-    transform: [
-      {
-        scale: 0.992,
-      },
-    ],
-  },
-
-  languageIcon: {
-    width: 46,
-    height: 46,
-
-    borderRadius: 23,
-
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    marginRight: 13,
-  },
-
-  languageIconGreen: {
-    backgroundColor: '#E6F2E5',
-  },
-
-  languageIconOrange: {
-    backgroundColor: '#FFF0DC',
-  },
-
-  languageIconPurple: {
-    backgroundColor: '#EEE8F8',
-  },
-
-  languageSymbol: {
-    color: '#24733D',
-    fontSize: 21,
-    fontWeight: '800',
-  },
-
-  languageSymbolOrange: {
-    color: '#C56C18',
-  },
-
-  languageSymbolPurple: {
-    color: '#7552A8',
-  },
-
-  languageTextArea: {
-    flex: 1,
-    paddingRight: 10,
-  },
-
-  languageTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    flexWrap: 'wrap',
-  },
-
-  languageTitle: {
-    color: '#203E2A',
-    fontSize: 16,
-    lineHeight: 21,
-    fontWeight: '700',
-  },
-
-  languageNativeTitle: {
-    marginLeft: 7,
-
-    color: '#4E5C52',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-
-  languageHelper: {
-    marginTop: 2,
-
-    color: '#7A8279',
-    fontSize: 12.5,
-    lineHeight: 17,
-  },
-
-  comingSoon: {
-    marginTop: 3,
-
-    color: '#A06C23',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-
-  radioOuter: {
-    width: 23,
-    height: 23,
-
-    borderRadius: 12,
-
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  radioOuterIdle: {
-    borderWidth: 2,
-    borderColor: '#A5ADA6',
-  },
-
-  radioOuterSelected: {
-    borderWidth: 2,
-    borderColor: '#24733D',
-  },
-
-  radioInner: {
-    width: 11,
-    height: 11,
-
-    borderRadius: 6,
-
-    backgroundColor: '#24733D',
-  },
-
-  infoCard: {
-    width: '100%',
-
-    flexDirection: 'row',
-    alignItems: 'center',
-
-    marginTop: 20,
-
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-
-    backgroundColor: '#EDF5E7',
-
     borderWidth: 1,
-    borderColor: '#D4E4CB',
-    borderRadius: 15,
-  },
+    borderColor: '#E4E7DF',
 
-  infoLeaf: {
-    width: 38,
-    height: 38,
-    marginRight: 11,
-  },
+    shadowColor: '#273626',
+    shadowOpacity: 0.11,
+    shadowRadius: 7,
 
-  infoTextArea: {
-    flex: 1,
-  },
-
-  infoTitle: {
-    color: '#28543A',
-    fontSize: 13.5,
-    fontWeight: '700',
-  },
-
-  infoText: {
-    marginTop: 2,
-
-    color: '#667367',
-    fontSize: 12,
-    lineHeight: 17,
-  },
-
-  errorText: {
-    width: '100%',
-    marginTop: 10,
-
-    color: '#A04435',
-    fontSize: 12,
-    lineHeight: 17,
-    textAlign: 'center',
-  },
-
-  actions: {
-    width: '100%',
-    flexDirection: 'row',
-
-    marginTop: 21,
-    gap: 12,
-  },
-
-  backButton: {
-    minHeight: 50,
-    flex: 0.9,
-
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    borderWidth: 1.4,
-    borderColor: '#A7B0A5',
-    borderRadius: 13,
-
-    backgroundColor: '#F8FAF3',
-  },
-
-  backButtonDisabled: {
-    opacity: 0.58,
-  },
-
-  backButtonText: {
-    color: '#59645B',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-
-  backButtonTextDisabled: {
-    color: '#8B938B',
-  },
-
-  continueButton: {
-    minHeight: 50,
-    flex: 1.45,
-
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    paddingHorizontal: 15,
-
-    backgroundColor: '#176A36',
-    borderRadius: 13,
-
-    shadowColor: '#123C24',
-    shadowOpacity: 0.16,
-    shadowRadius: 6,
     shadowOffset: {
       width: 0,
       height: 3,
@@ -782,73 +719,250 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
+  languageCardSelected: {
+    backgroundColor: '#F6FAF1',
+
+    borderColor: '#3D8B4D',
+    borderWidth: 1.5,
+  },
+
+  pressed: {
+    opacity: 0.84,
+  },
+
+  languageIcon: {
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    backgroundColor: '#EDF4E3',
+  },
+
+  languageSymbol: {
+    color: '#12632F',
+    fontWeight: '700',
+  },
+
+  globe: {
+    width: 32,
+    height: 32,
+
+    borderRadius: 16,
+
+    borderWidth: 2.2,
+    borderColor: '#12632F',
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    overflow: 'hidden',
+  },
+
+  globeVertical: {
+    position: 'absolute',
+
+    width: 12,
+    height: 30,
+
+    borderLeftWidth: 2,
+    borderRightWidth: 2,
+
+    borderColor: '#12632F',
+
+    borderRadius: 9,
+  },
+
+  globeHorizontal: {
+    position: 'absolute',
+
+    width: 30,
+    height: 2,
+
+    backgroundColor: '#12632F',
+  },
+
+  globeUpperArc: {
+    position: 'absolute',
+    top: 7,
+
+    width: 28,
+    height: 2,
+
+    backgroundColor: '#12632F',
+  },
+
+  globeLowerArc: {
+    position: 'absolute',
+    bottom: 7,
+
+    width: 28,
+    height: 2,
+
+    backgroundColor: '#12632F',
+  },
+
+  languageTextArea: {
+    flex: 1,
+  },
+
+  languageTitle: {
+    color: '#102E35',
+    fontWeight: '700',
+  },
+
+  languageHelper: {
+    marginTop: 2,
+    color: '#6E7980',
+  },
+
+  radioOuter: {
+    marginLeft: 10,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    borderWidth: 2,
+  },
+
+  radioSelected: {
+    borderColor: '#12632F',
+  },
+
+  radioIdle: {
+    borderColor: '#969EA3',
+  },
+
+  radioInner: {
+    backgroundColor: '#1E7C3B',
+  },
+
+  infoCard: {
+    width: '100%',
+
+    flexDirection: 'row',
+    alignItems: 'center',
+
+    backgroundColor: '#EEF4DB',
+  },
+
+  infoIcon: {
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    borderWidth: 1.7,
+    borderColor: '#176B35',
+
+    marginRight: 12,
+  },
+
+  infoIconText: {
+    color: '#176B35',
+
+    fontFamily: 'serif',
+    fontWeight: '700',
+
+    marginTop: -2,
+  },
+
+  infoText: {
+    flex: 1,
+
+    color: '#145C2D',
+    fontWeight: '700',
+  },
+
+  errorText: {
+    marginTop: 5,
+
+    color: '#A04435',
+
+    fontSize: 11,
+    textAlign: 'center',
+  },
+
+  continueButton: {
+    width: '100%',
+
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    backgroundColor: '#176C35',
+
+    shadowColor: '#173F25',
+    shadowOpacity: 0.18,
+    shadowRadius: 7,
+
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+
+    elevation: 4,
+  },
+
   continueButtonDisabled: {
     opacity: 0.65,
   },
 
   continueButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
+
     fontWeight: '800',
   },
 
   continueArrow: {
-    marginLeft: 10,
+    marginLeft: 16,
 
     color: '#FFFFFF',
-    fontSize: 19,
-    fontWeight: '700',
+
+    fontWeight: '400',
   },
 
-  buttonPressed: {
-    opacity: 0.86,
+  footerOverlay: {
+    position: 'absolute',
+
+    left: 0,
+    right: 0,
+
+    zIndex: 3,
+
+    alignItems: 'center',
+
+    paddingHorizontal: 88,
   },
 
-  divider: {
+  footerDivider: {
     width: '100%',
 
     flexDirection: 'row',
     alignItems: 'center',
-
-    marginTop: 24,
   },
 
-  dividerLine: {
+  footerLine: {
     flex: 1,
     height: 1,
 
-    backgroundColor: '#CBD7C3',
-  },
-
-  dividerSprout: {
-    width: 32,
-    height: 32,
-
-    marginHorizontal: 12,
+    backgroundColor: '#9FB991',
   },
 
   footerQuote: {
-    marginTop: 7,
-    marginBottom: 12,
+    marginTop: -1,
 
-    color: '#6D786B',
-    fontSize: 12.5,
-    fontStyle: 'italic',
+    color: '#4E463C',
+
+    fontWeight: '600',
     textAlign: 'center',
   },
 
-  landscapeFrame: {
+  bottomLandscape: {
+    position: 'absolute',
+
+    left: 0,
+    right: 0,
+    bottom: 0,
+
     width: '100%',
-    height: 142,
 
-    marginTop: 2,
-
-    borderRadius: 17,
-    overflow: 'hidden',
-  },
-
-  landscape: {
-    width: '100%',
-    height: '100%',
+    zIndex: 1,
   },
 });
