@@ -189,17 +189,6 @@ export function GetStartedScreen({
     );
   };
 
-  const handleBack = () => {
-    if (page > 0) {
-      goToPage(page - 1);
-
-      return;
-    }
-
-    navigation.navigate(
-      'LanguageSelection',
-    );
-  };
 
   const handleScrollEnd = (
     event: NativeSyntheticEvent<
@@ -272,55 +261,7 @@ export function GetStartedScreen({
       />
 
       {/* Real Back control */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={
-          page === 0
-            ? 'Back to language selection'
-            : 'Previous introduction screen'
-        }
-        hitSlop={12}
-        onPress={
-          handleBack
-        }
-        style={({ pressed }) => [
-          styles.backButton,
-
-          {
-            top:
-              Math.max(
-                insets.top,
-                8,
-              ) +
-              10 *
-                scale,
-
-            width:
-              42 * scale,
-
-            height:
-              42 * scale,
-
-            borderRadius:
-              21 * scale,
-          },
-
-          pressed &&
-            styles.pressed,
-        ]}
-      >
-        <Text
-          style={[
-            styles.backArrow,
-            {
-              fontSize:
-                24 * scale,
-            },
-          ]}
-        >
-          ←
-        </Text>
-      </Pressable>
+    
 
       <FlatList
         ref={listRef}
@@ -787,53 +728,6 @@ const styles =
       opacity: 0.72,
     },
 
-    backButton: {
-      position:
-        'absolute',
-
-      left: 20,
-
-      zIndex: 10,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      backgroundColor:
-        'rgba(255,255,255,0.88)',
-
-      borderWidth: 1,
-
-      borderColor:
-        '#D5DED0',
-
-      shadowColor:
-        '#263E2B',
-
-      shadowOpacity:
-        0.08,
-
-      shadowRadius: 6,
-
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-
-      elevation: 2,
-    },
-
-    backArrow: {
-      color:
-        '#245C34',
-
-      fontWeight:
-        '600',
-
-      marginTop: -1,
-    },
 
     heroArea: {
       height: '56%',
