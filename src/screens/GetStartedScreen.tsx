@@ -89,17 +89,17 @@ function PageTitle({
   index: number;
   scale: number;
 }) {
-  const commonStyle = [
-    styles.title,
-    {
-      fontSize: 38 * scale,
-      lineHeight: 42 * scale,
-    },
-  ];
-
   if (index === 0) {
     return (
-      <Text style={commonStyle}>
+      <Text
+        style={[
+          styles.title,
+          {
+            fontSize: 34 * scale,
+            lineHeight: 38 * scale,
+          },
+        ]}
+      >
         <Text style={styles.navy}>
           Welcome to
         </Text>
@@ -119,7 +119,15 @@ function PageTitle({
 
   if (index === 1) {
     return (
-      <Text style={commonStyle}>
+      <Text
+        style={[
+          styles.title,
+          {
+            fontSize: 34 * scale,
+            lineHeight: 38 * scale,
+          },
+        ]}
+      >
         <Text style={styles.green}>
           Grow Smarter
         </Text>
@@ -135,7 +143,15 @@ function PageTitle({
 
   if (index === 2) {
     return (
-      <Text style={commonStyle}>
+      <Text
+        style={[
+          styles.title,
+          {
+            fontSize: 33 * scale,
+            lineHeight: 37 * scale,
+          },
+        ]}
+      >
         <Text style={styles.navy}>
           Fair Prices
         </Text>
@@ -154,8 +170,8 @@ function PageTitle({
       style={[
         styles.title,
         {
-          fontSize: 37 * scale,
-          lineHeight: 42 * scale,
+          fontSize: 34 * scale,
+          lineHeight: 38 * scale,
         },
       ]}
     >
@@ -186,17 +202,16 @@ function FeatureCard({
       style={[
         styles.featureCard,
         {
-          height: 83 * scale,
+          height: 92 * scale,
           borderRadius: 13 * scale,
-          paddingHorizontal: 10 * scale,
         },
       ]}
     >
       <View
         style={[
-          styles.featureImageArea,
+          styles.featureArtworkArea,
           {
-            width: 105 * scale,
+            width: 118 * scale,
           },
         ]}
       >
@@ -205,19 +220,19 @@ function FeatureCard({
           resizeMode="contain"
           fadeDuration={0}
           style={{
-            width: 94 * scale,
-            height: 76 * scale,
+            width: 108 * scale,
+            height: 87 * scale,
           }}
         />
       </View>
 
-      <View style={styles.featureTextArea}>
+      <View style={styles.featureCopy}>
         <Text
           style={[
             styles.featureTitle,
             {
-              fontSize: 15 * scale,
-              lineHeight: 19 * scale,
+              fontSize: 14.5 * scale,
+              lineHeight: 18 * scale,
             },
           ]}
         >
@@ -228,7 +243,7 @@ function FeatureCard({
           style={[
             styles.featureDescription,
             {
-              fontSize: 12.5 * scale,
+              fontSize: 12.3 * scale,
               lineHeight: 16 * scale,
             },
           ]}
@@ -245,7 +260,7 @@ function MarketRow({
   crop,
   price,
   movement,
-  negative = false,
+  negative,
   scale,
 }: {
   icon: string;
@@ -260,14 +275,14 @@ function MarketRow({
       style={[
         styles.marketRow,
         {
-          minHeight: 42 * scale,
+          minHeight: 40 * scale,
         },
       ]}
     >
       <Text
         style={{
-          width: 30 * scale,
-          fontSize: 20 * scale,
+          width: 29 * scale,
+          fontSize: 19 * scale,
         }}
       >
         {icon}
@@ -277,7 +292,7 @@ function MarketRow({
         style={[
           styles.cropName,
           {
-            fontSize: 11.5 * scale,
+            fontSize: 10.8 * scale,
           },
         ]}
       >
@@ -289,7 +304,7 @@ function MarketRow({
           style={[
             styles.priceText,
             {
-              fontSize: 11.2 * scale,
+              fontSize: 10.8 * scale,
             },
           ]}
         >
@@ -300,7 +315,7 @@ function MarketRow({
           style={[
             styles.movementText,
             {
-              fontSize: 10.2 * scale,
+              fontSize: 9.8 * scale,
             },
 
             negative
@@ -317,36 +332,34 @@ function MarketRow({
 
 function Pagination({
   index,
-  onPress,
   scale,
+  onPress,
 }: {
   index: number;
-  onPress: (index: number) => void;
   scale: number;
+  onPress: (index: number) => void;
 }) {
   return (
     <View style={styles.pagination}>
       {[0, 1, 2, 3].map((dot) => (
         <Pressable
           key={dot}
-          accessibilityRole="button"
-          accessibilityLabel={`Go to introduction screen ${
-            dot + 1
-          }`}
           hitSlop={8}
           onPress={() => onPress(dot)}
+          accessibilityRole="button"
+          accessibilityLabel={`Go to introduction page ${
+            dot + 1
+          }`}
           style={[
-            styles.paginationDot,
-
             {
-              width: 10 * scale,
-              height: 10 * scale,
-              borderRadius: 5 * scale,
+              width: 9 * scale,
+              height: 9 * scale,
+              borderRadius: 999,
             },
 
             dot === index
               ? styles.paginationDotActive
-              : styles.paginationDotIdle,
+              : styles.paginationDotInactive,
           ]}
         />
       ))}
@@ -371,7 +384,7 @@ export function GetStartedScreen({
     useRef<FlatList<number>>(null);
 
   const scale = Math.max(
-    0.86,
+    0.88,
     Math.min(
       1.04,
       Math.min(
@@ -382,41 +395,50 @@ export function GetStartedScreen({
   );
 
   /*
-   * FARMPRISM GLOBAL RULE:
-   * No interactive UI may overlap
+   * Keep all important content above
    * Android system navigation.
    */
   const safeBottom =
-    Math.max(insets.bottom, 12);
-
-  /*
-   * Compact footer like the approved
-   * Get Started reference.
-   */
-  const footerHeight =
-    94 * scale +
-    safeBottom;
-
-  const contentHeight =
     Math.max(
-      0,
-      height - footerHeight,
+      insets.bottom,
+      12,
     );
 
   /*
-   * Stronger farmland section,
-   * closer to the reference design.
+   * MUCH smaller footer.
+   *
+   * This fixes the huge white area
+   * visible in the current screenshot.
+   */
+  const footerHeight =
+    76 * scale +
+    safeBottom;
+
+  const contentHeight =
+    height -
+    footerHeight;
+
+  /*
+   * Landscape occupies a proper lower
+   * portion of the artwork instead of
+   * appearing as a tiny banner.
    */
   const landscapeHeight =
-    198 * scale;
+    Math.min(
+      215 * scale,
+      contentHeight * 0.27,
+    );
 
   const safeTop =
-    Math.max(insets.top, 0);
+    Math.max(
+      insets.top,
+      0,
+    );
 
   const goToPage = (
     nextPage: number,
   ) => {
-    const safePage =
+    const target =
       Math.max(
         0,
         Math.min(
@@ -428,7 +450,7 @@ export function GetStartedScreen({
     requestAnimationFrame(() => {
       listRef.current?.scrollToOffset({
         offset:
-          safePage *
+          target *
           width,
 
         animated: true,
@@ -441,6 +463,7 @@ export function GetStartedScreen({
   ) => {
     if (index < 3) {
       goToPage(index + 1);
+
       return;
     }
 
@@ -454,7 +477,6 @@ export function GetStartedScreen({
   ) => {
     /*
      * PAGE 1
-     * Welcome to FarmPrism
      */
     if (index === 0) {
       return (
@@ -463,33 +485,33 @@ export function GetStartedScreen({
             styles.pageOneBody,
             {
               marginTop:
-                10 * scale,
+                12 * scale,
             },
           ]}
         >
           <FeatureCard
-            scale={scale}
             image={
               artwork.farmerPortrait
             }
+            scale={scale}
             title="Sell directly to verified buyers"
             description="Get better prices for your hard work."
           />
 
           <FeatureCard
-            scale={scale}
             image={
               artwork.sproutingPlant
             }
+            scale={scale}
             title="Manage your crops with ease"
             description="Track, update and grow your produce."
           />
 
           <FeatureCard
-            scale={scale}
             image={
               artwork.teamNetwork
             }
+            scale={scale}
             title="Be part of a trusted farming community"
             description="Together for a prosperous tomorrow."
           />
@@ -502,13 +524,15 @@ export function GetStartedScreen({
             fadeDuration={0}
             style={{
               width:
-                215 * scale,
+                250 * scale,
 
               height:
-                58 * scale,
+                71 * scale,
 
               marginTop:
-                3 * scale,
+                1 * scale,
+
+              zIndex: 5,
             }}
           />
         </View>
@@ -517,7 +541,6 @@ export function GetStartedScreen({
 
     /*
      * PAGE 2
-     * Grow Smarter Every Season
      */
     if (index === 1) {
       return (
@@ -526,7 +549,7 @@ export function GetStartedScreen({
             styles.pageTwoBody,
             {
               marginTop:
-                5 * scale,
+                9 * scale,
             },
           ]}
         >
@@ -538,15 +561,11 @@ export function GetStartedScreen({
             fadeDuration={0}
             style={{
               width:
-                width * 0.82,
+                width * 0.88,
 
               height:
-                Math.min(
-                  contentHeight *
-                    0.53,
-
-                  400 * scale,
-                ),
+                contentHeight *
+                0.57,
             }}
           />
         </View>
@@ -555,7 +574,6 @@ export function GetStartedScreen({
 
     /*
      * PAGE 3
-     * Fair Prices
      */
     if (index === 2) {
       return (
@@ -564,7 +582,7 @@ export function GetStartedScreen({
             styles.pageThreeBody,
             {
               marginTop:
-                7 * scale,
+                11 * scale,
             },
           ]}
         >
@@ -573,7 +591,7 @@ export function GetStartedScreen({
               styles.marketComposition,
               {
                 height:
-                  245 * scale,
+                  270 * scale,
               },
             ]}
           >
@@ -588,14 +606,14 @@ export function GetStartedScreen({
                 {
                   width:
                     width *
-                    0.52,
+                    0.58,
 
                   height:
-                    230 *
+                    270 *
                     scale,
 
                   left:
-                    -13 *
+                    -18 *
                     scale,
 
                   bottom: 0,
@@ -609,22 +627,22 @@ export function GetStartedScreen({
                 {
                   width:
                     width *
-                    0.58,
+                    0.59,
 
                   right:
                     10 *
                     scale,
 
                   top:
-                    2 *
+                    8 *
                     scale,
 
                   borderRadius:
-                    13 *
+                    12 *
                     scale,
 
                   padding:
-                    10 *
+                    9 *
                     scale,
                 },
               ]}
@@ -635,7 +653,7 @@ export function GetStartedScreen({
                     styles.marketTitle,
                     {
                       fontSize:
-                        12.5 *
+                        12 *
                         scale,
                     },
                   ]}
@@ -648,7 +666,7 @@ export function GetStartedScreen({
                     styles.viewAll,
                     {
                       fontSize:
-                        10 *
+                        9.2 *
                         scale,
                     },
                   ]}
@@ -658,36 +676,36 @@ export function GetStartedScreen({
               </View>
 
               <MarketRow
-                scale={scale}
                 icon="🍅"
                 crop="Tomato"
                 price="₹1,420 / qtl"
                 movement="↑ 2.5%"
+                scale={scale}
               />
 
               <MarketRow
-                scale={scale}
                 icon="🧅"
                 crop="Onion"
                 price="₹1,980 / qtl"
                 movement="↓ 1.3%"
                 negative
+                scale={scale}
               />
 
               <MarketRow
-                scale={scale}
                 icon="🌾"
                 crop="Wheat"
                 price="₹2,183 / qtl"
                 movement="↑ 3.1%"
+                scale={scale}
               />
 
               <MarketRow
-                scale={scale}
                 icon="🫛"
                 crop="Soybean"
                 price="₹3,200 / qtl"
                 movement="↑ 0.8%"
+                scale={scale}
               />
             </View>
           </View>
@@ -700,13 +718,15 @@ export function GetStartedScreen({
             fadeDuration={0}
             style={{
               width:
-                220 * scale,
+                245 * scale,
 
               height:
-                58 * scale,
+                70 * scale,
 
               marginTop:
-                4 * scale,
+                -2 * scale,
+
+              zIndex: 5,
             }}
           />
         </View>
@@ -715,7 +735,6 @@ export function GetStartedScreen({
 
     /*
      * PAGE 4
-     * Stronger Together
      */
     return (
       <View
@@ -723,7 +742,7 @@ export function GetStartedScreen({
           styles.pageFourBody,
           {
             marginTop:
-              5 * scale,
+              6 * scale,
           },
         ]}
       >
@@ -735,10 +754,10 @@ export function GetStartedScreen({
           fadeDuration={0}
           style={{
             width:
-              width * 0.74,
+              width * 0.83,
 
             height:
-              275 * scale,
+              315 * scale,
           }}
         />
 
@@ -750,13 +769,15 @@ export function GetStartedScreen({
           fadeDuration={0}
           style={{
             width:
-              260 * scale,
+              285 * scale,
 
             height:
-              72 * scale,
+              83 * scale,
 
             marginTop:
-              -2 * scale,
+              -8 * scale,
+
+            zIndex: 5,
           }}
         />
       </View>
@@ -769,22 +790,21 @@ export function GetStartedScreen({
 
       <FlatList
         ref={listRef}
+        horizontal
+        pagingEnabled
+        bounces={false}
+        overScrollMode="never"
+        decelerationRate="fast"
         data={[
           0,
           1,
           2,
           3,
         ]}
-        horizontal
-        pagingEnabled
-        bounces={false}
-        overScrollMode="never"
-        decelerationRate="fast"
-        showsHorizontalScrollIndicator={false}
-        scrollEventThrottle={16}
         keyExtractor={(item) =>
-          `get-started-${item}`
+          `farmprism-get-started-${item}`
         }
+        showsHorizontalScrollIndicator={false}
         getItemLayout={(
           _,
           index,
@@ -807,7 +827,6 @@ export function GetStartedScreen({
               },
             ]}
           >
-            {/* Main UI */}
             <View
               style={[
                 styles.contentArea,
@@ -817,12 +836,12 @@ export function GetStartedScreen({
 
                   paddingTop:
                     safeTop +
-                    8 *
+                    27 *
                     scale,
                 },
               ]}
             >
-              {/* Decorative leaves */}
+              {/* LEFT LEAVES */}
 
               <Image
                 pointerEvents="none"
@@ -835,15 +854,17 @@ export function GetStartedScreen({
                   styles.topLeftLeaves,
                   {
                     width:
-                      150 *
+                      155 *
                       scale,
 
                     height:
-                      145 *
+                      150 *
                       scale,
                   },
                 ]}
               />
+
+              {/* RIGHT LEAVES */}
 
               <Image
                 pointerEvents="none"
@@ -856,60 +877,57 @@ export function GetStartedScreen({
                   styles.topRightLeaves,
                   {
                     width:
-                      150 *
+                      155 *
                       scale,
 
                     height:
-                      145 *
+                      150 *
                       scale,
                   },
                 ]}
               />
 
-              {/* Common approved logo */}
+              {/* LOGO */}
 
               <Image
                 source={artwork.logo}
                 resizeMode="contain"
                 fadeDuration={0}
                 accessibilityLabel="FarmPrism"
-                style={[
-                  styles.logo,
-                  {
-                    width:
-                      91 *
-                      scale,
+                style={{
+                  width:
+                    96 * scale,
 
-                    height:
-                      91 *
-                      scale,
-                  },
-                ]}
+                  height:
+                    96 * scale,
+
+                  zIndex: 5,
+                }}
               />
 
-              {/* Real coded title */}
+              {/* TITLE */}
 
               <PageTitle
                 index={item}
                 scale={scale}
               />
 
-              {/* Real coded description */}
+              {/* DESCRIPTION */}
 
               <Text
                 style={[
                   styles.description,
                   {
                     fontSize:
-                      15 *
+                      14.2 *
                       scale,
 
                     lineHeight:
-                      20 *
+                      19 *
                       scale,
 
                     marginTop:
-                      8 *
+                      7 *
                       scale,
                   },
                 ]}
@@ -921,13 +939,13 @@ export function GetStartedScreen({
                 }
               </Text>
 
-              {/* Page specific content */}
+              {/* MAIN PAGE ARTWORK */}
 
               {renderPageBody(
                 item,
               )}
 
-              {/* Shared farm landscape */}
+              {/* LANDSCAPE */}
 
               <Image
                 pointerEvents="none"
@@ -946,7 +964,7 @@ export function GetStartedScreen({
               />
             </View>
 
-            {/* Footer */}
+            {/* WHITE BOTTOM PANEL */}
 
             <View
               style={[
@@ -956,20 +974,20 @@ export function GetStartedScreen({
                     footerHeight,
 
                   paddingTop:
-                    8 *
+                    6 *
                     scale,
 
                   paddingBottom:
                     safeBottom +
-                    9 *
+                    5 *
                     scale,
 
                   borderTopLeftRadius:
-                    31 *
+                    29 *
                     scale,
 
                   borderTopRightRadius:
-                    31 *
+                    29 *
                     scale,
                 },
               ]}
@@ -997,20 +1015,20 @@ export function GetStartedScreen({
 
                   {
                     height:
-                      50 *
+                      47 *
                       scale,
 
                     borderRadius:
-                      12 *
+                      11 *
                       scale,
 
                     marginTop:
-                      9 *
+                      7 *
                       scale,
                   },
 
                   pressed &&
-                    styles.pressed,
+                    styles.buttonPressed,
                 ]}
               >
                 <Text
@@ -1018,7 +1036,7 @@ export function GetStartedScreen({
                     styles.primaryButtonText,
                     {
                       fontSize:
-                        16.5 *
+                        15.5 *
                         scale,
                     },
                   ]}
@@ -1033,7 +1051,7 @@ export function GetStartedScreen({
                     styles.primaryArrow,
                     {
                       fontSize:
-                        24 *
+                        22 *
                         scale,
 
                       right:
@@ -1053,446 +1071,496 @@ export function GetStartedScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
+const styles =
+  StyleSheet.create({
+    root: {
+      flex: 1,
 
-    backgroundColor:
-      '#FCFBF3',
+      backgroundColor:
+        '#FCFBF3',
 
-    overflow: 'hidden',
-  },
-
-  page: {
-    flex: 1,
-
-    backgroundColor:
-      '#FCFBF3',
-  },
-
-  contentArea: {
-    width: '100%',
-
-    alignItems: 'center',
-
-    position: 'relative',
-
-    overflow: 'hidden',
-  },
-
-  topLeftLeaves: {
-    position: 'absolute',
-
-    left: -29,
-    top: -22,
-
-    zIndex: 0,
-
-    opacity: 0.94,
-  },
-
-  topRightLeaves: {
-    position: 'absolute',
-
-    right: -30,
-    top: -23,
-
-    zIndex: 0,
-
-    opacity: 0.86,
-  },
-
-  logo: {
-    zIndex: 3,
-  },
-
-  title: {
-    width: '94%',
-
-    marginTop: 5,
-
-    textAlign: 'center',
-
-    fontFamily: 'serif',
-
-    fontWeight: '700',
-
-    zIndex: 3,
-  },
-
-  navy: {
-    color: '#102D42',
-  },
-
-  green: {
-    color: '#176B35',
-  },
-
-  brown: {
-    color: '#8C3515',
-  },
-
-  description: {
-    width: '86%',
-
-    color: '#4F5F6D',
-
-    textAlign: 'center',
-
-    zIndex: 3,
-  },
-
-  /*
-   * PAGE 1
-   */
-
-  pageOneBody: {
-    width: '88%',
-
-    alignItems: 'center',
-
-    gap: 8,
-
-    zIndex: 3,
-  },
-
-  featureCard: {
-    width: '100%',
-
-    flexDirection: 'row',
-
-    alignItems: 'center',
-
-    backgroundColor:
-      'rgba(248,250,239,0.96)',
-
-    borderWidth: 1,
-
-    borderColor:
-      '#E2E8D5',
-
-    shadowColor:
-      '#36543B',
-
-    shadowOpacity:
-      0.08,
-
-    shadowRadius:
-      6,
-
-    shadowOffset: {
-      width: 0,
-      height: 2,
+      overflow:
+        'hidden',
     },
 
-    elevation: 2,
-  },
+    page: {
+      flex: 1,
 
-  featureImageArea: {
-    height: '100%',
-
-    alignItems: 'center',
-
-    justifyContent: 'center',
-  },
-
-  featureTextArea: {
-    flex: 1,
-
-    paddingRight: 5,
-  },
-
-  featureTitle: {
-    color: '#176B35',
-
-    fontWeight: '800',
-  },
-
-  featureDescription: {
-    marginTop: 3,
-
-    color: '#66717A',
-  },
-
-  /*
-   * PAGE 2
-   */
-
-  pageTwoBody: {
-    flex: 1,
-
-    width: '100%',
-
-    alignItems: 'center',
-
-    justifyContent:
-      'flex-start',
-
-    zIndex: 3,
-  },
-
-  /*
-   * PAGE 3
-   */
-
-  pageThreeBody: {
-    width: '100%',
-
-    alignItems: 'center',
-
-    zIndex: 3,
-  },
-
-  marketComposition: {
-    width: '100%',
-
-    position: 'relative',
-  },
-
-  marketFarmer: {
-    position: 'absolute',
-
-    zIndex: 2,
-  },
-
-  marketCard: {
-    position: 'absolute',
-
-    backgroundColor:
-      'rgba(255,255,255,0.98)',
-
-    shadowColor:
-      '#27452F',
-
-    shadowOpacity:
-      0.12,
-
-    shadowRadius:
-      8,
-
-    shadowOffset: {
-      width: 0,
-      height: 3,
+      backgroundColor:
+        '#FCFBF3',
     },
 
-    elevation: 4,
+    contentArea: {
+      width: '100%',
 
-    zIndex: 4,
-  },
+      position:
+        'relative',
 
-  marketHeader: {
-    flexDirection: 'row',
+      alignItems:
+        'center',
 
-    alignItems: 'center',
-
-    justifyContent:
-      'space-between',
-
-    paddingBottom: 5,
-
-    borderBottomWidth: 1,
-
-    borderBottomColor:
-      '#E7ECE3',
-  },
-
-  marketTitle: {
-    color: '#165C34',
-
-    fontWeight: '800',
-  },
-
-  viewAll: {
-    color: '#1A7139',
-
-    fontWeight: '700',
-  },
-
-  marketRow: {
-    flexDirection: 'row',
-
-    alignItems: 'center',
-
-    borderBottomWidth: 1,
-
-    borderBottomColor:
-      '#EDF0EA',
-  },
-
-  cropName: {
-    flex: 1,
-
-    color: '#24333E',
-
-    fontWeight: '700',
-  },
-
-  priceArea: {
-    width: '47%',
-
-    alignItems:
-      'flex-start',
-  },
-
-  priceText: {
-    color: '#172D43',
-
-    fontWeight: '800',
-  },
-
-  movementText: {
-    marginTop: 1,
-
-    fontWeight: '800',
-  },
-
-  positiveMovement: {
-    color: '#14913C',
-  },
-
-  negativeMovement: {
-    color: '#D9342B',
-  },
-
-  /*
-   * PAGE 4
-   */
-
-  pageFourBody: {
-    width: '100%',
-
-    alignItems: 'center',
-
-    zIndex: 3,
-  },
-
-  /*
-   * Shared farmland
-   */
-
-  landscape: {
-    position: 'absolute',
-
-    left: -8,
-    right: -8,
-
-    bottom: -3,
-
-    width: '104%',
-
-    zIndex: 1,
-  },
-
-  /*
-   * Footer
-   */
-
-  footer: {
-    position: 'absolute',
-
-    left: 0,
-    right: 0,
-    bottom: 0,
-
-    zIndex: 20,
-
-    paddingHorizontal: 22,
-
-    backgroundColor:
-      '#FFFFFF',
-
-    shadowColor:
-      '#2D4A35',
-
-    shadowOpacity:
-      0.08,
-
-    shadowRadius:
-      9,
-
-    shadowOffset: {
-      width: 0,
-      height: -2,
+      overflow:
+        'hidden',
     },
 
-    elevation: 5,
-  },
+    topLeftLeaves: {
+      position:
+        'absolute',
 
-  pagination: {
-    flexDirection: 'row',
+      left: -31,
+      top: -22,
 
-    alignItems: 'center',
+      zIndex: 1,
 
-    justifyContent: 'center',
-
-    gap: 10,
-  },
-
-  paginationDot: {},
-
-  paginationDotIdle: {
-    backgroundColor:
-      '#C9D9C0',
-  },
-
-  paginationDotActive: {
-    backgroundColor:
-      '#16713A',
-  },
-
-  primaryButton: {
-    width: '100%',
-
-    flexDirection: 'row',
-
-    alignItems: 'center',
-
-    justifyContent: 'center',
-
-    backgroundColor:
-      '#176C35',
-
-    shadowColor:
-      '#173F25',
-
-    shadowOpacity:
-      0.16,
-
-    shadowRadius:
-      7,
-
-    shadowOffset: {
-      width: 0,
-      height: 3,
+      opacity: 0.95,
     },
 
-    elevation: 4,
-  },
+    topRightLeaves: {
+      position:
+        'absolute',
 
-  primaryButtonText: {
-    color: '#FFFFFF',
+      right: -31,
+      top: -22,
 
-    fontWeight: '800',
-  },
+      zIndex: 1,
 
-  /*
-   * Arrow is absolute so
-   * Next/Get Started remains
-   * perfectly centered.
-   */
-  primaryArrow: {
-    position: 'absolute',
+      opacity: 0.9,
+    },
 
-    color: '#FFFFFF',
-  },
+    title: {
+      width: '94%',
 
-  pressed: {
-    opacity: 0.86,
+      marginTop: 14,
 
-    transform: [
-      {
-        scale: 0.992,
+      textAlign:
+        'center',
+
+      fontFamily:
+        'serif',
+
+      fontWeight:
+        '700',
+
+      zIndex: 5,
+    },
+
+    navy: {
+      color:
+        '#102D42',
+    },
+
+    green: {
+      color:
+        '#176B35',
+    },
+
+    brown: {
+      color:
+        '#8C3515',
+    },
+
+    description: {
+      width: '86%',
+
+      textAlign:
+        'center',
+
+      color:
+        '#536575',
+
+      zIndex: 5,
+    },
+
+    /*
+     * PAGE 1
+     */
+
+    pageOneBody: {
+      width: '88%',
+
+      alignItems:
+        'center',
+
+      gap: 8,
+
+      zIndex: 5,
+    },
+
+    featureCard: {
+      width: '100%',
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      backgroundColor:
+        'rgba(249,250,241,0.97)',
+
+      borderWidth: 1,
+
+      borderColor:
+        '#DFE7D4',
+
+      shadowColor:
+        '#304F37',
+
+      shadowOpacity:
+        0.08,
+
+      shadowRadius:
+        5,
+
+      shadowOffset: {
+        width: 0,
+        height: 2,
       },
-    ],
-  },
-});
+
+      elevation: 2,
+    },
+
+    featureArtworkArea: {
+      height: '100%',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+    },
+
+    featureCopy: {
+      flex: 1,
+
+      justifyContent:
+        'center',
+
+      paddingRight: 8,
+    },
+
+    featureTitle: {
+      color:
+        '#176B35',
+
+      fontWeight:
+        '800',
+    },
+
+    featureDescription: {
+      marginTop: 3,
+
+      color:
+        '#66737B',
+    },
+
+    /*
+     * PAGE 2
+     */
+
+    pageTwoBody: {
+      flex: 1,
+
+      width: '100%',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'flex-start',
+
+      zIndex: 5,
+    },
+
+    /*
+     * PAGE 3
+     */
+
+    pageThreeBody: {
+      width: '100%',
+
+      alignItems:
+        'center',
+
+      zIndex: 5,
+    },
+
+    marketComposition: {
+      width: '100%',
+
+      position:
+        'relative',
+    },
+
+    marketFarmer: {
+      position:
+        'absolute',
+
+      zIndex: 3,
+    },
+
+    marketCard: {
+      position:
+        'absolute',
+
+      zIndex: 5,
+
+      backgroundColor:
+        'rgba(255,255,255,0.98)',
+
+      shadowColor:
+        '#284731',
+
+      shadowOpacity:
+        0.13,
+
+      shadowRadius:
+        7,
+
+      shadowOffset: {
+        width: 0,
+        height: 3,
+      },
+
+      elevation: 4,
+    },
+
+    marketHeader: {
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'space-between',
+
+      paddingBottom: 5,
+
+      borderBottomWidth:
+        1,
+
+      borderBottomColor:
+        '#E8ECE5',
+    },
+
+    marketTitle: {
+      color:
+        '#165E34',
+
+      fontWeight:
+        '800',
+    },
+
+    viewAll: {
+      color:
+        '#17723A',
+
+      fontWeight:
+        '700',
+    },
+
+    marketRow: {
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      borderBottomWidth:
+        1,
+
+      borderBottomColor:
+        '#EDF0E9',
+    },
+
+    cropName: {
+      flex: 1,
+
+      color:
+        '#263844',
+
+      fontWeight:
+        '700',
+    },
+
+    priceArea: {
+      width: '48%',
+
+      alignItems:
+        'flex-start',
+    },
+
+    priceText: {
+      color:
+        '#162F44',
+
+      fontWeight:
+        '800',
+    },
+
+    movementText: {
+      marginTop: 1,
+
+      fontWeight:
+        '800',
+    },
+
+    positiveMovement: {
+      color:
+        '#14913C',
+    },
+
+    negativeMovement: {
+      color:
+        '#D9352B',
+    },
+
+    /*
+     * PAGE 4
+     */
+
+    pageFourBody: {
+      width: '100%',
+
+      alignItems:
+        'center',
+
+      zIndex: 5,
+    },
+
+    /*
+     * SHARED LANDSCAPE
+     */
+
+    landscape: {
+      position:
+        'absolute',
+
+      left: -8,
+      right: -8,
+      bottom: -1,
+
+      width: '104%',
+
+      zIndex: 2,
+    },
+
+    /*
+     * FOOTER
+     */
+
+    footer: {
+      position:
+        'absolute',
+
+      left: 0,
+      right: 0,
+      bottom: 0,
+
+      zIndex: 20,
+
+      paddingHorizontal:
+        22,
+
+      backgroundColor:
+        '#FFFFFF',
+
+      shadowColor:
+        '#294732',
+
+      shadowOpacity:
+        0.08,
+
+      shadowRadius:
+        7,
+
+      shadowOffset: {
+        width: 0,
+        height: -2,
+      },
+
+      elevation: 5,
+    },
+
+    pagination: {
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      gap: 10,
+    },
+
+    paginationDotInactive: {
+      backgroundColor:
+        '#C9D9C0',
+    },
+
+    paginationDotActive: {
+      backgroundColor:
+        '#14733A',
+    },
+
+    primaryButton: {
+      width: '100%',
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      backgroundColor:
+        '#176C35',
+
+      shadowColor:
+        '#183F25',
+
+      shadowOpacity:
+        0.16,
+
+      shadowRadius:
+        6,
+
+      shadowOffset: {
+        width: 0,
+        height: 3,
+      },
+
+      elevation: 4,
+    },
+
+    primaryButtonText: {
+      color:
+        '#FFFFFF',
+
+      fontWeight:
+        '800',
+    },
+
+    primaryArrow: {
+      position:
+        'absolute',
+
+      color:
+        '#FFFFFF',
+    },
+
+    buttonPressed: {
+      opacity: 0.88,
+
+      transform: [
+        {
+          scale: 0.993,
+        },
+      ],
+    },
+  });

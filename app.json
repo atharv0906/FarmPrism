@@ -4,28 +4,34 @@
     "slug": "FarmPrism",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+
+    "icon": "./assets/1. FarmPrism_Splash_Assets/farmprism_splash_logo_badge_1024.png",
+
     "splash": {
       "backgroundColor": "#2D5B35",
       "resizeMode": "contain"
     },
+
     "userInterfaceStyle": "light",
+
     "ios": {
       "supportsTablet": true
     },
+
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#F7F7EF",
+        "foregroundImage": "./assets/1. FarmPrism_Splash_Assets/farmprism_splash_logo_badge_1024.png"
       },
+
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.FarmPrism"
     },
+
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/1. FarmPrism_Splash_Assets/farmprism_splash_logo_badge_1024.png"
     },
+
     "plugins": [
       "expo-video"
     ]
