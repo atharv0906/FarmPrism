@@ -1,6 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import { RoleSelectionScreen } from '../screens/AuthScreens';
+import { RoleSelectionScreen } from '../screens/RoleSelectionScreen';
 
 export type OnboardingStackParamList = {
   RoleSelection: undefined;
@@ -10,11 +10,15 @@ const Stack = createNativeStackNavigator<OnboardingStackParamList>();
 
 export function OnboardingNavigator() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'slide_from_right',
+      }}
+    >
       <Stack.Screen
         name="RoleSelection"
         component={RoleSelectionScreen}
-        options={{ title: 'Choose role' }}
       />
     </Stack.Navigator>
   );
