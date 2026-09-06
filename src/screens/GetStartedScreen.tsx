@@ -50,7 +50,7 @@ const DESIGN_HEIGHT = 2340;
 // Native comparison: the visible clouds trail the master by about 105 px.
 // Lift the panorama and its footer seam by 50 px to share that residual between
 // the two boundaries while retaining the intact artwork's aspect ratio.
-const LANDSCAPE_SEAM_LIFT = 50;
+const LANDSCAPE_SEAM_LIFT = 20;
 const pages = [0, 1, 2, 3];
 // Measured from reference_1080x2340, in master pixels (not device pixels).
 // Each vertical anchor is independent: typography cannot push subsequent zones.
@@ -65,7 +65,7 @@ const masters = [
     main: [0, 845, 1030, 799], quote: [385, 1635, 350, 180], landscapeTop: 1624,
     footer: 2082, dots: 2122, cta: [60, 2168, 960, 119] },
   { logo: [395, 100, 290, 282], heading: [120, 416, 840, 100], subtitle: [175, 536, 730, 152],
-    main: [155, 713, 770, 802], quote: [250, 1544, 600, 176], landscapeTop: 1588,
+    main: [155, 713, 770, 802], quote: [185, 1510, 710, 220], landscapeTop: 1588,
     footer: 2040, dots: 2082, cta: [60, 2123, 960, 117] },
 ] as const;
 
@@ -174,9 +174,22 @@ function PageArtwork({ page, map }: { page: number; map: Mapping }) {
   // Its handset, rather than that whole canvas, occupies the measured main zone.
   if (page === 1) return <Art name="phone" frame={[63, 685, 1080, 1295]} map={map} />;
   if (page === 2) return <>
-    <Art name="crate" frame={[-18, 922, 637, 718]} map={map} />
-    <MarketCard map={map} />
-  </>;
+  <Image
+    source={artwork.crate}
+    resizeMode="contain"
+    fadeDuration={0}
+    style={{
+      position: 'absolute',
+      left: -18 * map.sx,
+      top: 875 * map.sy,
+      width: 620 * map.sx,
+      height: 810 * map.sy,
+      zIndex: 2,
+    }}
+  />
+
+  <MarketCard map={map} />
+</>;
   return <>
     <Art name="roles" frame={[155, 713, 770, 770]} map={map} label="FarmPrism community network" />
     {/* The supplied illustration has no role captions; these are reference labels,
