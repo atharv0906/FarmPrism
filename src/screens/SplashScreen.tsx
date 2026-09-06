@@ -21,16 +21,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const artwork = {
   background: require(
-    '../../assets/FarmPrism_Splash_Assets/farmprism_splash_background_1080x2340.png',
-  ),
+'../../assets/1. FarmPrism_Splash_Assets/farmprism_splash_background_1080x2340.png'  ),
 
   logo: require(
-    '../../assets/FarmPrism_Splash_Assets/farmprism_splash_logo_badge_1024.png',
-  ),
+'../../assets/1. FarmPrism_Splash_Assets/farmprism_splash_logo_badge_1024.png'  ),
 
   sprout: require(
-    '../../assets/FarmPrism_Splash_Assets/farmprism_center_sprout.png',
-  ),
+'../../assets/1. FarmPrism_Splash_Assets/farmprism_center_sprout.png'  ),
 };
 
 const SEQUENCE_MS = 2790;
