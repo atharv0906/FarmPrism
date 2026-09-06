@@ -411,100 +411,133 @@ export function GetStartedScreen({
     );
   };
 
-  const renderPageBody = (
-    index: number,
-  ) => {
-    /*
-     * PAGE 1
-     * Welcome + 3 feature cards
-     */
-    if (index === 0) {
-      return (
-        <View
+const renderPageBody = (
+  index: number,
+) => {
+  /*
+   * PAGE 1
+   * Feature cards + quote in normal flow.
+   */
+  if (index === 0) {
+    return (
+      <View
+        style={[
+          styles.pageOneBody,
+          {
+            marginTop:
+              10 * scale,
+          },
+        ]}
+      >
+        <FeatureCard
+          scale={scale}
+          image={
+            artwork.farmerPortrait
+          }
+          title="Sell directly to verified buyers"
+          description="Get better prices for your hard work."
+        />
+
+        <FeatureCard
+          scale={scale}
+          image={
+            artwork.sproutingPlant
+          }
+          title="Manage your crops with ease"
+          description="Track, update and grow your produce."
+        />
+
+        <FeatureCard
+          scale={scale}
+          image={
+            artwork.teamNetwork
+          }
+          title="Be part of a trusted farming community"
+          description="Together for a prosperous tomorrow."
+        />
+
+        <Text
           style={[
-            styles.pageOneBody,
+            styles.inlineQuote,
             {
-              marginTop:
-                13 * scale,
+              fontSize:
+                15 * scale,
 
-              paddingBottom:
-                landscapeHeight *
-                0.82,
-            },
-          ]}
-        >
-          <FeatureCard
-            scale={scale}
-            image={
-              artwork.farmerPortrait
-            }
-            title="Sell directly to verified buyers"
-            description="Get better prices for your hard work."
-          />
-
-          <FeatureCard
-            scale={scale}
-            image={
-              artwork.sproutingPlant
-            }
-            title="Manage your crops with ease"
-            description="Track, update and grow your produce."
-          />
-
-          <FeatureCard
-            scale={scale}
-            image={
-              artwork.teamNetwork
-            }
-            title="Be part of a trusted farming community"
-            description="Together for a prosperous tomorrow."
-          />
-        </View>
-      );
-    }
-
-    /*
-     * PAGE 2
-     * Large crop-management phone
-     */
-    if (index === 1) {
-      return (
-        <View style={styles.pageTwoBody}>
-          <Image
-            source={
-              artwork.producePhone
-            }
-            resizeMode="contain"
-            fadeDuration={0}
-            style={{
-              width:
-                width * 0.82,
-
-              height:
-                Math.min(
-                  contentHeight *
-                    0.54,
-
-                  405 * scale,
-                ),
+              lineHeight:
+                18 * scale,
 
               marginTop:
                 5 * scale,
+            },
+          ]}
+        >
+          {'“Better Farmers\nBrighter Tomorrows”'}
+        </Text>
+      </View>
+    );
+  }
 
-              zIndex: 3,
-            }}
-          />
-        </View>
-      );
-    }
+  /*
+   * PAGE 2
+   */
+  if (index === 1) {
+    return (
+      <View
+        style={[
+          styles.pageTwoBody,
+          {
+            marginTop:
+              5 * scale,
+          },
+        ]}
+      >
+        <Image
+          source={
+            artwork.producePhone
+          }
+          resizeMode="contain"
+          fadeDuration={0}
+          style={{
+            width:
+              width * 0.82,
 
-    /*
-     * PAGE 3
-     * Farmer + live market card
-     */
-    if (index === 2) {
-      return (
-        <View style={styles.pageThreeBody}>
+            height:
+              Math.min(
+                contentHeight *
+                  0.53,
+
+                400 * scale,
+              ),
+          }}
+        />
+      </View>
+    );
+  }
+
+  /*
+   * PAGE 3
+   * Market artwork and quote get separate vertical zones.
+   */
+  if (index === 2) {
+    return (
+      <View
+        style={[
+          styles.pageThreeBody,
+          {
+            marginTop:
+              7 * scale,
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.marketComposition,
+            {
+              height:
+                245 * scale,
+            },
+          ]}
+        >
           <Image
             source={
               artwork.farmerProduce
@@ -515,18 +548,15 @@ export function GetStartedScreen({
               styles.marketFarmer,
               {
                 width:
-                  width * 0.60,
+                  width * 0.52,
 
                 height:
-                  contentHeight *
-                  0.39,
+                  230 * scale,
 
                 left:
-                  -35 * scale,
+                  -13 * scale,
 
-                bottom:
-                  landscapeHeight *
-                  0.49,
+                bottom: 0,
               },
             ]}
           />
@@ -536,29 +566,34 @@ export function GetStartedScreen({
               styles.marketCard,
               {
                 width:
-                  width * 0.59,
+                  width * 0.58,
 
                 right:
-                  13 * scale,
+                  10 * scale,
 
                 top:
-                  18 * scale,
+                  2 * scale,
 
                 borderRadius:
                   13 * scale,
 
                 padding:
-                  11 * scale,
+                  10 * scale,
               },
             ]}
           >
-            <View style={styles.marketHeader}>
+            <View
+              style={
+                styles.marketHeader
+              }
+            >
               <Text
                 style={[
                   styles.marketTitle,
                   {
                     fontSize:
-                      13 * scale,
+                      12.5 *
+                      scale,
                   },
                 ]}
               >
@@ -570,7 +605,7 @@ export function GetStartedScreen({
                   styles.viewAll,
                   {
                     fontSize:
-                      10.5 *
+                      10 *
                       scale,
                   },
                 ]}
@@ -613,36 +648,116 @@ export function GetStartedScreen({
             />
           </View>
         </View>
-      );
-    }
 
-    /*
-     * PAGE 4
-     * FarmPrism network / roles
-     */
-    return (
-      <View style={styles.pageFourBody}>
-        <Image
-          source={
-            artwork.teamRoles
-          }
-          resizeMode="contain"
-          fadeDuration={0}
-          style={{
-            width:
-              width * 0.78,
+        <Text
+          style={[
+            styles.inlineQuote,
+            {
+              fontSize:
+                15 * scale,
 
-            height:
-              contentHeight *
-              0.44,
+              lineHeight:
+                18 * scale,
 
-            marginTop:
-              2 * scale,
-          }}
-        />
+              marginTop:
+                4 * scale,
+            },
+          ]}
+        >
+          {'Better Markets\nBrighter Tomorrows'}
+        </Text>
       </View>
     );
-  };
+  }
+
+  /*
+   * PAGE 4
+   * Network followed by tagline instead of overlaying it.
+   */
+  return (
+    <View
+      style={[
+        styles.pageFourBody,
+        {
+          marginTop:
+            5 * scale,
+        },
+      ]}
+    >
+      <Image
+        source={
+          artwork.teamRoles
+        }
+        resizeMode="contain"
+        fadeDuration={0}
+        style={{
+          width:
+            width * 0.74,
+
+          height:
+            275 * scale,
+        }}
+      />
+
+      <Text
+        style={[
+          styles.togetherText,
+          {
+            fontSize:
+              17 * scale,
+
+            lineHeight:
+              20 * scale,
+
+            marginTop:
+              -3 * scale,
+          },
+        ]}
+      >
+        {'Together\nWe Build a Better Tomorrow'}
+      </Text>
+
+      <View
+        style={[
+          styles.sproutDivider,
+          {
+            marginTop:
+              4 * scale,
+          },
+        ]}
+      >
+        <View
+          style={
+            styles.sproutLine
+          }
+        />
+
+        <Image
+          source={
+            artwork.sproutingPlant
+          }
+          resizeMode="contain"
+          style={{
+            width:
+              25 * scale,
+
+            height:
+              25 * scale,
+
+            marginHorizontal:
+              8 * scale,
+          }}
+        />
+
+        <View
+          style={
+            styles.sproutLine
+          }
+        />
+      </View>
+    </View>
+  );
+};
 
   return (
     <View style={styles.root}>
@@ -778,54 +893,6 @@ export function GetStartedScreen({
 
               {renderPageBody(
                 item,
-              )}
-
-              {/* Page 1 quote */}
-              {item === 0 && (
-                <Text
-                  style={[
-                    styles.quote,
-                    {
-                      bottom:
-                        landscapeHeight -
-                        4 * scale,
-
-                      fontSize:
-                        16 *
-                        scale,
-
-                      lineHeight:
-                        20 *
-                        scale,
-                    },
-                  ]}
-                >
-                  {'“Better Farmers\nBrighter Tomorrows”'}
-                </Text>
-              )}
-
-              {/* Page 3 quote */}
-              {item === 2 && (
-                <Text
-                  style={[
-                    styles.quote,
-                    {
-                      bottom:
-                        landscapeHeight -
-                        3 * scale,
-
-                      fontSize:
-                        15.5 *
-                        scale,
-
-                      lineHeight:
-                        20 *
-                        scale,
-                    },
-                  ]}
-                >
-                  {'Better Markets\nBrighter Tomorrows'}
-                </Text>
               )}
 
               {/* Page 4 tagline */}
