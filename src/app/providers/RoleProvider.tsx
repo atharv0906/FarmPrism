@@ -6,7 +6,7 @@ import { isDevelopmentMockOtpEnabled } from '../../services/auth/otp.strategy';
 import { RoleContext, type RoleContextValue } from '../../hooks/useRole';
 import type { AvailableRole } from '../../types/role';
 
-const MOCK_LAST_ROLE_KEY='farmprism.mock.lastRole';
+const MOCK_LAST_ROLE_KEY='farmprism.mock.lastRole.v2';
 const MOCK_ROLES:AvailableRole[]=[
  {id:'mock-farmer',code:'farmer'},
  {id:'mock-buyer',code:'buyer'},

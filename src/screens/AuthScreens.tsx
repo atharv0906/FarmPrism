@@ -873,6 +873,8 @@ export function RoleDashboardPlaceholder({
 }: {
   role: ApplicationRole;
 }) {
+  const { clearSelectedRole } = useRole();
+
   return (
     <ScreenLayout>
       <BrandMark />
@@ -897,10 +899,10 @@ export function RoleDashboardPlaceholder({
         onPress={() => {}}
       />
 
-      <TextButton
-        label="Back"
-        onPress={() => {}}
-      />
+<TextButton
+  label="← Back to Role Selection"
+  onPress={clearSelectedRole}
+/>
 
       <Field
         label="Status"
