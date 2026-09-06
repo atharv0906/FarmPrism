@@ -94,7 +94,11 @@ export function LanguageSelectionScreen({
   'LanguageSelection'
 >) {
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
+
+  const {
+    width,
+    height,
+  } = useWindowDimensions();
 
   const {
     setLanguage,
@@ -102,19 +106,32 @@ export function LanguageSelectionScreen({
   } = useLanguage();
 
   const scale = Math.max(
-    0.9,
+    0.86,
     Math.min(
-      1.04,
-      Math.min(width / 392, height / 850),
+      1.03,
+      Math.min(
+        width / 392,
+        height / 850,
+      ),
     ),
   );
+
+  /*
+   * GLOBAL FARMPRISM SCREEN RULE:
+   * nothing interactive or visually important
+   * may enter Android's bottom navigation area.
+   */
+  const safeBottom =
+    Math.max(insets.bottom, 12);
+
+  const landscapeHeight =
+    158 * scale;
 
   const [selectedLanguage, setSelectedLanguage] =
     useState<LanguageCode>('en');
 
-  const [saving, setSaving] = useState(false);
-
-  const landscapeHeight = 166 * scale;
+  const [saving, setSaving] =
+    useState(false);
 
   const selectLanguage = (
     option: LanguageOption,
@@ -141,9 +158,13 @@ export function LanguageSelectionScreen({
     try {
       setSaving(true);
 
-      await setLanguage(selectedLanguage);
+      await setLanguage(
+        selectedLanguage,
+      );
 
-      navigation.navigate('GetStarted');
+      navigation.navigate(
+        'GetStarted',
+      );
     } finally {
       setSaving(false);
     }
@@ -153,7 +174,7 @@ export function LanguageSelectionScreen({
     <View style={styles.root}>
       <StatusBar hidden />
 
-      {/* Top decorative leaves */}
+      {/* Top left decorative leaves */}
       <Image
         pointerEvents="none"
         source={artwork.topLeftLeaves}
@@ -167,6 +188,7 @@ export function LanguageSelectionScreen({
         ]}
       />
 
+      {/* Top right decorative leaves */}
       <Image
         pointerEvents="none"
         source={artwork.topRightLeaves}
@@ -180,39 +202,51 @@ export function LanguageSelectionScreen({
         ]}
       />
 
+      {/* Main content */}
       <View
         style={[
           styles.content,
           {
             paddingTop:
-              Math.max(insets.top, 4) +
-              6 * scale,
+              Math.max(
+                insets.top,
+                4,
+              ) +
+              8 * scale,
 
+            /*
+             * Main content stops before
+             * footer + landscape + Android safe area.
+             */
             paddingBottom:
               landscapeHeight +
-              Math.max(insets.bottom, 0),
+              safeBottom +
+              72 * scale,
           },
         ]}
       >
-        {/* Logo */}
+        {/* FarmPrism logo */}
         <Image
           source={artwork.logo}
           resizeMode="contain"
           fadeDuration={0}
           accessibilityLabel="FarmPrism"
           style={{
-            width: 92 * scale,
-            height: 92 * scale,
+            width: 88 * scale,
+            height: 88 * scale,
           }}
         />
 
-        {/* Title */}
+        {/* Heading */}
         <Text
           style={[
             styles.heading,
             {
-              fontSize: 30 * scale,
-              lineHeight: 35 * scale,
+              fontSize:
+                29 * scale,
+
+              lineHeight:
+                34 * scale,
             },
           ]}
         >
@@ -225,40 +259,56 @@ export function LanguageSelectionScreen({
           </Text>
         </Text>
 
+        {/* Subtitle */}
         <Text
           style={[
             styles.subtitle,
             {
-              fontSize: 14 * scale,
-              lineHeight: 19 * scale,
+              fontSize:
+                13.5 * scale,
+
+              lineHeight:
+                18.5 * scale,
             },
           ]}
         >
           {'Select your preferred language.\nYou can change it anytime from Profile.'}
         </Text>
 
-        {/* Top divider */}
+        {/* Divider under heading */}
         <View
           style={[
             styles.headerDivider,
             {
-              marginTop: 8 * scale,
+              marginTop:
+                8 * scale,
             },
           ]}
         >
-          <View style={styles.headerDividerLine} />
+          <View
+            style={
+              styles.headerDividerLine
+            }
+          />
 
           <Image
-            source={artwork.dividerSprout}
+            source={
+              artwork.dividerSprout
+            }
             resizeMode="contain"
             style={{
-              width: 48 * scale,
-              height: 28 * scale,
-              marginHorizontal: 10 * scale,
+              width: 45 * scale,
+              height: 26 * scale,
+              marginHorizontal:
+                9 * scale,
             }}
           />
 
-          <View style={styles.headerDividerLine} />
+          <View
+            style={
+              styles.headerDividerLine
+            }
+          />
         </View>
 
         {/* Language cards */}
@@ -266,160 +316,191 @@ export function LanguageSelectionScreen({
           style={[
             styles.languageList,
             {
-              marginTop: 8 * scale,
-              gap: 10 * scale,
+              marginTop:
+                8 * scale,
+
+              gap:
+                9 * scale,
             },
           ]}
         >
-          {languageOptions.map((option) => {
-            const selected =
-              selectedLanguage === option.code;
+          {languageOptions.map(
+            (option) => {
+              const selected =
+                selectedLanguage ===
+                option.code;
 
-            return (
-              <Pressable
-                key={option.code}
-                accessibilityRole="radio"
-                accessibilityLabel={option.title}
-                accessibilityState={{
-                  selected,
-                }}
-                accessibilityHint={
-                  option.comingSoon
-                    ? 'This language is coming soon'
-                    : undefined
-                }
-                onPress={() =>
-                  selectLanguage(option)
-                }
-                style={({ pressed }) => [
-                  styles.languageCard,
+              return (
+                <Pressable
+                  key={option.code}
+                  accessibilityRole="radio"
+                  accessibilityLabel={
+                    option.title
+                  }
+                  accessibilityState={{
+                    selected,
+                  }}
+                  accessibilityHint={
+                    option.comingSoon
+                      ? 'This language is coming soon'
+                      : undefined
+                  }
+                  onPress={() =>
+                    selectLanguage(
+                      option,
+                    )
+                  }
+                  style={({
+                    pressed,
+                  }) => [
+                    styles.languageCard,
 
-                  {
-                    minHeight: 82 * scale,
-                    paddingHorizontal:
-                      16 * scale,
-                    borderRadius:
-                      13 * scale,
-                  },
-
-                  selected &&
-                    styles.languageCardSelected,
-
-                  pressed &&
-                    styles.pressed,
-                ]}
-              >
-                <View
-                  style={[
-                    styles.languageIcon,
                     {
-                      width: 54 * scale,
-                      height: 54 * scale,
+                      minHeight:
+                        78 * scale,
+
+                      paddingHorizontal:
+                        16 * scale,
+
                       borderRadius:
-                        27 * scale,
-                      marginRight:
-                        15 * scale,
+                        13 * scale,
                     },
+
+                    selected &&
+                      styles.languageCardSelected,
+
+                    pressed &&
+                      styles.pressed,
                   ]}
                 >
-                  {option.symbol ===
-                  'globe' ? (
-                    <GlobeIcon />
-                  ) : (
+                  <View
+                    style={[
+                      styles.languageIcon,
+                      {
+                        width:
+                          52 * scale,
+
+                        height:
+                          52 * scale,
+
+                        borderRadius:
+                          26 * scale,
+
+                        marginRight:
+                          15 * scale,
+                      },
+                    ]}
+                  >
+                    {option.symbol ===
+                    'globe' ? (
+                      <GlobeIcon />
+                    ) : (
+                      <Text
+                        style={[
+                          styles.languageSymbol,
+                          {
+                            fontSize:
+                              option.code ===
+                              'hi'
+                                ? 23 *
+                                  scale
+                                : 26 *
+                                  scale,
+                          },
+                        ]}
+                      >
+                        {
+                          option.symbol
+                        }
+                      </Text>
+                    )}
+                  </View>
+
+                  <View
+                    style={
+                      styles.languageTextArea
+                    }
+                  >
                     <Text
                       style={[
-                        styles.languageSymbol,
+                        styles.languageTitle,
                         {
                           fontSize:
-                            option.code ===
-                            'hi'
-                              ? 24 *
-                                scale
-                              : 27 *
-                                scale,
+                            16.5 *
+                            scale,
+
+                          lineHeight:
+                            21 *
+                            scale,
                         },
                       ]}
                     >
-                      {option.symbol}
+                      {option.title}
                     </Text>
-                  )}
-                </View>
 
-                <View
-                  style={
-                    styles.languageTextArea
-                  }
-                >
-                  <Text
-                    style={[
-                      styles.languageTitle,
-                      {
-                        fontSize:
-                          17 * scale,
-
-                        lineHeight:
-                          22 * scale,
-                      },
-                    ]}
-                  >
-                    {option.title}
-                  </Text>
-
-                  <Text
-                    style={[
-                      styles.languageHelper,
-                      {
-                        fontSize:
-                          13 * scale,
-
-                        lineHeight:
-                          18 * scale,
-                      },
-                    ]}
-                  >
-                    {option.helper}
-                  </Text>
-                </View>
-
-                <View
-                  style={[
-                    styles.radioOuter,
-
-                    {
-                      width: 27 * scale,
-                      height:
-                        27 * scale,
-
-                      borderRadius:
-                        14 * scale,
-                    },
-
-                    selected
-                      ? styles.radioSelected
-                      : styles.radioIdle,
-                  ]}
-                >
-                  {selected && (
-                    <View
+                    <Text
                       style={[
-                        styles.radioInner,
+                        styles.languageHelper,
                         {
-                          width:
-                            15 * scale,
+                          fontSize:
+                            12.7 *
+                            scale,
 
-                          height:
-                            15 * scale,
-
-                          borderRadius:
-                            8 * scale,
+                          lineHeight:
+                            17 *
+                            scale,
                         },
                       ]}
-                    />
-                  )}
-                </View>
-              </Pressable>
-            );
-          })}
+                    >
+                      {option.helper}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.radioOuter,
+
+                      {
+                        width:
+                          26 * scale,
+
+                        height:
+                          26 * scale,
+
+                        borderRadius:
+                          13 * scale,
+                      },
+
+                      selected
+                        ? styles.radioSelected
+                        : styles.radioIdle,
+                    ]}
+                  >
+                    {selected && (
+                      <View
+                        style={[
+                          styles.radioInner,
+                          {
+                            width:
+                              14 *
+                              scale,
+
+                            height:
+                              14 *
+                              scale,
+
+                            borderRadius:
+                              7 *
+                              scale,
+                          },
+                        ]}
+                      />
+                    )}
+                  </View>
+                </Pressable>
+              );
+            },
+          )}
         </View>
 
         {/* Information banner */}
@@ -427,8 +508,11 @@ export function LanguageSelectionScreen({
           style={[
             styles.infoCard,
             {
-              minHeight: 66 * scale,
-              marginTop: 13 * scale,
+              minHeight:
+                64 * scale,
+
+              marginTop:
+                12 * scale,
 
               borderRadius:
                 12 * scale,
@@ -442,8 +526,11 @@ export function LanguageSelectionScreen({
             style={[
               styles.infoIcon,
               {
-                width: 38 * scale,
-                height: 38 * scale,
+                width:
+                  37 * scale,
+
+                height:
+                  37 * scale,
 
                 borderRadius:
                   19 * scale,
@@ -454,7 +541,8 @@ export function LanguageSelectionScreen({
               style={[
                 styles.infoIconText,
                 {
-                  fontSize: 24 * scale,
+                  fontSize:
+                    23 * scale,
                 },
               ]}
             >
@@ -467,24 +555,27 @@ export function LanguageSelectionScreen({
               styles.infoText,
               {
                 fontSize:
-                  13.5 * scale,
+                  13.2 * scale,
 
                 lineHeight:
-                  19 * scale,
+                  18.5 * scale,
               },
             ]}
           >
-            Your language preference will be
+            Your language preference
+            will be
             {'\n'}
             applied across the app.
           </Text>
 
           <Image
-            source={artwork.infoLeaf}
+            source={
+              artwork.infoLeaf
+            }
             resizeMode="contain"
             style={{
-              width: 42 * scale,
-              height: 42 * scale,
+              width: 40 * scale,
+              height: 40 * scale,
             }}
           />
         </View>
@@ -494,12 +585,14 @@ export function LanguageSelectionScreen({
             accessibilityRole="alert"
             style={styles.errorText}
           >
-            We couldn’t save the previous
-            preference. You can still continue.
+            We couldn’t save the
+            previous preference. You
+            can still continue.
           </Text>
         )}
 
-        {/* No Back button — Language is first page */}
+        {/* Language is first page:
+            NO BACK BUTTON */}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Save and Continue"
@@ -511,12 +604,17 @@ export function LanguageSelectionScreen({
           onPress={() =>
             void saveAndContinue()
           }
-          style={({ pressed }) => [
+          style={({
+            pressed,
+          }) => [
             styles.continueButton,
 
             {
-              minHeight: 54 * scale,
-              marginTop: 14 * scale,
+              minHeight:
+                52 * scale,
+
+              marginTop:
+                13 * scale,
 
               borderRadius:
                 12 * scale,
@@ -535,7 +633,7 @@ export function LanguageSelectionScreen({
               styles.continueButtonText,
               {
                 fontSize:
-                  17 * scale,
+                  16.5 * scale,
               },
             ]}
           >
@@ -550,7 +648,7 @@ export function LanguageSelectionScreen({
                 styles.continueArrow,
                 {
                   fontSize:
-                    25 * scale,
+                    24 * scale,
                 },
               ]}
             >
@@ -560,33 +658,52 @@ export function LanguageSelectionScreen({
         </Pressable>
       </View>
 
-      {/* Footer quote */}
+      {/* Footer above landscape */}
       <View
         pointerEvents="none"
         style={[
           styles.footerOverlay,
           {
             bottom:
+              safeBottom +
               landscapeHeight -
-              2 * scale,
+              3 * scale,
           },
         ]}
       >
-        <View style={styles.footerDivider}>
-          <View style={styles.footerLine} />
+        <View
+          style={
+            styles.footerDivider
+          }
+        >
+          <View
+            style={
+              styles.footerLine
+            }
+          />
 
           <Image
-            source={artwork.dividerSprout}
+            source={
+              artwork.dividerSprout
+            }
             resizeMode="contain"
             style={{
-              width: 46 * scale,
-              height: 27 * scale,
+              width:
+                44 * scale,
+
+              height:
+                25 * scale,
+
               marginHorizontal:
-                10 * scale,
+                9 * scale,
             }}
           />
 
-          <View style={styles.footerLine} />
+          <View
+            style={
+              styles.footerLine
+            }
+          />
         </View>
 
         <Text
@@ -594,7 +711,7 @@ export function LanguageSelectionScreen({
             styles.footerQuote,
             {
               fontSize:
-                13 * scale,
+                12.5 * scale,
 
               lineHeight:
                 16 * scale,
@@ -605,16 +722,34 @@ export function LanguageSelectionScreen({
         </Text>
       </View>
 
-      {/* Bottom farm artwork */}
+      {/* Landscape ends ABOVE Android navigation */}
       <Image
         pointerEvents="none"
-        source={artwork.bottomLandscape}
+        source={
+          artwork.bottomLandscape
+        }
         resizeMode="cover"
         fadeDuration={0}
         style={[
           styles.bottomLandscape,
           {
-            height: landscapeHeight,
+            bottom:
+              safeBottom,
+
+            height:
+              landscapeHeight,
+          },
+        ]}
+      />
+
+      {/* Protect Android navigation area */}
+      <View
+        pointerEvents="none"
+        style={[
+          styles.systemBottomGuard,
+          {
+            height:
+              safeBottom,
           },
         ]}
       />
@@ -631,32 +766,43 @@ const styles = StyleSheet.create({
 
   content: {
     flex: 1,
+
     zIndex: 2,
+
     alignItems: 'center',
+
     paddingHorizontal: 26,
   },
 
   topLeftLeaves: {
     position: 'absolute',
+
     top: -10,
     left: -15,
+
     zIndex: 1,
+
     opacity: 0.96,
   },
 
   topRightLeaves: {
     position: 'absolute',
+
     top: -6,
     right: -17,
+
     zIndex: 1,
+
     opacity: 0.58,
   },
 
   heading: {
     width: '100%',
-    marginTop: 3,
+
+    marginTop: 2,
 
     textAlign: 'center',
+
     fontFamily: 'serif',
     fontWeight: '700',
   },
@@ -670,9 +816,10 @@ const styles = StyleSheet.create({
   },
 
   subtitle: {
-    marginTop: 5,
+    marginTop: 4,
 
     color: '#66717A',
+
     textAlign: 'center',
   },
 
@@ -685,9 +832,11 @@ const styles = StyleSheet.create({
 
   headerDividerLine: {
     flex: 1,
+
     height: 1,
 
-    backgroundColor: '#BFD1B4',
+    backgroundColor:
+      '#BFD1B4',
   },
 
   languageList: {
@@ -700,15 +849,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
 
-    paddingVertical: 9,
+    paddingVertical: 8,
 
-    backgroundColor: '#FFFFFF',
+    backgroundColor:
+      '#FFFFFF',
 
     borderWidth: 1,
-    borderColor: '#E4E7DF',
 
-    shadowColor: '#273626',
-    shadowOpacity: 0.11,
+    borderColor:
+      '#E4E7DF',
+
+    shadowColor:
+      '#273626',
+
+    shadowOpacity: 0.10,
+
     shadowRadius: 7,
 
     shadowOffset: {
@@ -720,9 +875,12 @@ const styles = StyleSheet.create({
   },
 
   languageCardSelected: {
-    backgroundColor: '#F6FAF1',
+    backgroundColor:
+      '#F6FAF1',
 
-    borderColor: '#3D8B4D',
+    borderColor:
+      '#3D8B4D',
+
     borderWidth: 1.5,
   },
 
@@ -734,22 +892,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
 
-    backgroundColor: '#EDF4E3',
+    backgroundColor:
+      '#EDF4E3',
   },
 
   languageSymbol: {
     color: '#12632F',
+
     fontWeight: '700',
   },
 
   globe: {
-    width: 32,
-    height: 32,
+    width: 31,
+    height: 31,
 
     borderRadius: 16,
 
-    borderWidth: 2.2,
-    borderColor: '#12632F',
+    borderWidth: 2.1,
+
+    borderColor:
+      '#12632F',
 
     alignItems: 'center',
     justifyContent: 'center',
@@ -761,12 +923,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
 
     width: 12,
-    height: 30,
+    height: 29,
 
     borderLeftWidth: 2,
     borderRightWidth: 2,
 
-    borderColor: '#12632F',
+    borderColor:
+      '#12632F',
 
     borderRadius: 9,
   },
@@ -774,30 +937,35 @@ const styles = StyleSheet.create({
   globeHorizontal: {
     position: 'absolute',
 
-    width: 30,
+    width: 29,
     height: 2,
 
-    backgroundColor: '#12632F',
+    backgroundColor:
+      '#12632F',
   },
 
   globeUpperArc: {
     position: 'absolute',
+
     top: 7,
 
-    width: 28,
+    width: 27,
     height: 2,
 
-    backgroundColor: '#12632F',
+    backgroundColor:
+      '#12632F',
   },
 
   globeLowerArc: {
     position: 'absolute',
+
     bottom: 7,
 
-    width: 28,
+    width: 27,
     height: 2,
 
-    backgroundColor: '#12632F',
+    backgroundColor:
+      '#12632F',
   },
 
   languageTextArea: {
@@ -806,11 +974,13 @@ const styles = StyleSheet.create({
 
   languageTitle: {
     color: '#102E35',
+
     fontWeight: '700',
   },
 
   languageHelper: {
     marginTop: 2,
+
     color: '#6E7980',
   },
 
@@ -824,15 +994,18 @@ const styles = StyleSheet.create({
   },
 
   radioSelected: {
-    borderColor: '#12632F',
+    borderColor:
+      '#12632F',
   },
 
   radioIdle: {
-    borderColor: '#969EA3',
+    borderColor:
+      '#969EA3',
   },
 
   radioInner: {
-    backgroundColor: '#1E7C3B',
+    backgroundColor:
+      '#1E7C3B',
   },
 
   infoCard: {
@@ -841,7 +1014,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
 
-    backgroundColor: '#EEF4DB',
+    backgroundColor:
+      '#EEF4DB',
   },
 
   infoIcon: {
@@ -849,7 +1023,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
 
     borderWidth: 1.7,
-    borderColor: '#176B35',
+
+    borderColor:
+      '#176B35',
 
     marginRight: 12,
   },
@@ -867,6 +1043,7 @@ const styles = StyleSheet.create({
     flex: 1,
 
     color: '#145C2D',
+
     fontWeight: '700',
   },
 
@@ -876,6 +1053,7 @@ const styles = StyleSheet.create({
     color: '#A04435',
 
     fontSize: 11,
+
     textAlign: 'center',
   },
 
@@ -886,10 +1064,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
 
-    backgroundColor: '#176C35',
+    backgroundColor:
+      '#176C35',
 
-    shadowColor: '#173F25',
+    shadowColor:
+      '#173F25',
+
     shadowOpacity: 0.18,
+
     shadowRadius: 7,
 
     shadowOffset: {
@@ -924,7 +1106,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
 
-    zIndex: 3,
+    zIndex: 4,
 
     alignItems: 'center',
 
@@ -940,9 +1122,11 @@ const styles = StyleSheet.create({
 
   footerLine: {
     flex: 1,
+
     height: 1,
 
-    backgroundColor: '#9FB991',
+    backgroundColor:
+      '#9FB991',
   },
 
   footerQuote: {
@@ -951,6 +1135,7 @@ const styles = StyleSheet.create({
     color: '#4E463C',
 
     fontWeight: '600',
+
     textAlign: 'center',
   },
 
@@ -959,10 +1144,30 @@ const styles = StyleSheet.create({
 
     left: 0,
     right: 0,
-    bottom: 0,
 
     width: '100%',
 
     zIndex: 1,
+  },
+
+  /*
+   * This is deliberately separate from
+   * the landscape.
+   *
+   * Android navigation stays on this
+   * neutral area instead of covering
+   * FarmPrism artwork or UI.
+   */
+  systemBottomGuard: {
+    position: 'absolute',
+
+    left: 0,
+    right: 0,
+    bottom: 0,
+
+    zIndex: 5,
+
+    backgroundColor:
+      '#FCFBF5',
   },
 });
