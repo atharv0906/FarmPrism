@@ -1,9 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import {
-  PhoneLoginScreen,
-  SignUpScreen,
-} from '../screens/AuthScreens';
+import { SignUpScreen } from '../screens/AuthScreens';
+import { PhoneLoginScreen } from '../screens/PhoneLoginScreen';
 
 import { LanguageSelectionScreen } from '../screens/LanguageSelectionScreen';
 import { GetStartedScreen } from '../screens/GetStartedScreen';
