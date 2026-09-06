@@ -31,38 +31,19 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useRole } from '../hooks/useRole';
 
 import type { AuthStackParamList } from '../navigation/AuthNavigator';
+import type { OnboardingStackParamList } from '../navigation/OnboardingNavigator';
 import type { ApplicationRole } from '../types/role';
 
-/*
- * ============================================================
- * GET STARTED ARTWORK
- * ============================================================
- *
- * These are the four approved individual FarmPrism onboarding
- * screens.
- *
- * IMPORTANT:
- * Do not replace these with the old 4-in-1 collage.
- */
-const getStartedSlides = [
+const getStartedReferences = [
   require('../../assets/2a_intro.png'),
   require('../../assets/2b_intro.png'),
   require('../../assets/2c_intro.png'),
   require('../../assets/2d_intro.png'),
 ] as const;
 
-/*
- * ============================================================
- * LANGUAGE SELECTION ARTWORK
- * ============================================================
- */
-
 const languageSelectorImage = require('../../assets/1a.lang sel.png');
-
-const languageSelectorImageStyle = {
-  width: '100%',
-  height: '100%',
-} as const;
+const loginImage = require('../../assets/3.mainlogin.png');
+const roleImage = require('../../assets/4.select role.png');
 
 const languageSelectorStyles = StyleSheet.create({
   languageBackHit: {
@@ -120,7 +101,7 @@ const languageRowMaskStyles = StyleSheet.create({
     position: 'absolute',
     left: '6.5%',
     right: '6.5%',
-    top: '42.0%',
+    top: '42%',
     height: '0.25%',
     backgroundColor: '#F7FAF1',
   },
@@ -146,7 +127,7 @@ const languageRowMaskStyles = StyleSheet.create({
   radioEnglish: {
     position: 'absolute',
     right: '9.5%',
-    top: '35.0%',
+    top: '35%',
     width: '6.5%',
     aspectRatio: 1,
     borderRadius: 999,
@@ -158,7 +139,7 @@ const languageRowMaskStyles = StyleSheet.create({
   radioHindi: {
     position: 'absolute',
     right: '9.5%',
-    top: '47.0%',
+    top: '47%',
     width: '6.5%',
     aspectRatio: 1,
     borderRadius: 999,
@@ -170,7 +151,7 @@ const languageRowMaskStyles = StyleSheet.create({
   radioMarathi: {
     position: 'absolute',
     right: '9.5%',
-    top: '59.0%',
+    top: '59%',
     width: '6.5%',
     aspectRatio: 1,
     borderRadius: 999,
@@ -197,21 +178,6 @@ const languageRowMaskStyles = StyleSheet.create({
   },
 });
 
-/*
- * ============================================================
- * LOGIN / ROLE ARTWORK
- * ============================================================
- */
-
-const loginImage = require('../../assets/3.mainlogin.png');
-const roleImage = require('../../assets/4.select role.png');
-
-/*
- * ============================================================
- * DESIGN IMAGE
- * ============================================================
- */
-
 function DesignImage({
   source,
   children,
@@ -235,12 +201,6 @@ function DesignImage({
   );
 }
 
-/*
- * ============================================================
- * BACK BUTTON
- * ============================================================
- */
-
 function BackButton({
   onPress,
 }: {
@@ -259,34 +219,72 @@ function BackButton({
   );
 }
 
-/*
- * ============================================================
+/* ============================================================
  * GET STARTED
- * ============================================================
- *
- * VISUAL SOURCE OF TRUTH:
- * FarmPrism / Lovable onboarding design.
- *
- * The supplied 2a–2d images already contain:
- *
- * - FarmPrism branding
- * - illustrations
- * - headings
- * - descriptions
- * - page indicator artwork
- * - bottom white section
- * - Get Started button
- * - arrow
- *
- * Therefore React Native MUST NOT draw another visible button
- * or another visible set of page indicators.
- *
- * React Native supplies ONLY transparent interaction zones.
- *
- * The Get Started control is therefore visually STATIC.
- *
- * The artwork itself never moves vertically and is never cropped.
- */
+ * ============================================================ */
+
+const onboardingContent = [
+  {
+    title: 'Welcome to FarmPrism',
+    description:
+      'From soil to sell, FarmPrism helps you grow, connect and move your produce with confidence.',
+    accent: 'Grow together',
+  },
+  {
+    title: 'Grow Smarter Every Season',
+    description:
+      'Keep your farming journey organised and make better decisions season after season.',
+    accent: 'Farm smarter',
+  },
+  {
+    title: 'Fair Prices, Real Opportunities',
+    description:
+      'Discover better market opportunities and connect your produce with the right buyers.',
+    accent: 'Sell better',
+  },
+  {
+    title: 'Stronger Together',
+    description:
+      'Farmers, buyers, logistics and the wider agricultural network work better together.',
+    accent: 'Build together',
+  },
+] as const;
+
+function ReferenceIllustration({
+  source,
+  width,
+  height,
+}: {
+  source: any;
+  width: number;
+  height: number;
+}) {
+  return (
+    <View
+      pointerEvents="none"
+      style={[
+        styles.referenceIllustrationFrame,
+        {
+          width: width * 0.88,
+          height: height * 0.42,
+        },
+      ]}
+    >
+      <Image
+        source={source}
+        resizeMode="cover"
+        fadeDuration={0}
+        style={[
+          styles.referenceIllustrationImage,
+          {
+            width: width * 0.88,
+            height: height * 0.88,
+          },
+        ]}
+      />
+    </View>
+  );
+}
 
 export function GetStartedScreen({
   navigation,
@@ -294,54 +292,45 @@ export function GetStartedScreen({
   const { width, height } = useWindowDimensions();
 
   const pagerRef = useRef<FlatList<number>>(null);
-
   const [page, setPage] = useState(0);
 
-  /*
-   * Move to a specific onboarding page.
-   */
   const goToPage = (nextPage: number) => {
     const safePage = Math.max(
       0,
-      Math.min(getStartedSlides.length - 1, nextPage),
+      Math.min(getStartedReferences.length - 1, nextPage),
     );
 
     setPage(safePage);
 
-    pagerRef.current?.scrollToIndex({
-      index: safePage,
-      animated: true,
+    requestAnimationFrame(() => {
+      pagerRef.current?.scrollToOffset({
+        offset: safePage * width,
+        animated: true,
+      });
     });
   };
 
-  /*
-   * Static Get Started button behavior:
-   *
-   * Slide 1 → Slide 2
-   * Slide 2 → Slide 3
-   * Slide 3 → Slide 4
-   * Slide 4 → Login
-   */
   const continueFromPage = () => {
-    if (page === getStartedSlides.length - 1) {
-      navigation.navigate('PhoneLogin');
+    if (page < getStartedReferences.length - 1) {
+      goToPage(page + 1);
       return;
     }
 
-    goToPage(page + 1);
+    navigation.navigate('PhoneLogin');
   };
 
-  /*
-   * Update current slide after a swipe.
-   */
-  const handleMomentumScrollEnd = (event: any) => {
-    const nextPage = Math.round(
-      event.nativeEvent.contentOffset.x / width,
-    );
+  const handleScrollEnd = (event: any) => {
+    const offset = event.nativeEvent.contentOffset.x;
+
+    if (width <= 0) {
+      return;
+    }
+
+    const nextPage = Math.round(offset / width);
 
     if (
       nextPage >= 0 &&
-      nextPage < getStartedSlides.length
+      nextPage < getStartedReferences.length
     ) {
       setPage(nextPage);
     }
@@ -351,140 +340,144 @@ export function GetStartedScreen({
     <View style={styles.getStartedRoot}>
       <StatusBar hidden />
 
-      /*
-       * --------------------------------------------------------
-       * BACK BUTTON
-       * --------------------------------------------------------
-       *
-       * Matches the Lovable onboarding flow.
-       *
-       * This is the only visible React-rendered control.
-       * It does not interfere with the artwork.
-       */
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Back to language selection"
-        hitSlop={8}
-        onPress={() => navigation.navigate('LanguageSelection')}
-        style={styles.getStartedBackButton}
-      >
-        <Text style={styles.getStartedBackLabel}>←</Text>
-      </Pressable>
-
-      /*
-       * --------------------------------------------------------
-       * HORIZONTAL ONBOARDING TRACK
-       * --------------------------------------------------------
-       */
       <FlatList
         ref={pagerRef}
-        data={getStartedSlides}
+        data={[0, 1, 2, 3]}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         bounces={false}
         overScrollMode="never"
+        decelerationRate="fast"
         scrollEventThrottle={16}
-        keyExtractor={(_, index) => `get-started-${index}`}
+        keyExtractor={(item) => `get-started-${item}`}
         getItemLayout={(_, index) => ({
           length: width,
           offset: width * index,
           index,
         })}
-        onMomentumScrollEnd={handleMomentumScrollEnd}
-        renderItem={({ item }) => (
-          <View
-            style={[
-              styles.getStartedPage,
-              {
-                width,
-                height,
-              },
-            ]}
-          >
-            <Image
-              source={item}
-              resizeMode="contain"
-              fadeDuration={0}
+        onMomentumScrollEnd={handleScrollEnd}
+        renderItem={({ item }) => {
+          const content = onboardingContent[item];
+
+          return (
+            <View
               style={[
-                styles.getStartedImage,
+                styles.getStartedPage,
                 {
                   width,
                   height,
                 },
               ]}
-            />
-          </View>
-        )}
+            >
+              <View
+                style={[
+                  styles.getStartedTopArea,
+                  {
+                    height: height * 0.56,
+                  },
+                ]}
+              >
+                <View style={styles.brandRow}>
+                  <View style={styles.brandLeaf}>
+                    <Text style={styles.brandLeafText}>⌁</Text>
+                  </View>
+
+                  <Text style={styles.brandName}>
+                    FarmPrism
+                  </Text>
+                </View>
+
+                <ReferenceIllustration
+                  source={getStartedReferences[item]}
+                  width={width}
+                  height={height}
+                />
+              </View>
+
+              <View
+                style={[
+                  styles.getStartedCard,
+                  {
+                    minHeight: height * 0.44,
+                  },
+                ]}
+              >
+                <View style={styles.accentPill}>
+                  <Text style={styles.accentPillText}>
+                    {content.accent}
+                  </Text>
+                </View>
+
+                <Text style={styles.getStartedTitle}>
+                  {content.title}
+                </Text>
+
+                <Text style={styles.getStartedDescription}>
+                  {content.description}
+                </Text>
+
+                <View style={styles.pagination}>
+                  {[0, 1, 2, 3].map((dot) => (
+                    <Pressable
+                      key={dot}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Go to onboarding screen ${dot + 1}`}
+                      onPress={() => goToPage(dot)}
+                      style={[
+                        styles.paginationDot,
+                        dot === page &&
+                          styles.paginationDotActive,
+                      ]}
+                    />
+                  ))}
+                </View>
+
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    page === 3
+                      ? 'Get started'
+                      : 'Next onboarding screen'
+                  }
+                  onPress={continueFromPage}
+                  style={({ pressed }) => [
+                    styles.getStartedButton,
+                    pressed && styles.getStartedButtonPressed,
+                  ]}
+                >
+                  <Text style={styles.getStartedButtonText}>
+                    Get Started
+                  </Text>
+
+                  <Text style={styles.getStartedButtonArrow}>
+                    →
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          );
+        }}
       />
 
-      /*
-       * --------------------------------------------------------
-       * STATIC GET STARTED BUTTON HIT AREA
-       * --------------------------------------------------------
-       *
-       * IMPORTANT:
-       *
-       * This Pressable has NO background, NO text and NO border.
-       *
-       * The visible button comes exclusively from the artwork.
-       *
-       * It is positioned relative to the complete screen so the
-       * visible artwork remains untouched.
-       */
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Get Started"
-        onPress={continueFromPage}
-        style={styles.getStartedButtonHit}
-      />
-
-      /*
-       * --------------------------------------------------------
-       * STATIC PAGE INDICATOR HIT AREAS
-       * --------------------------------------------------------
-       *
-       * The actual dots are already painted inside each image.
-       * These Pressables are invisible.
-       */
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Go to onboarding screen 1"
-        onPress={() => goToPage(0)}
-        style={styles.getStartedDotHit1}
-      />
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Go to onboarding screen 2"
-        onPress={() => goToPage(1)}
-        style={styles.getStartedDotHit2}
-      />
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Go to onboarding screen 3"
-        onPress={() => goToPage(2)}
-        style={styles.getStartedDotHit3}
-      />
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Go to onboarding screen 4"
-        onPress={() => goToPage(3)}
-        style={styles.getStartedDotHit4}
-      />
+        accessibilityLabel="Back to language selection"
+        hitSlop={8}
+        onPress={() =>
+          navigation.navigate('LanguageSelection')
+        }
+        style={styles.getStartedBackButton}
+      >
+        <Text style={styles.getStartedBackLabel}>←</Text>
+      </Pressable>
     </View>
   );
 }
 
-/*
- * ============================================================
+/* ============================================================
  * LANGUAGE SELECTION
- * ============================================================
- *
- * Existing implementation preserved.
- */
+ * ============================================================ */
 
 export function LanguageSelectionScreen({
   navigation,
@@ -492,7 +485,6 @@ export function LanguageSelectionScreen({
   const {
     language,
     setLanguage,
-    supportedLanguages,
   } = useLanguage();
 
   const saveAndContinue = async () => {
@@ -507,7 +499,7 @@ export function LanguageSelectionScreen({
       <Image
         source={languageSelectorImage}
         resizeMode="cover"
-        style={languageSelectorImageStyle}
+        style={styles.languageSelectorImage}
       />
 
       <View
@@ -515,11 +507,8 @@ export function LanguageSelectionScreen({
         style={StyleSheet.absoluteFill}
       >
         <View style={languageRowMaskStyles.englishTop} />
-
         <View style={languageRowMaskStyles.englishBottom} />
-
         <View style={languageRowMaskStyles.englishLeft} />
-
         <View style={languageRowMaskStyles.englishRight} />
 
         <View
@@ -609,11 +598,9 @@ export function LanguageSelectionScreen({
   );
 }
 
-/*
- * ============================================================
- * PHONE LOGIN
- * ============================================================
- */
+/* ============================================================
+ * PHONE LOGIN / SIGNUP
+ * ============================================================ */
 
 export function PhoneLoginScreen({
   navigation,
@@ -650,9 +637,7 @@ function PhoneAuthScreen({
   const [otp, setOtp] = useState('');
   const [sent, setSent] = useState(false);
   const [seconds, setSeconds] = useState(0);
-  const [message, setMessage] = useState<string | null>(
-    null,
-  );
+  const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const refs = useRef<Array<TextInput | null>>([]);
@@ -706,7 +691,6 @@ function PhoneAuthScreen({
 
     try {
       await verifyOtp(phone, otp);
-      navigation.navigate('RoleSelection');
     } catch (error) {
       setMessage(
         error instanceof Error
@@ -720,19 +704,14 @@ function PhoneAuthScreen({
 
   return (
     <DesignImage source={loginImage}>
-      <BackButton
-        onPress={() => navigation.goBack()}
-      />
-
-      <Pressable
-        style={styles.loginPhoneHit}
-        onPress={() => {}}
-      />
+      <BackButton onPress={() => navigation.goBack()} />
 
       <TextInput
         value={phone}
         onChangeText={(value) =>
-          setPhone(value.replace(/\D/g, '').slice(0, 10))
+          setPhone(
+            value.replace(/\D/g, '').slice(0, 10),
+          )
         }
         keyboardType="phone-pad"
         maxLength={10}
@@ -800,9 +779,11 @@ function PhoneAuthScreen({
 
       <Pressable
         style={styles.signupHit}
-        onPress={() =>
-          navigation.navigate('SignUp')
-        }
+        onPress={() => {
+          if (mode === 'login') {
+            navigation.navigate('SignUp');
+          }
+        }}
       />
 
       {message && (
@@ -816,31 +797,30 @@ function PhoneAuthScreen({
   );
 }
 
-/*
- * ============================================================
+/* ============================================================
  * ROLE SELECTION
- * ============================================================
- */
+ * ============================================================ */
 
 export function RoleSelectionScreen({
-  navigation,
-}: NativeStackScreenProps<AuthStackParamList, 'RoleSelection'>) {
-  const { role, setRole } = useRole();
+}: NativeStackScreenProps<
+  OnboardingStackParamList,
+  'RoleSelection'
+>) {
+  const { selectRole } = useRole();
 
   const chooseRole = async (
     nextRole: ApplicationRole,
   ) => {
-    await setRole(nextRole);
-
-    if (nextRole === 'farmer') {
-      navigation.navigate('FarmerPersonal');
-      return;
+    try {
+      await selectRole(nextRole);
+    } catch (error) {
+      Alert.alert(
+        'Unable to select role',
+        error instanceof Error
+          ? error.message
+          : 'Please try again.',
+      );
     }
-
-    Alert.alert(
-      'Coming Soon',
-      'This FarmPrism role will be available in a future phase.',
-    );
   };
 
   return (
@@ -850,30 +830,21 @@ export function RoleSelectionScreen({
         style={styles.roleHits}
       >
         <Pressable
-          style={[
-            styles.roleHit,
-            styles.r1,
-          ]}
+          style={[styles.roleHit, styles.r1]}
           onPress={() =>
             void chooseRole('farmer')
           }
         />
 
         <Pressable
-          style={[
-            styles.roleHit,
-            styles.r2,
-          ]}
+          style={[styles.roleHit, styles.r2]}
           onPress={() =>
             void chooseRole('buyer')
           }
         />
 
         <Pressable
-          style={[
-            styles.roleHit,
-            styles.r3,
-          ]}
+          style={[styles.roleHit, styles.r3]}
           onPress={() =>
             void chooseRole('logistics')
           }
@@ -893,40 +864,41 @@ export function RoleSelectionScreen({
   );
 }
 
-/*
- * ============================================================
+/* ============================================================
  * ROLE DASHBOARD PLACEHOLDER
- * ============================================================
- */
+ * ============================================================ */
 
-export function RoleDashboardPlaceholder() {
+export function RoleDashboardPlaceholder({
+  role,
+}: {
+  role: ApplicationRole;
+}) {
   return (
     <ScreenLayout>
       <BrandMark />
 
       <ScreenIntro
-        eyebrow="FarmPrism"
         title="Dashboard"
-        description="Your FarmPrism dashboard will be available here."
+        description={`Your ${role} dashboard will be available here.`}
       />
 
-      <InlineMessage>
+      <InlineMessage tone="info">
         This is a temporary dashboard placeholder for the
         current implementation phase.
       </InlineMessage>
 
       <PrimaryButton
-        title="Dashboard Ready"
+        label="Dashboard Ready"
         onPress={() => {}}
       />
 
       <SecondaryButton
-        title="Continue"
+        label="Continue"
         onPress={() => {}}
       />
 
       <TextButton
-        title="Back"
+        label="Back"
         onPress={() => {}}
       />
 
@@ -934,24 +906,20 @@ export function RoleDashboardPlaceholder() {
         label="Status"
         value="Prototype"
         onChangeText={() => {}}
+        placeholder="Status"
       />
     </ScreenLayout>
   );
 }
 
-/*
- * ============================================================
+/* ============================================================
  * STYLES
- * ============================================================
- */
+ * ============================================================ */
 
 const styles = StyleSheet.create({
-  /*
-   * General canvas
-   */
   canvas: {
     flex: 1,
-    backgroundColor: '#f5f1e8',
+    backgroundColor: '#F5F1E8',
   },
 
   background: {
@@ -960,117 +928,193 @@ const styles = StyleSheet.create({
     height: '100%',
   },
 
-  /*
-   * ==========================================================
-   * GET STARTED
-   * ==========================================================
-   */
+  /* Get Started */
 
   getStartedRoot: {
     flex: 1,
-    backgroundColor: '#FAFDF8',
+    backgroundColor: '#F7F4EA',
     overflow: 'hidden',
   },
 
   getStartedPage: {
     flex: 1,
+    backgroundColor: '#F7F4EA',
+  },
+
+  getStartedTopArea: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 44,
+  },
+
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 8,
+  },
+
+  brandLeaf: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#DCEBD5',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FAFDF8',
+  },
+
+  brandLeafText: {
+    fontSize: 22,
+    color: '#2F6F3B',
+    fontWeight: '800',
+  },
+
+  brandName: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#24442D',
+  },
+
+  referenceIllustrationFrame: {
     overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    marginTop: 8,
   },
 
-  getStartedImage: {
-    resizeMode: 'contain',
+  referenceIllustrationImage: {
+    resizeMode: 'cover',
   },
 
-  /*
-   * Lovable-style top-left back control.
-   *
-   * This is intentionally small and unobtrusive so it does not
-   * interfere with the supplied artwork.
-   */
+  getStartedCard: {
+    flex: 1,
+    width: '100%',
+    marginTop: -4,
+    paddingHorizontal: 28,
+    paddingTop: 26,
+    paddingBottom: 24,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+  },
+
+  accentPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#EAF4E5',
+    marginBottom: 14,
+  },
+
+  accentPillText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#2F7A3E',
+    letterSpacing: 0.4,
+  },
+
+  getStartedTitle: {
+    width: '100%',
+    textAlign: 'center',
+    fontSize: 29,
+    lineHeight: 35,
+    fontWeight: '800',
+    color: '#24442D',
+  },
+
+  getStartedDescription: {
+    width: '94%',
+    marginTop: 12,
+    textAlign: 'center',
+    fontSize: 15,
+    lineHeight: 23,
+    color: '#657267',
+  },
+
+  pagination: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    marginTop: 20,
+    marginBottom: 18,
+  },
+
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#C8D4C7',
+  },
+
+  paginationDotActive: {
+    width: 24,
+    backgroundColor: '#2F7A3E',
+  },
+
+  getStartedButton: {
+    width: '100%',
+    minHeight: 56,
+    borderRadius: 18,
+    backgroundColor: '#2F7A3E',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 22,
+    elevation: 3,
+    shadowColor: '#24442D',
+    shadowOpacity: 0.16,
+    shadowRadius: 8,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+  },
+
+  getStartedButtonPressed: {
+    opacity: 0.82,
+    transform: [{ scale: 0.985 }],
+  },
+
+  getStartedButtonText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '800',
+  },
+
+  getStartedButtonArrow: {
+    position: 'absolute',
+    right: 20,
+    color: '#FFFFFF',
+    fontSize: 23,
+    fontWeight: '700',
+  },
+
   getStartedBackButton: {
     position: 'absolute',
     zIndex: 20,
-    top: 10,
-    left: 8,
-    width: 40,
-    height: 40,
+    top: 12,
+    left: 10,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.70)',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderWidth: 1,
+    borderColor: '#D6E0D5',
   },
 
   getStartedBackLabel: {
-    fontSize: 26,
+    fontSize: 25,
     lineHeight: 30,
     color: '#245B2A',
-    fontWeight: '500',
-    marginTop: -2,
+    fontWeight: '600',
   },
 
-  /*
-   * Static transparent hit area over the baked-in
-   * Get Started button.
-   */
-  getStartedButtonHit: {
-    position: 'absolute',
-    left: '8%',
-    right: '8%',
-    bottom: '1.6%',
-    height: '6%',
-    backgroundColor: 'transparent',
-  },
-
-  /*
-   * Transparent page indicator hit areas.
-   *
-   * These are deliberately wider than the visible dots to make
-   * tapping easier on Android.
-   */
-  getStartedDotHit1: {
-    position: 'absolute',
-    left: '34%',
-    bottom: '7.0%',
-    width: '8%',
-    height: '5%',
-    backgroundColor: 'transparent',
-  },
-
-  getStartedDotHit2: {
-    position: 'absolute',
-    left: '43%',
-    bottom: '7.0%',
-    width: '8%',
-    height: '5%',
-    backgroundColor: 'transparent',
-  },
-
-  getStartedDotHit3: {
-    position: 'absolute',
-    left: '52%',
-    bottom: '7.0%',
-    width: '8%',
-    height: '5%',
-    backgroundColor: 'transparent',
-  },
-
-  getStartedDotHit4: {
-    position: 'absolute',
-    left: '61%',
-    bottom: '7.0%',
-    width: '8%',
-    height: '5%',
-    backgroundColor: 'transparent',
-  },
-
-  /*
-   * ==========================================================
-   * OTHER EXISTING UI
-   * ==========================================================
-   */
+  /* Existing screens */
 
   backButton: {
     position: 'absolute',
@@ -1099,28 +1143,20 @@ const styles = StyleSheet.create({
     marginTop: -4,
   },
 
-  phoneOverlay: {
-    ...StyleSheet.absoluteFillObject,
+  languageSelectorImage: {
+    width: '100%',
+    height: '100%',
   },
 
   phoneInput: {
     position: 'absolute',
     left: '20%',
-    top: '42.0%',
+    top: '42%',
     width: '58%',
     height: '4.7%',
     fontSize: 16,
     color: '#24372A',
     paddingHorizontal: 8,
-    backgroundColor: 'transparent',
-  },
-
-  loginPhoneHit: {
-    position: 'absolute',
-    left: '20%',
-    top: '40.5%',
-    width: '60%',
-    height: '8%',
     backgroundColor: 'transparent',
   },
 
@@ -1163,7 +1199,7 @@ const styles = StyleSheet.create({
   resendHit: {
     position: 'absolute',
     left: '29%',
-    top: '66.0%',
+    top: '66%',
     width: '43%',
     height: '4%',
   },
@@ -1193,7 +1229,7 @@ const styles = StyleSheet.create({
   },
 
   roleHits: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
 
   roleHit: {
