@@ -1,4 +1,4 @@
-import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Animated, Easing, Image, Platform, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
@@ -26,6 +26,12 @@ function getSplashCompletionSnapshot() {
   return splashCompleted;
 }
 
+function getSplashElapsed() {
+  if (splashCompleted) return SEQUENCE_MS;
+  if (splashStartedAt === undefined) return 0;
+  return Math.max(0, Math.min(Date.now() - splashStartedAt, SEQUENCE_MS));
+}
+
 function completeSplash() {
   if (splashCompleted) return;
   splashCompleted = true;
@@ -37,14 +43,19 @@ export function useSplashCompleted() {
 }
 
 export function SplashScreen() {
-  const { width, height } = useWindowDimensions();
+  const { width, height, fontScale } = useWindowDimensions();
   const unit = Math.min(width / 392, height / 850);
-  const timeline = useRef(new Animated.Value(splashCompleted ? SEQUENCE_MS : 0)).current;
+  // Initialize at the launch position before the first render of a remount.
+  const [timeline] = useState(() => new Animated.Value(getSplashElapsed()));
   const loading = useRef(new Animated.Value(0)).current;
+  const loaderTop = Math.max(
+    height * 0.80,
+    height * 0.715 + (72 * Math.min(fontScale, 1.2) + 8) * unit,
+  );
 
   useEffect(() => {
     splashStartedAt ??= Date.now();
-    const elapsed = splashCompleted ? SEQUENCE_MS : Math.min(Date.now() - splashStartedAt, SEQUENCE_MS);
+    const elapsed = getSplashElapsed();
     timeline.setValue(elapsed);
     const sequence = Animated.timing(timeline, {
       toValue: SEQUENCE_MS,
@@ -58,6 +69,7 @@ export function SplashScreen() {
     });
 
     // Independent of visual completion: keep moving while restoration is pending.
+    loading.setValue(0);
     const loader = Animated.sequence([
       Animated.delay(Math.max(0, LOADER_START_MS - elapsed)),
       Animated.loop(Animated.timing(loading, {
@@ -121,10 +133,10 @@ export function SplashScreen() {
         {'Growing\nA Better Tomorrow'}
       </Animated.Text>
       <Animated.View style={[styles.loadingArea, {
-        top: height * 0.80, opacity: reveal(1750, 2000),
+        top: loaderTop, opacity: reveal(1750, 2000),
       }]}>
         {/* Clip the transparent sprout canvas to its central artwork. */}
-        <View style={{ width: 30 * unit, height: 25 * unit, overflow: 'hidden', marginBottom: 15 * unit }}>
+        <View style={{ width: 32 * unit, height: 28 * unit, overflow: 'hidden', marginBottom: 12 * unit }}>
           <Image source={artwork.sprout} resizeMode="contain" style={{
             position: 'absolute', width: 134 * unit, height: 134 * unit, left: -57.5 * unit, top: -61.5 * unit,
           }} />
