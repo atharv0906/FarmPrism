@@ -1,12 +1,12 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import {
-  GetStartedScreen,
   PhoneLoginScreen,
   SignUpScreen,
 } from '../screens/AuthScreens';
 
 import { LanguageSelectionScreen } from '../screens/LanguageSelectionScreen';
+import { GetStartedScreen } from '../screens/GetStartedScreen';
 
 export type AuthStackParamList = {
   LanguageSelection: undefined;
