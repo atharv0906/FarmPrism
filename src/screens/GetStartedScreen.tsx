@@ -1,3 +1,5 @@
+import { useRef } from 'react';
+
 import {
   FlatList,
   Image,
@@ -6,14 +8,8 @@ import {
   Text,
   View,
   useWindowDimensions,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
+  type ImageSourcePropType,
 } from 'react-native';
-
-import {
-  useRef,
-  useState,
-} from 'react';
 
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -64,43 +60,266 @@ const artwork = {
   ),
 };
 
-const slides = [
-  {
-    title: 'Welcome to FarmPrism',
-    description:
-      'From soil to sell, FarmPrism helps you grow, connect and move your produce with confidence.',
-    accent: 'Grow together',
-    illustration: artwork.farmerPortrait,
-    kind: 'farmer',
-  },
+const descriptions = [
+  'From Soil to Sell, We Grow Together.',
 
-  {
-    title: 'Grow Smarter Every Season',
-    description:
-      'Keep your farming journey organised and make better decisions season after season.',
-    accent: 'Farm smarter',
-    illustration: artwork.producePhone,
-    kind: 'phone',
-  },
+  'Track your crops, monitor progress and get insights to improve yield and quality.',
 
-  {
-    title: 'Fair Prices, Real Opportunities',
-    description:
-      'Discover better market opportunities and connect your produce with the right buyers.',
-    accent: 'Sell better',
-    illustration: artwork.farmerProduce,
-    kind: 'produce',
-  },
+  'Connect directly with buyers, explore live market rates and get the best value for your produce.',
 
-  {
-    title: 'Stronger Together',
-    description:
-      'Farmers, buyers, logistics and the wider agricultural network work better together.',
-    accent: 'Build together',
-    illustration: artwork.teamRoles,
-    kind: 'team',
-  },
+  'Join a trusted community of farmers, FPOs, buyers and partners for a sustainable future.',
 ] as const;
+
+function PageTitle({
+  index,
+  scale,
+}: {
+  index: number;
+  scale: number;
+}) {
+  const commonStyle = [
+    styles.title,
+    {
+      fontSize: 38 * scale,
+      lineHeight: 42 * scale,
+    },
+  ];
+
+  if (index === 0) {
+    return (
+      <Text style={commonStyle}>
+        <Text style={styles.navy}>Welcome to</Text>
+
+        {'\n'}
+
+        <Text style={styles.green}>Farm</Text>
+        <Text style={styles.brown}>Prism</Text>
+      </Text>
+    );
+  }
+
+  if (index === 1) {
+    return (
+      <Text style={commonStyle}>
+        <Text style={styles.green}>Grow Smarter</Text>
+
+        {'\n'}
+
+        <Text style={styles.brown}>Every Season</Text>
+      </Text>
+    );
+  }
+
+  if (index === 2) {
+    return (
+      <Text style={commonStyle}>
+        <Text style={styles.navy}>Fair Prices</Text>
+
+        {'\n'}
+
+        <Text style={styles.green}>
+          Real Opportunities
+        </Text>
+      </Text>
+    );
+  }
+
+  return (
+    <Text
+      style={[
+        styles.title,
+        {
+          fontSize: 37 * scale,
+          lineHeight: 42 * scale,
+        },
+      ]}
+    >
+      <Text style={styles.navy}>Stronger </Text>
+      <Text style={styles.green}>Together</Text>
+    </Text>
+  );
+}
+
+function FeatureCard({
+  image,
+  title,
+  description,
+  scale,
+}: {
+  image: ImageSourcePropType;
+  title: string;
+  description: string;
+  scale: number;
+}) {
+  return (
+    <View
+      style={[
+        styles.featureCard,
+        {
+          height: 83 * scale,
+          borderRadius: 13 * scale,
+          paddingHorizontal: 10 * scale,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.featureImageArea,
+          {
+            width: 105 * scale,
+          },
+        ]}
+      >
+        <Image
+          source={image}
+          resizeMode="contain"
+          style={{
+            width: 94 * scale,
+            height: 76 * scale,
+          }}
+        />
+      </View>
+
+      <View style={styles.featureTextArea}>
+        <Text
+          style={[
+            styles.featureTitle,
+            {
+              fontSize: 15 * scale,
+              lineHeight: 19 * scale,
+            },
+          ]}
+        >
+          {title}
+        </Text>
+
+        <Text
+          style={[
+            styles.featureDescription,
+            {
+              fontSize: 12.5 * scale,
+              lineHeight: 16 * scale,
+            },
+          ]}
+        >
+          {description}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function MarketRow({
+  icon,
+  crop,
+  price,
+  movement,
+  negative = false,
+  scale,
+}: {
+  icon: string;
+  crop: string;
+  price: string;
+  movement: string;
+  negative?: boolean;
+  scale: number;
+}) {
+  return (
+    <View
+      style={[
+        styles.marketRow,
+        {
+          minHeight: 43 * scale,
+        },
+      ]}
+    >
+      <Text
+        style={{
+          fontSize: 21 * scale,
+          width: 31 * scale,
+        }}
+      >
+        {icon}
+      </Text>
+
+      <Text
+        style={[
+          styles.cropName,
+          {
+            fontSize: 11.5 * scale,
+          },
+        ]}
+      >
+        {crop}
+      </Text>
+
+      <View style={styles.priceArea}>
+        <Text
+          style={[
+            styles.priceText,
+            {
+              fontSize: 11.5 * scale,
+            },
+          ]}
+        >
+          {price}
+        </Text>
+
+        <Text
+          style={[
+            styles.movementText,
+            {
+              fontSize: 10.5 * scale,
+            },
+            negative
+              ? styles.negativeMovement
+              : styles.positiveMovement,
+          ]}
+        >
+          {movement}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function Pagination({
+  index,
+  onPress,
+  scale,
+}: {
+  index: number;
+  onPress: (index: number) => void;
+  scale: number;
+}) {
+  return (
+    <View style={styles.pagination}>
+      {[0, 1, 2, 3].map((dot) => (
+        <Pressable
+          key={dot}
+          accessibilityRole="button"
+          accessibilityLabel={`Go to introduction screen ${
+            dot + 1
+          }`}
+          onPress={() => onPress(dot)}
+          hitSlop={8}
+          style={[
+            styles.paginationDot,
+            {
+              width: 10 * scale,
+              height: 10 * scale,
+              borderRadius: 5 * scale,
+            },
+
+            dot === index
+              ? styles.paginationDotActive
+              : styles.paginationDotIdle,
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
 
 export function GetStartedScreen({
   navigation,
@@ -113,36 +332,47 @@ export function GetStartedScreen({
     height,
   } = useWindowDimensions();
 
-  const insets =
-    useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
 
   const listRef =
     useRef<FlatList<number>>(null);
 
-  const [page, setPage] =
-    useState(0);
+  const scale = Math.max(
+    0.86,
+    Math.min(
+      1.04,
+      Math.min(
+        width / 392,
+        height / 850,
+      ),
+    ),
+  );
 
   /*
-   * FARMPRISM GLOBAL SAFE-AREA RULE:
-   * interactive content must remain above
+   * Permanent FarmPrism rule:
+   * interactive elements stay above
    * Android system navigation.
    */
   const safeBottom =
+    Math.max(insets.bottom, 12);
+
+  const footerHeight =
+    110 * scale +
+    safeBottom;
+
+  const contentHeight =
     Math.max(
-      insets.bottom,
-      12,
+      0,
+      height - footerHeight,
     );
 
-  const scale =
+  const landscapeHeight =
+    168 * scale;
+
+  const safeTop =
     Math.max(
-      0.88,
-      Math.min(
-        1.04,
-        Math.min(
-          width / 392,
-          height / 850,
-        ),
-      ),
+      insets.top,
+      0,
     );
 
   const goToPage = (
@@ -152,35 +382,27 @@ export function GetStartedScreen({
       Math.max(
         0,
         Math.min(
-          slides.length - 1,
+          3,
           nextPage,
         ),
       );
 
-    setPage(safePage);
+    requestAnimationFrame(() => {
+      listRef.current?.scrollToOffset({
+        offset:
+          safePage *
+          width,
 
-    requestAnimationFrame(
-      () => {
-        listRef.current?.scrollToOffset(
-          {
-            offset:
-              safePage *
-              width,
-
-            animated: true,
-          },
-        );
-      },
-    );
+        animated: true,
+      });
+    });
   };
 
-  const handleNext = () => {
-    if (
-      page <
-      slides.length - 1
-    ) {
-      goToPage(page + 1);
-
+  const continueFromPage = (
+    index: number,
+  ) => {
+    if (index < 3) {
+      goToPage(index + 1);
       return;
     }
 
@@ -189,101 +411,255 @@ export function GetStartedScreen({
     );
   };
 
-
-  const handleScrollEnd = (
-    event: NativeSyntheticEvent<
-      NativeScrollEvent
-    >,
+  const renderPageBody = (
+    index: number,
   ) => {
-    if (width <= 0) {
-      return;
-    }
+    /*
+     * PAGE 1
+     * Welcome + 3 feature cards
+     */
+    if (index === 0) {
+      return (
+        <View
+          style={[
+            styles.pageOneBody,
+            {
+              marginTop:
+                13 * scale,
 
-    const nextPage =
-      Math.round(
-        event.nativeEvent
-          .contentOffset.x /
-          width,
+              paddingBottom:
+                landscapeHeight *
+                0.82,
+            },
+          ]}
+        >
+          <FeatureCard
+            scale={scale}
+            image={
+              artwork.farmerPortrait
+            }
+            title="Sell directly to verified buyers"
+            description="Get better prices for your hard work."
+          />
+
+          <FeatureCard
+            scale={scale}
+            image={
+              artwork.sproutingPlant
+            }
+            title="Manage your crops with ease"
+            description="Track, update and grow your produce."
+          />
+
+          <FeatureCard
+            scale={scale}
+            image={
+              artwork.teamNetwork
+            }
+            title="Be part of a trusted farming community"
+            description="Together for a prosperous tomorrow."
+          />
+        </View>
       );
-
-    if (
-      nextPage >= 0 &&
-      nextPage <
-        slides.length
-    ) {
-      setPage(nextPage);
     }
+
+    /*
+     * PAGE 2
+     * Large crop-management phone
+     */
+    if (index === 1) {
+      return (
+        <View style={styles.pageTwoBody}>
+          <Image
+            source={
+              artwork.producePhone
+            }
+            resizeMode="contain"
+            fadeDuration={0}
+            style={{
+              width:
+                width * 0.82,
+
+              height:
+                Math.min(
+                  contentHeight *
+                    0.54,
+
+                  405 * scale,
+                ),
+
+              marginTop:
+                5 * scale,
+
+              zIndex: 3,
+            }}
+          />
+        </View>
+      );
+    }
+
+    /*
+     * PAGE 3
+     * Farmer + live market card
+     */
+    if (index === 2) {
+      return (
+        <View style={styles.pageThreeBody}>
+          <Image
+            source={
+              artwork.farmerProduce
+            }
+            resizeMode="contain"
+            fadeDuration={0}
+            style={[
+              styles.marketFarmer,
+              {
+                width:
+                  width * 0.60,
+
+                height:
+                  contentHeight *
+                  0.39,
+
+                left:
+                  -35 * scale,
+
+                bottom:
+                  landscapeHeight *
+                  0.49,
+              },
+            ]}
+          />
+
+          <View
+            style={[
+              styles.marketCard,
+              {
+                width:
+                  width * 0.59,
+
+                right:
+                  13 * scale,
+
+                top:
+                  18 * scale,
+
+                borderRadius:
+                  13 * scale,
+
+                padding:
+                  11 * scale,
+              },
+            ]}
+          >
+            <View style={styles.marketHeader}>
+              <Text
+                style={[
+                  styles.marketTitle,
+                  {
+                    fontSize:
+                      13 * scale,
+                  },
+                ]}
+              >
+                Live Market Price
+              </Text>
+
+              <Text
+                style={[
+                  styles.viewAll,
+                  {
+                    fontSize:
+                      10.5 *
+                      scale,
+                  },
+                ]}
+              >
+                View All →
+              </Text>
+            </View>
+
+            <MarketRow
+              scale={scale}
+              icon="🍅"
+              crop="Tomato"
+              price="₹1,420 / qtl"
+              movement="↑ 2.5%"
+            />
+
+            <MarketRow
+              scale={scale}
+              icon="🧅"
+              crop="Onion"
+              price="₹1,980 / qtl"
+              movement="↓ 1.3%"
+              negative
+            />
+
+            <MarketRow
+              scale={scale}
+              icon="🌾"
+              crop="Wheat"
+              price="₹2,183 / qtl"
+              movement="↑ 3.1%"
+            />
+
+            <MarketRow
+              scale={scale}
+              icon="🫛"
+              crop="Soybean"
+              price="₹3,200 / qtl"
+              movement="↑ 0.8%"
+            />
+          </View>
+        </View>
+      );
+    }
+
+    /*
+     * PAGE 4
+     * FarmPrism network / roles
+     */
+    return (
+      <View style={styles.pageFourBody}>
+        <Image
+          source={
+            artwork.teamRoles
+          }
+          resizeMode="contain"
+          fadeDuration={0}
+          style={{
+            width:
+              width * 0.78,
+
+            height:
+              contentHeight *
+              0.44,
+
+            marginTop:
+              2 * scale,
+          }}
+        />
+      </View>
+    );
   };
 
   return (
-    <View
-      style={
-        styles.root
-      }
-    >
+    <View style={styles.root}>
       <StatusBar hidden />
-
-      {/* Shared leaf decorations */}
-      <Image
-        pointerEvents="none"
-        source={
-          artwork.topLeftLeaves
-        }
-        resizeMode="contain"
-        style={[
-          styles.topLeftLeaves,
-          {
-            width:
-              125 * scale,
-
-            height:
-              125 * scale,
-          },
-        ]}
-      />
-
-      <Image
-        pointerEvents="none"
-        source={
-          artwork.topRightLeaves
-        }
-        resizeMode="contain"
-        style={[
-          styles.topRightLeaves,
-          {
-            width:
-              125 * scale,
-
-            height:
-              125 * scale,
-          },
-        ]}
-      />
-
-      {/* Real Back control */}
-    
 
       <FlatList
         ref={listRef}
-        data={[
-          0,
-          1,
-          2,
-          3,
-        ]}
+        data={[0, 1, 2, 3]}
         horizontal
         pagingEnabled
         bounces={false}
         overScrollMode="never"
         decelerationRate="fast"
-        showsHorizontalScrollIndicator={
-          false
-        }
+        showsHorizontalScrollIndicator={false}
         scrollEventThrottle={16}
-        keyExtractor={(
-          item,
-        ) =>
-          `farmprism-intro-${item}`
+        keyExtractor={(item) =>
+          `get-started-${item}`
         }
         getItemLayout={(
           _,
@@ -291,694 +667,754 @@ export function GetStartedScreen({
         ) => ({
           length: width,
           offset:
-            width *
-            index,
+            width * index,
           index,
         })}
-        onMomentumScrollEnd={
-          handleScrollEnd
-        }
-        renderItem={({
-          item,
-        }) => {
-          const slide =
-            slides[item];
-
-          return (
+        renderItem={({ item }) => (
+          <View
+            style={[
+              styles.page,
+              {
+                width,
+                height,
+              },
+            ]}
+          >
+            {/* Main content area */}
             <View
               style={[
-                styles.page,
-
+                styles.contentArea,
                 {
-                  width,
-                  height,
+                  height:
+                    contentHeight,
+
+                  paddingTop:
+                    safeTop +
+                    8 * scale,
                 },
               ]}
             >
-              {/* Upper area */}
-              <View
+              {/* Decorative leaves */}
+              <Image
+                pointerEvents="none"
+                source={
+                  artwork.topLeftLeaves
+                }
+                resizeMode="contain"
                 style={[
-                  styles.heroArea,
-
+                  styles.topLeftLeaves,
                   {
-                    paddingTop:
-                      Math.max(
-                        insets.top,
-                        6,
-                      ) +
-                      8 *
-                        scale,
+                    width:
+                      150 * scale,
+
+                    height:
+                      145 * scale,
+                  },
+                ]}
+              />
+
+              <Image
+                pointerEvents="none"
+                source={
+                  artwork.topRightLeaves
+                }
+                resizeMode="contain"
+                style={[
+                  styles.topRightLeaves,
+                  {
+                    width:
+                      150 * scale,
+
+                    height:
+                      145 * scale,
+                  },
+                ]}
+              />
+
+              {/* Common FarmPrism logo */}
+              <Image
+                source={artwork.logo}
+                resizeMode="contain"
+                fadeDuration={0}
+                accessibilityLabel="FarmPrism"
+                style={[
+                  styles.logo,
+                  {
+                    width:
+                      91 * scale,
+
+                    height:
+                      91 * scale,
+                  },
+                ]}
+              />
+
+              <PageTitle
+                index={item}
+                scale={scale}
+              />
+
+              <Text
+                style={[
+                  styles.description,
+                  {
+                    fontSize:
+                      15 * scale,
+
+                    lineHeight:
+                      20 * scale,
+
+                    marginTop:
+                      8 * scale,
                   },
                 ]}
               >
-                {/* Common approved logo */}
-                <Image
-                  source={
-                    artwork.logo
-                  }
-                  resizeMode="contain"
-                  fadeDuration={0}
-                  accessibilityLabel="FarmPrism"
-                  style={{
-                    width:
-                      82 *
-                      scale,
+                {
+                  descriptions[
+                    item
+                  ]
+                }
+              </Text>
 
-                    height:
-                      82 *
-                      scale,
-                  }}
-                />
+              {renderPageBody(
+                item,
+              )}
 
-                {/* Main illustration stage */}
-                <View
+              {/* Page 1 quote */}
+              {item === 0 && (
+                <Text
                   style={[
-                    styles.illustrationStage,
-
+                    styles.quote,
                     {
-                      height:
-                        height *
-                        0.36,
+                      bottom:
+                        landscapeHeight -
+                        4 * scale,
+
+                      fontSize:
+                        16 *
+                        scale,
+
+                      lineHeight:
+                        20 *
+                        scale,
                     },
                   ]}
                 >
-                  {/* Page 2 supporting sprout */}
-                  {item ===
-                    1 && (
+                  {'“Better Farmers\nBrighter Tomorrows”'}
+                </Text>
+              )}
+
+              {/* Page 3 quote */}
+              {item === 2 && (
+                <Text
+                  style={[
+                    styles.quote,
+                    {
+                      bottom:
+                        landscapeHeight -
+                        3 * scale,
+
+                      fontSize:
+                        15.5 *
+                        scale,
+
+                      lineHeight:
+                        20 *
+                        scale,
+                    },
+                  ]}
+                >
+                  {'Better Markets\nBrighter Tomorrows'}
+                </Text>
+              )}
+
+              {/* Page 4 tagline */}
+              {item === 3 && (
+                <View
+                  style={[
+                    styles.togetherArea,
+                    {
+                      bottom:
+                        landscapeHeight -
+                        4 * scale,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.togetherText,
+                      {
+                        fontSize:
+                          18 *
+                          scale,
+
+                        lineHeight:
+                          22 *
+                          scale,
+                      },
+                    ]}
+                  >
+                    {'Together\nWe Build a Better Tomorrow'}
+                  </Text>
+
+                  <View style={styles.sproutDivider}>
+                    <View style={styles.sproutLine} />
+
                     <Image
-                      pointerEvents="none"
                       source={
                         artwork.sproutingPlant
                       }
                       resizeMode="contain"
-                      style={[
-                        styles.phoneSprout,
+                      style={{
+                        width:
+                          27 *
+                          scale,
 
-                        {
-                          width:
-                            145 *
-                            scale,
+                        height:
+                          27 *
+                          scale,
 
-                          height:
-                            115 *
-                            scale,
-                        },
-                      ]}
+                        marginHorizontal:
+                          8 *
+                          scale,
+                      }}
                     />
-                  )}
 
-                  {/* Page 4 supporting network */}
-                  {item ===
-                    3 && (
-                    <Image
-                      pointerEvents="none"
-                      source={
-                        artwork.teamNetwork
-                      }
-                      resizeMode="contain"
-                      style={[
-                        styles.teamNetwork,
-
-                        {
-                          width:
-                            150 *
-                            scale,
-
-                          height:
-                            105 *
-                            scale,
-                        },
-                      ]}
-                    />
-                  )}
-
-                  <Image
-                    source={
-                      slide.illustration
-                    }
-                    resizeMode="contain"
-                    fadeDuration={0}
-                    style={[
-                      styles.mainIllustration,
-
-                      slide.kind ===
-                        'farmer' && {
-                        width:
-                          width *
-                          0.76,
-
-                        height:
-                          height *
-                          0.32,
-                      },
-
-                      slide.kind ===
-                        'phone' && {
-                        width:
-                          width *
-                          0.69,
-
-                        height:
-                          height *
-                          0.34,
-                      },
-
-                      slide.kind ===
-                        'produce' && {
-                        width:
-                          width *
-                          0.76,
-
-                        height:
-                          height *
-                          0.34,
-                      },
-
-                      slide.kind ===
-                        'team' && {
-                        width:
-                          width *
-                          0.72,
-
-                        height:
-                          height *
-                          0.32,
-                      },
-                    ]}
-                  />
+                    <View style={styles.sproutLine} />
+                  </View>
                 </View>
+              )}
 
-                {/* Shared FarmPrism landscape */}
-                <Image
-                  pointerEvents="none"
-                  source={
-                    artwork.bottomLandscape
-                  }
-                  resizeMode="contain"
-                  fadeDuration={0}
-                  style={[
-                    styles.landscape,
-
-                    {
-                      height:
-                        100 *
-                        scale,
-                    },
-                  ]}
-                />
-              </View>
-
-              {/* Bottom native UI card */}
-              <View
+              {/* Shared bottom landscape */}
+              <Image
+                pointerEvents="none"
+                source={
+                  artwork.bottomLandscape
+                }
+                resizeMode="cover"
+                fadeDuration={0}
                 style={[
-                  styles.contentCard,
-
+                  styles.landscape,
                   {
-                    paddingBottom:
-                      safeBottom +
-                      14 *
-                        scale,
+                    height:
+                      landscapeHeight,
                   },
                 ]}
-              >
-                <View
-                  style={[
-                    styles.accentPill,
-
-                    {
-                      paddingHorizontal:
-                        15 *
-                        scale,
-
-                      height:
-                        30 *
-                        scale,
-
-                      borderRadius:
-                        15 *
-                        scale,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.accentText,
-
-                      {
-                        fontSize:
-                          12.5 *
-                          scale,
-                      },
-                    ]}
-                  >
-                    {
-                      slide.accent
-                    }
-                  </Text>
-                </View>
-
-                <Text
-                  style={[
-                    styles.title,
-
-                    {
-                      fontSize:
-                        27 *
-                        scale,
-
-                      lineHeight:
-                        33 *
-                        scale,
-                    },
-                  ]}
-                >
-                  {
-                    slide.title
-                  }
-                </Text>
-
-                <Text
-                  style={[
-                    styles.description,
-
-                    {
-                      fontSize:
-                        14 *
-                        scale,
-
-                      lineHeight:
-                        21 *
-                        scale,
-                    },
-                  ]}
-                >
-                  {
-                    slide.description
-                  }
-                </Text>
-
-                {/* Real pagination */}
-                <View
-                  style={
-                    styles.pagination
-                  }
-                >
-                  {slides.map(
-                    (
-                      _,
-                      dot,
-                    ) => (
-                      <Pressable
-                        key={
-                          dot
-                        }
-                        accessibilityRole="button"
-                        accessibilityLabel={`Go to introduction screen ${
-                          dot +
-                          1
-                        }`}
-                        onPress={() =>
-                          goToPage(
-                            dot,
-                          )
-                        }
-                        style={[
-                          styles.paginationDot,
-
-                          dot ===
-                            page &&
-                            styles.paginationDotActive,
-                        ]}
-                      />
-                    ),
-                  )}
-                </View>
-
-                {/* Real Next/Get Started button */}
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    page ===
-                    slides.length -
-                      1
-                      ? 'Get Started'
-                      : 'Next'
-                  }
-                  onPress={
-                    handleNext
-                  }
-                  style={({ pressed }) => [
-                    styles.primaryButton,
-
-                    {
-                      height:
-                        54 *
-                        scale,
-
-                      borderRadius:
-                        14 *
-                        scale,
-                    },
-
-                    pressed &&
-                      styles.pressed,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.primaryButtonText,
-
-                      {
-                        fontSize:
-                          16 *
-                          scale,
-                      },
-                    ]}
-                  >
-                    {page ===
-                    slides.length -
-                      1
-                      ? 'Get Started'
-                      : 'Next'}
-                  </Text>
-
-                  <Text
-                    style={[
-                      styles.primaryButtonArrow,
-
-                      {
-                        fontSize:
-                          23 *
-                          scale,
-                      },
-                    ]}
-                  >
-                    →
-                  </Text>
-                </Pressable>
-              </View>
+              />
             </View>
-          );
-        }}
+
+            {/* Bottom white footer */}
+            <View
+              style={[
+                styles.footer,
+                {
+                  height:
+                    footerHeight,
+
+                  paddingBottom:
+                    safeBottom +
+                    9 * scale,
+
+                  paddingTop:
+                    10 * scale,
+
+                  borderTopLeftRadius:
+                    28 * scale,
+
+                  borderTopRightRadius:
+                    28 * scale,
+                },
+              ]}
+            >
+              <Pagination
+                index={item}
+                scale={scale}
+                onPress={goToPage}
+              />
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={
+                  item === 3
+                    ? 'Get Started'
+                    : 'Next'
+                }
+                onPress={() =>
+                  continueFromPage(
+                    item,
+                  )
+                }
+                style={({
+                  pressed,
+                }) => [
+                  styles.primaryButton,
+                  {
+                    height:
+                      54 * scale,
+
+                    borderRadius:
+                      12 * scale,
+
+                    marginTop:
+                      12 * scale,
+                  },
+
+                  pressed &&
+                    styles.pressed,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.primaryButtonText,
+                    {
+                      fontSize:
+                        16.5 *
+                        scale,
+                    },
+                  ]}
+                >
+                  {item === 3
+                    ? 'Get Started'
+                    : 'Next'}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.primaryArrow,
+                    {
+                      fontSize:
+                        25 * scale,
+                    },
+                  ]}
+                >
+                  →
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
       />
     </View>
   );
 }
 
-const styles =
-  StyleSheet.create({
-    root: {
-      flex: 1,
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor:
+      '#FCFBF3',
+    overflow: 'hidden',
+  },
 
-      backgroundColor:
-        '#F6F8EC',
+  page: {
+    flex: 1,
+    backgroundColor:
+      '#FCFBF3',
+  },
 
-      overflow:
-        'hidden',
+  contentArea: {
+    width: '100%',
+    alignItems: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+
+  topLeftLeaves: {
+    position: 'absolute',
+    left: -29,
+    top: -22,
+    zIndex: 0,
+    opacity: 0.94,
+  },
+
+  topRightLeaves: {
+    position: 'absolute',
+    right: -30,
+    top: -23,
+    zIndex: 0,
+    opacity: 0.86,
+  },
+
+  logo: {
+    zIndex: 3,
+  },
+
+  title: {
+    width: '94%',
+    marginTop: 5,
+
+    textAlign: 'center',
+
+    fontFamily: 'serif',
+    fontWeight: '700',
+
+    zIndex: 3,
+  },
+
+  navy: {
+    color: '#102D42',
+  },
+
+  green: {
+    color: '#176B35',
+  },
+
+  brown: {
+    color: '#8C3515',
+  },
+
+  description: {
+    width: '86%',
+
+    color: '#4F5F6D',
+
+    textAlign: 'center',
+
+    zIndex: 3,
+  },
+
+  pageOneBody: {
+    width: '88%',
+    gap: 9,
+    zIndex: 3,
+  },
+
+  featureCard: {
+    width: '100%',
+
+    flexDirection: 'row',
+    alignItems: 'center',
+
+    backgroundColor:
+      'rgba(248,250,239,0.96)',
+
+    borderWidth: 1,
+    borderColor:
+      '#E2E8D5',
+
+    shadowColor:
+      '#36543B',
+
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+
+    shadowOffset: {
+      width: 0,
+      height: 2,
     },
 
-    page: {
-      flex: 1,
+    elevation: 2,
+  },
 
-      backgroundColor:
-        '#F6F8EC',
+  featureImageArea: {
+    height: '100%',
+
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  featureTextArea: {
+    flex: 1,
+    paddingRight: 5,
+  },
+
+  featureTitle: {
+    color: '#176B35',
+    fontWeight: '800',
+  },
+
+  featureDescription: {
+    marginTop: 3,
+
+    color: '#66717A',
+  },
+
+  pageTwoBody: {
+    flex: 1,
+
+    width: '100%',
+
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+
+    zIndex: 3,
+  },
+
+  pageThreeBody: {
+    flex: 1,
+
+    width: '100%',
+
+    position: 'relative',
+
+    zIndex: 3,
+  },
+
+  marketFarmer: {
+    position: 'absolute',
+    zIndex: 2,
+  },
+
+  marketCard: {
+    position: 'absolute',
+
+    backgroundColor:
+      'rgba(255,255,255,0.97)',
+
+    shadowColor:
+      '#27452F',
+
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+
+    shadowOffset: {
+      width: 0,
+      height: 3,
     },
 
-    topLeftLeaves: {
-      position:
-        'absolute',
+    elevation: 4,
 
-      top: -18,
-      left: -25,
+    zIndex: 4,
+  },
 
-      zIndex: 4,
+  marketHeader: {
+    flexDirection: 'row',
 
-      opacity: 0.92,
+    alignItems: 'center',
+    justifyContent:
+      'space-between',
+
+    paddingBottom: 5,
+
+    borderBottomWidth: 1,
+
+    borderBottomColor:
+      '#E7ECE3',
+  },
+
+  marketTitle: {
+    color: '#165C34',
+    fontWeight: '800',
+  },
+
+  viewAll: {
+    color: '#1A7139',
+    fontWeight: '700',
+  },
+
+  marketRow: {
+    flexDirection: 'row',
+
+    alignItems: 'center',
+
+    borderBottomWidth: 1,
+
+    borderBottomColor:
+      '#EDF0EA',
+  },
+
+  cropName: {
+    flex: 1,
+
+    color: '#24333E',
+
+    fontWeight: '700',
+  },
+
+  priceArea: {
+    alignItems:
+      'flex-start',
+
+    width: '47%',
+  },
+
+  priceText: {
+    color: '#172D43',
+    fontWeight: '800',
+  },
+
+  movementText: {
+    marginTop: 1,
+    fontWeight: '800',
+  },
+
+  positiveMovement: {
+    color: '#14913C',
+  },
+
+  negativeMovement: {
+    color: '#D9342B',
+  },
+
+  pageFourBody: {
+    flex: 1,
+
+    width: '100%',
+
+    alignItems: 'center',
+
+    zIndex: 3,
+  },
+
+  quote: {
+    position: 'absolute',
+
+    left: 0,
+    right: 0,
+
+    zIndex: 5,
+
+    color: '#177239',
+
+    textAlign: 'center',
+
+    fontFamily: 'serif',
+
+    fontStyle: 'italic',
+    fontWeight: '700',
+  },
+
+  togetherArea: {
+    position: 'absolute',
+
+    left: 0,
+    right: 0,
+
+    zIndex: 5,
+
+    alignItems: 'center',
+  },
+
+  togetherText: {
+    color: '#1A3850',
+
+    textAlign: 'center',
+
+    fontWeight: '500',
+  },
+
+  sproutDivider: {
+    width: 125,
+
+    flexDirection: 'row',
+
+    alignItems: 'center',
+
+    marginTop: 5,
+  },
+
+  sproutLine: {
+    flex: 1,
+    height: 1,
+
+    backgroundColor:
+      '#477B4F',
+  },
+
+  landscape: {
+    position: 'absolute',
+
+    left: 0,
+    right: 0,
+    bottom: -1,
+
+    width: '100%',
+
+    zIndex: 1,
+  },
+
+  footer: {
+    position: 'absolute',
+
+    left: 0,
+    right: 0,
+    bottom: 0,
+
+    zIndex: 20,
+
+    paddingHorizontal: 22,
+
+    backgroundColor:
+      '#FFFFFF',
+
+    shadowColor:
+      '#2D4A35',
+
+    shadowOpacity: 0.08,
+    shadowRadius: 9,
+
+    shadowOffset: {
+      width: 0,
+      height: -2,
     },
 
-    topRightLeaves: {
-      position:
-        'absolute',
+    elevation: 5,
+  },
 
-      top: -18,
-      right: -25,
+  pagination: {
+    flexDirection: 'row',
 
-      zIndex: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
 
-      opacity: 0.72,
+    gap: 10,
+  },
+
+  paginationDot: {},
+
+  paginationDotIdle: {
+    backgroundColor:
+      '#C9D9C0',
+  },
+
+  paginationDotActive: {
+    backgroundColor:
+      '#16713A',
+  },
+
+  primaryButton: {
+    width: '100%',
+
+    flexDirection: 'row',
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    backgroundColor:
+      '#176C35',
+
+    shadowColor:
+      '#173F25',
+
+    shadowOpacity: 0.16,
+    shadowRadius: 7,
+
+    shadowOffset: {
+      width: 0,
+      height: 3,
     },
 
+    elevation: 4,
+  },
 
-    heroArea: {
-      height: '56%',
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+  },
 
-      alignItems:
-        'center',
+  primaryArrow: {
+    marginLeft: 18,
 
-      justifyContent:
-        'flex-start',
+    color: '#FFFFFF',
+  },
 
-      overflow:
-        'hidden',
+  pressed: {
+    opacity: 0.86,
 
-      position:
-        'relative',
-    },
-
-    illustrationStage: {
-      width: '100%',
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      position:
-        'relative',
-
-      marginTop: -1,
-    },
-
-    mainIllustration: {
-      zIndex: 3,
-    },
-
-    phoneSprout: {
-      position:
-        'absolute',
-
-      left: 4,
-      bottom: 4,
-
-      zIndex: 1,
-    },
-
-    teamNetwork: {
-      position:
-        'absolute',
-
-      right: 3,
-      bottom: 3,
-
-      zIndex: 1,
-    },
-
-    landscape: {
-      position:
-        'absolute',
-
-      left: -7,
-      right: -7,
-      bottom: -8,
-
-      width: '104%',
-
-      zIndex: 2,
-    },
-
-    contentCard: {
-      flex: 1,
-
-      width: '100%',
-
-      alignItems:
-        'center',
-
-      paddingTop: 22,
-
-      paddingHorizontal:
-        26,
-
-      backgroundColor:
-        '#FFFDF7',
-
-      borderTopLeftRadius:
-        30,
-
-      borderTopRightRadius:
-        30,
-
-      shadowColor:
-        '#1C3924',
-
-      shadowOpacity:
-        0.08,
-
-      shadowRadius:
-        12,
-
-      shadowOffset: {
-        width: 0,
-        height: -3,
+    transform: [
+      {
+        scale: 0.992,
       },
-
-      elevation: 5,
-    },
-
-    accentPill: {
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      backgroundColor:
-        '#EAF3DF',
-    },
-
-    accentText: {
-      color:
-        '#2E713D',
-
-      fontWeight:
-        '700',
-    },
-
-    title: {
-      marginTop: 13,
-
-      color:
-        '#17372B',
-
-      textAlign:
-        'center',
-
-      fontFamily:
-        'serif',
-
-      fontWeight:
-        '700',
-
-      paddingHorizontal:
-        4,
-    },
-
-    description: {
-      marginTop: 9,
-
-      maxWidth: 340,
-
-      color:
-        '#68736B',
-
-      textAlign:
-        'center',
-    },
-
-    pagination: {
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      gap: 8,
-
-      marginTop:
-        19,
-
-      marginBottom:
-        19,
-    },
-
-    paginationDot: {
-      width: 8,
-
-      height: 8,
-
-      borderRadius: 4,
-
-      backgroundColor:
-        '#C8D1C6',
-    },
-
-    paginationDotActive: {
-      width: 26,
-
-      backgroundColor:
-        '#26743C',
-    },
-
-    primaryButton: {
-      width: '100%',
-
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      backgroundColor:
-        '#176C35',
-
-      shadowColor:
-        '#153E24',
-
-      shadowOpacity:
-        0.16,
-
-      shadowRadius: 7,
-
-      shadowOffset: {
-        width: 0,
-        height: 3,
-      },
-
-      elevation: 4,
-    },
-
-    primaryButtonText: {
-      color:
-        '#FFFFFF',
-
-      fontWeight:
-        '800',
-    },
-
-    primaryButtonArrow: {
-      color:
-        '#FFFFFF',
-
-      marginLeft: 13,
-
-      fontWeight:
-        '500',
-    },
-
-    pressed: {
-      opacity: 0.84,
-
-      transform: [
-        {
-          scale: 0.992,
-        },
-      ],
-    },
-  });
+    ],
+  },
+});
