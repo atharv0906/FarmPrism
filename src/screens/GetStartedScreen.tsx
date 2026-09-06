@@ -1,1911 +1,288 @@
-import { useRef } from 'react';
-
+import { useEffect, useRef, useState } from 'react';
 import {
-  FlatList,
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  useWindowDimensions,
-  type ImageSourcePropType,
+  FlatList, Image, Platform, Pressable, StyleSheet, Text, View,
+  useWindowDimensions, type ViewStyle,
 } from 'react-native';
-
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-
 import type { AuthStackParamList } from '../navigation/AuthNavigator';
 
 const artwork = {
-  logo: require(
-    '../../assets/3. FarmPrism_Get_started_Assets/getstarted_farmprism_logo.png',
-  ),
-
-  topLeftLeaves: require(
-    '../../assets/3. FarmPrism_Get_started_Assets/getstarted_top_left_leaves.png',
-  ),
-
-  topRightLeaves: require(
-    '../../assets/3. FarmPrism_Get_started_Assets/getstarted_top_right_leaves.png',
-  ),
-
-  bottomLandscape: require(
-    '../../assets/3. FarmPrism_Get_started_Assets/getstarted_bottom_landscape.png',
-  ),
-
-  farmerPortrait: require(
-    '../../assets/3. FarmPrism_Get_started_Assets/getstarted_farmer_portrait.png',
-  ),
-
-  farmerProduce: require(
-    '../../assets/3. FarmPrism_Get_started_Assets/getstarted_farmer_produce_crate.png',
-  ),
-
-  producePhone: require(
-    '../../assets/3. FarmPrism_Get_started_Assets/getstarted_produce_phone.png',
-  ),
-
-  sproutingPlant: require(
-    '../../assets/3. FarmPrism_Get_started_Assets/getstarted_sprouting_plant.png',
-  ),
-
-  teamNetwork: require(
-    '../../assets/3. FarmPrism_Get_started_Assets/getstarted_team_network.png',
-  ),
-
-  teamRoles: require(
-    '../../assets/3. FarmPrism_Get_started_Assets/getstarted_team_roles.png',
-  ),
-
-  betterFarmersQuote: require(
-    '../../assets/3. FarmPrism_Get_started_Assets/getstarted_quote_better_farmers.png',
-  ),
-
-  betterMarketsQuote: require(
-    '../../assets/3. FarmPrism_Get_started_Assets/getstarted_quote_better_markets.png',
-  ),
-
-  togetherTomorrow: require(
-    '../../assets/3. FarmPrism_Get_started_Assets/getstarted_together_tomorrow.png',
-  ),
+  logo: require('../../assets/3. FarmPrism_Get_started_Assets/getstarted_farmprism_logo.png'),
+  leftLeaves: require('../../assets/3. FarmPrism_Get_started_Assets/getstarted_top_left_leaves.png'),
+  rightLeaves: require('../../assets/3. FarmPrism_Get_started_Assets/getstarted_top_right_leaves.png'),
+  landscape: require('../../assets/3. FarmPrism_Get_started_Assets/getstarted_bottom_landscape.png'),
+  farmer: require('../../assets/3. FarmPrism_Get_started_Assets/getstarted_farmer_portrait.png'),
+  crate: require('../../assets/3. FarmPrism_Get_started_Assets/getstarted_farmer_produce_crate.png'),
+  phone: require('../../assets/3. FarmPrism_Get_started_Assets/getstarted_produce_phone.png'),
+  plant: require('../../assets/3. FarmPrism_Get_started_Assets/getstarted_sprouting_plant.png'),
+  community: require('../../assets/3. FarmPrism_Get_started_Assets/getstarted_team_network.png'),
+  roles: require('../../assets/3. FarmPrism_Get_started_Assets/getstarted_team_roles.png'),
+  farmersQuote: require('../../assets/3. FarmPrism_Get_started_Assets/getstarted_quote_better_farmers.png'),
+  marketsQuote: require('../../assets/3. FarmPrism_Get_started_Assets/getstarted_quote_better_markets.png'),
+  togetherQuote: require('../../assets/3. FarmPrism_Get_started_Assets/getstarted_together_tomorrow.png'),
 };
 
-const descriptions = [
-  'From Soil to Sell, We Grow Together.',
+type ArtName = keyof typeof artwork;
+type Box = readonly [x: number, y: number, width: number, height: number];
+type ArtBounds = { size: readonly [number, number]; visible: Box };
+// Native PNG sizes and non-transparent bounds. These are measurement metadata;
+// no artwork is resized or rewritten. Quote padding must not shrink its lettering.
+const artBounds: Record<ArtName, ArtBounds> = {
+  logo: { size: [1254, 1254], visible: [0, 0, 1222, 1214] },
+  leftLeaves: { size: [1254, 1254], visible: [0, 0, 1228, 1254] },
+  rightLeaves: { size: [1254, 1254], visible: [39, 0, 1215, 1214] },
+  landscape: { size: [2172, 724], visible: [0, 25, 2172, 699] },
+  farmer: { size: [1448, 1086], visible: [0, 30, 1392, 1056] },
+  crate: { size: [1122, 1402], visible: [0, 21, 1122, 1349] },
+  phone: { size: [1086, 1448], visible: [0, 5, 1086, 1443] },
+  plant: { size: [1448, 1086], visible: [0, 21, 1428, 1041] },
+  community: { size: [1448, 1086], visible: [0, 17, 1432, 1069] },
+  roles: { size: [1254, 1254], visible: [0, 5, 1236, 1249] },
+  farmersQuote: { size: [2172, 724], visible: [447, 70, 1427, 628] },
+  marketsQuote: { size: [2172, 724], visible: [276, 47, 1550, 653] },
+  togetherQuote: { size: [2172, 724], visible: [114, 59, 1927, 649] },
+};
 
-  'Track your crops, monitor progress and get insights to improve yield and quality.',
-
-  'Connect directly with buyers, explore live market rates and get the best value for your produce.',
-
-  'Join a trusted community of farmers, FPOs, buyers and partners for a sustainable future.',
+const DESIGN_WIDTH = 1080;
+const DESIGN_HEIGHT = 2340;
+// Native comparison: the visible clouds trail the master by about 105 px.
+// Lift the panorama and its footer seam by 50 px to share that residual between
+// the two boundaries while retaining the intact artwork's aspect ratio.
+const LANDSCAPE_SEAM_LIFT = 50;
+const pages = [0, 1, 2, 3];
+// Measured from reference_1080x2340, in master pixels (not device pixels).
+// Each vertical anchor is independent: typography cannot push subsequent zones.
+const masters = [
+  { logo: [395, 116, 290, 282], heading: [165, 414, 750, 220], subtitle: [130, 652, 820, 58],
+    main: [70, 758, 940, 886], quote: [375, 1685, 360, 180], landscapeTop: 1616,
+    footer: 2072, dots: 2115, cta: [60, 2156, 960, 119] },
+  { logo: [395, 86, 290, 282], heading: [150, 382, 780, 198], subtitle: [155, 604, 770, 160],
+    main: [82, 800, 998, 985], quote: null, landscapeTop: 1556,
+    footer: 2017, dots: 2065, cta: [60, 2113, 960, 125] },
+  { logo: [395, 102, 290, 282], heading: [95, 415, 890, 204], subtitle: [160, 650, 760, 155],
+    main: [0, 845, 1030, 799], quote: [385, 1635, 350, 180], landscapeTop: 1624,
+    footer: 2082, dots: 2122, cta: [60, 2168, 960, 119] },
+  { logo: [395, 100, 290, 282], heading: [120, 416, 840, 100], subtitle: [175, 536, 730, 152],
+    main: [155, 713, 770, 802], quote: [250, 1544, 600, 176], landscapeTop: 1588,
+    footer: 2040, dots: 2082, cta: [60, 2123, 960, 117] },
 ] as const;
 
-function PageTitle({
-  index,
-  scale,
-}: {
-  index: number;
-  scale: number;
-}) {
-  if (index === 0) {
-    return (
-      <Text
-        style={[
-          styles.title,
-          {
-            fontSize: 34 * scale,
-            lineHeight: 38 * scale,
-          },
-        ]}
-      >
-        <Text style={styles.navy}>
-          Welcome to
-        </Text>
+const features = [
+  { image: 'farmer', y: 758, height: 289, title: 'Sell directly to\nverified buyers', description: 'Get better prices for\nyour hard work.' },
+  { image: 'plant', y: 1071, height: 281, title: 'Manage your crops\nwith ease', description: 'Track, update and grow\nyour produce.' },
+  { image: 'community', y: 1375, height: 269, title: 'Be part of a trusted\nfarming community', description: 'Together for a prosperous\ntomorrow.' },
+] as const;
+const subtitles = [
+  'From Soil to Sell, We Grow Together.',
+  'Track your crops, monitor progress\nand get insights to improve yield\nand quality.',
+  'Connect directly with buyers, explore\nlive market rates and get the best\nvalue for your produce.',
+  'Join a trusted community of\nfarmers, FPOs, buyers and partners\nfor a sustainable future.',
+];
+const marketRows = [
+  { icon: '🍅', name: 'Tomato', price: '₹1,420', movement: '↑ 2.5%', down: false },
+  { icon: '🧅', name: 'Onion', price: '₹1,980', movement: '↓ 1.3%', down: true },
+  { icon: '🌾', name: 'Wheat', price: '₹2,183', movement: '↑ 3.1%', down: false },
+  { icon: '🫛', name: 'Soybean', price: '₹3,200', movement: '↑ 0.8%', down: false },
+];
 
-        {'\n'}
+function mapping(width: number, height: number) {
+  const sx = width / DESIGN_WIDTH;
+  const sy = height / DESIGN_HEIGHT;
+  return {
+    sx, sy, font: Math.min(sx, sy),
+    box: ([x, y, w, h]: Box): ViewStyle => ({ position: 'absolute', left: x * sx, top: y * sy, width: w * sx, height: h * sy }),
+  };
+}
+type Mapping = ReturnType<typeof mapping>;
 
-        <Text style={styles.green}>
-          Farm
-        </Text>
-
-        <Text style={styles.brown}>
-          Prism
-        </Text>
-      </Text>
-    );
-  }
-
-  if (index === 1) {
-    return (
-      <Text
-        style={[
-          styles.title,
-          {
-            fontSize: 34 * scale,
-            lineHeight: 38 * scale,
-          },
-        ]}
-      >
-        <Text style={styles.green}>
-          Grow Smarter
-        </Text>
-
-        {'\n'}
-
-        <Text style={styles.brown}>
-          Every Season
-        </Text>
-      </Text>
-    );
-  }
-
-  if (index === 2) {
-    return (
-      <Text
-        style={[
-          styles.title,
-          {
-            fontSize: 33 * scale,
-            lineHeight: 37 * scale,
-          },
-        ]}
-      >
-        <Text style={styles.navy}>
-          Fair Prices
-        </Text>
-
-        {'\n'}
-
-        <Text style={styles.green}>
-          Real Opportunities
-        </Text>
-      </Text>
-    );
-  }
-
-  return (
-    <Text
-      style={[
-        styles.title,
-        {
-          fontSize: 34 * scale,
-          lineHeight: 38 * scale,
-        },
-      ]}
-    >
-      <Text style={styles.navy}>
-        Stronger{' '}
-      </Text>
-
-      <Text style={styles.green}>
-        Together
-      </Text>
-    </Text>
-  );
+function Art({ name, frame, map, label }: { name: ArtName; frame: Box; map: Mapping; label?: string }) {
+  const { size: [nativeWidth, nativeHeight], visible: [x, y, w, h] } = artBounds[name];
+  const scale = Math.min(frame[2] * map.sx / w, frame[3] * map.sy / h);
+  // Align the visible artwork, including its full composition, within the measured
+  // target bounds. The surrounding transparent canvas stays intact and unclipped.
+  return <Image source={artwork[name]} resizeMode="contain" fadeDuration={0}
+    accessible={!!label} accessibilityLabel={label} style={{
+      position: 'absolute',
+      left: (frame[0] + frame[2] / 2) * map.sx - (x + w / 2) * scale,
+      top: (frame[1] + frame[3] / 2) * map.sy - (y + h / 2) * scale,
+      width: nativeWidth * scale, height: nativeHeight * scale,
+    }} />;
 }
 
-function FeatureCard({
-  image,
-  title,
-  description,
-  scale,
-}: {
-  image: ImageSourcePropType;
-  title: string;
-  description: string;
-  scale: number;
-}) {
-  return (
-    <View
-      style={[
-        styles.featureCard,
-        {
-          height: 92 * scale,
-          borderRadius: 13 * scale,
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.featureArtworkArea,
-          {
-            width: 118 * scale,
-          },
-        ]}
-      >
-        <Image
-          source={image}
-          resizeMode="contain"
-          fadeDuration={0}
-          style={{
-            width: 108 * scale,
-            height: 87 * scale,
-          }}
-        />
-      </View>
+function Heading({ page, map }: { page: number; map: Mapping }) {
+  const frame = masters[page].heading;
+  // Android's serif face has wider glyphs than Georgia at the same font size.
+  const headingScale = map.font * (Platform.OS === 'android' ? 0.88 : 1);
+  const firstLines = ['Welcome to', 'Grow Smarter', 'Fair Prices', 'Stronger Together'];
+  return <View testID={`heading-${page}`} style={map.box(frame)}>
+    {page === 3 ? <Text maxFontSizeMultiplier={1.05} style={[styles.heading, {
+      fontSize: 87 * headingScale, lineHeight: 101 * map.font,
+    }]}><Text style={styles.navy}>Stronger </Text><Text style={styles.green}>Together</Text></Text>
+      : <>
+        <Text maxFontSizeMultiplier={1.05} style={[styles.heading, page === 1 ? styles.green : styles.navy, {
+          fontSize: (page === 2 ? 106 : page === 1 ? 98 : 91) * headingScale,
+          lineHeight: 112 * map.font,
+        }]}>{firstLines[page]}</Text>
+        <Text maxFontSizeMultiplier={1.05} style={[styles.heading, {
+          position: 'absolute', top: (page === 0 ? 90 : 101) * map.sy, width: '100%',
+          fontSize: (page === 0 ? 127 : page === 1 ? 98 : 101) * headingScale,
+          lineHeight: (page === 0 ? 139 : 115) * map.font,
+        }]}>{page === 0 ? <><Text style={styles.green}>Farm</Text><Text style={styles.brown}>Prism</Text></>
+          : <Text style={page === 1 ? styles.brown : styles.green}>{page === 1 ? 'Every Season' : 'Real Opportunities'}</Text>}</Text>
+      </>}
+  </View>;
+}
 
-      <View style={styles.featureCopy}>
-        <Text
-          style={[
-            styles.featureTitle,
-            {
-              fontSize: 14.5 * scale,
-              lineHeight: 18 * scale,
-            },
-          ]}
-        >
-          {title}
-        </Text>
-
-        <Text
-          style={[
-            styles.featureDescription,
-            {
-              fontSize: 12.3 * scale,
-              lineHeight: 16 * scale,
-            },
-          ]}
-        >
-          {description}
-        </Text>
-      </View>
+function FeatureCards({ map }: { map: Mapping }) {
+  return <>{features.map((card, i) => <View key={card.image} testID={`feature-card-${i}`} style={[
+    map.box([70, card.y, 940, card.height]), styles.card, { borderRadius: 32 * map.font },
+  ]}>
+    <Art name={card.image} frame={[22, 7, 389, card.height - 14]} map={map} />
+    <View style={map.box([458, 36, 450, card.height - 55])}>
+      <Text maxFontSizeMultiplier={1.05} style={[styles.cardTitle, { fontSize: 44 * map.font, lineHeight: 51 * map.font }]}>{card.title}</Text>
+      <Text maxFontSizeMultiplier={1.05} style={[styles.cardDescription, {
+        fontSize: 37 * map.font, lineHeight: 43 * map.font, marginTop: 18 * map.sy,
+      }]}>{card.description}</Text>
     </View>
-  );
+  </View>)}</>;
 }
 
-function MarketRow({
-  icon,
-  crop,
-  price,
-  movement,
-  negative,
-  scale,
-}: {
-  icon: string;
-  crop: string;
-  price: string;
-  movement: string;
-  negative?: boolean;
-  scale: number;
-}) {
-  return (
-    <View
-      style={[
-        styles.marketRow,
-        {
-          minHeight: 40 * scale,
-        },
-      ]}
-    >
-      <Text
-        style={{
-          width: 29 * scale,
-          fontSize: 19 * scale,
-        }}
-      >
-        {icon}
-      </Text>
-
-      <Text
-        style={[
-          styles.cropName,
-          {
-            fontSize: 10.8 * scale,
-          },
-        ]}
-      >
-        {crop}
-      </Text>
-
-      <View style={styles.priceArea}>
-        <Text
-          style={[
-            styles.priceText,
-            {
-              fontSize: 10.8 * scale,
-            },
-          ]}
-        >
-          {price}
+function MarketCard({ map }: { map: Mapping }) {
+  return <View style={[map.box([468, 844, 560, 596]), styles.market, { borderRadius: 26 * map.font, padding: 22 * map.font }]}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 68 * map.sy }}>
+      <Text maxFontSizeMultiplier={1.05} style={[styles.marketTitle, { fontSize: 36 * map.font }]}>Live Market Price</Text>
+      <Text maxFontSizeMultiplier={1.05} style={{ color: '#176b35', fontSize: 24 * map.font }}>View All →</Text>
+    </View>
+    {marketRows.map(row => <View key={row.name} style={[styles.marketRow, { height: 119 * map.sy }]}>
+      <Text accessible={false} style={{ fontSize: 57 * map.font, width: 95 * map.sx }}>{row.icon}</Text>
+      <Text maxFontSizeMultiplier={1.05} style={{ color: '#143c36', fontSize: 26 * map.font, width: 130 * map.sx }}>{row.name}</Text>
+      <View style={{ flex: 1 }}>
+        <Text maxFontSizeMultiplier={1.05} style={{ color: '#142e42', fontSize: 24 * map.font }}>
+          <Text style={{ fontWeight: '700', fontSize: 30 * map.font }}>{row.price}</Text> / quintal
         </Text>
-
-        <Text
-          style={[
-            styles.movementText,
-            {
-              fontSize: 9.8 * scale,
-            },
-
-            negative
-              ? styles.negativeMovement
-              : styles.positiveMovement,
-          ]}
-        >
-          {movement}
-        </Text>
+        <Text maxFontSizeMultiplier={1.05} style={{ color: row.down ? '#d63024' : '#12872e', fontSize: 30 * map.font, fontWeight: '700', marginTop: 9 * map.sy }}>{row.movement}</Text>
       </View>
-    </View>
-  );
+    </View>)}
+  </View>;
 }
 
-function Pagination({
-  index,
-  scale,
-  onPress,
-}: {
-  index: number;
-  scale: number;
-  onPress: (index: number) => void;
-}) {
-  return (
-    <View style={styles.pagination}>
-      {[0, 1, 2, 3].map((dot) => (
-        <Pressable
-          key={dot}
-          hitSlop={8}
-          onPress={() => onPress(dot)}
-          accessibilityRole="button"
-          accessibilityLabel={`Go to introduction page ${
-            dot + 1
-          }`}
-          style={[
-            {
-              width: 9 * scale,
-              height: 9 * scale,
-              borderRadius: 999,
-            },
-
-            dot === index
-              ? styles.paginationDotActive
-              : styles.paginationDotInactive,
-          ]}
-        />
-      ))}
-    </View>
-  );
+function PageArtwork({ page, map }: { page: number; map: Mapping }) {
+  if (page === 0) return <FeatureCards map={map} />;
+  // The native phone PNG includes a long sleeve and transparent upper padding.
+  // Its handset, rather than that whole canvas, occupies the measured main zone.
+  if (page === 1) return <Art name="phone" frame={[63, 685, 1080, 1295]} map={map} />;
+  if (page === 2) return <>
+    <Art name="crate" frame={[-18, 922, 637, 718]} map={map} />
+    <MarketCard map={map} />
+  </>;
+  return <>
+    <Art name="roles" frame={[155, 713, 770, 770]} map={map} label="FarmPrism community network" />
+    {/* The supplied illustration has no role captions; these are reference labels,
+        not selectable or persisted application roles. */}
+    {([
+      ['Farmers', 428, 925, 225], ['FPOs', 153, 1127, 200], ['Buyers', 730, 1127, 200],
+      ['Logistics', 245, 1475, 240], ['Experts', 636, 1475, 225],
+    ] as const).map(([text, x, y, w]) => <Text key={text} maxFontSizeMultiplier={1.05}
+      style={[map.box([x, y, w, 44]), styles.roleCaption, { fontSize: 35 * map.font }]}>{text}</Text>)}
+  </>;
 }
 
-export function GetStartedScreen({
-  navigation,
-}: NativeStackScreenProps<
-  AuthStackParamList,
-  'GetStarted'
->) {
-  const {
-    width,
-    height,
-  } = useWindowDimensions();
+function Landscape({ page, map }: { page: number; map: Mapping }) {
+  // The clipped panorama's first substantial alpha is at native Y=125.
+  // Align that cloud edge, rather than its mostly transparent image-box top.
+  // This uniform 3:1 scale retains the farmhouse and sunrise in the viewport.
+  return <Image source={artwork.landscape} resizeMode="contain" fadeDuration={0} style={{
+    position: 'absolute', left: -205 * map.sx,
+    top: (masters[page].landscapeTop + 30 - LANDSCAPE_SEAM_LIFT) * map.sy - 125 * (1728 / 2172) * map.sx,
+    width: 1728 * map.sx, height: 576 * map.sx,
+  }} />;
+}
 
+export function GetStartedScreen({ navigation }: NativeStackScreenProps<AuthStackParamList, 'GetStarted'>) {
+  const window = useWindowDimensions();
   const insets = useSafeAreaInsets();
-
-  const listRef =
-    useRef<FlatList<number>>(null);
-
-  const scale = Math.max(
-    0.88,
-    Math.min(
-      1.04,
-      Math.min(
-        width / 392,
-        height / 850,
-      ),
-    ),
-  );
-
-  /*
-   * Keep all important content above
-   * Android system navigation.
-   */
-  const safeBottom =
-    Math.max(
-      insets.bottom,
-      12,
-    );
-
-  /*
-   * MUCH smaller footer.
-   *
-   * This fixes the huge white area
-   * visible in the current screenshot.
-   */
-  const footerHeight =
-    76 * scale +
-    safeBottom;
-
-  const contentHeight =
-    height -
-    footerHeight;
-
-  /*
-   * Landscape occupies a proper lower
-   * portion of the artwork instead of
-   * appearing as a tiny banner.
-   */
-  const landscapeHeight =
-    Math.min(
-      215 * scale,
-      contentHeight * 0.27,
-    );
-
-  const safeTop =
-    Math.max(
-      insets.top,
-      0,
-    );
-
-  const goToPage = (
-    nextPage: number,
-  ) => {
-    const target =
-      Math.max(
-        0,
-        Math.min(
-          3,
-          nextPage,
-        ),
-      );
-
-    requestAnimationFrame(() => {
-      listRef.current?.scrollToOffset({
-        offset:
-          target *
-          width,
-
-        animated: true,
-      });
-    });
+  const [viewport, setViewport] = useState({ width: window.width, height: window.height });
+  const { width, height } = viewport;
+  const safeBottom = Math.max(insets.bottom, 12);
+  const safeTop = insets.top;
+  const map = mapping(width, Math.max(1, height - safeTop - safeBottom));
+  const list = useRef<FlatList<number>>(null);
+  const currentPage = useRef(0);
+  useEffect(() => {
+    list.current?.scrollToOffset({ offset: currentPage.current * width, animated: false });
+  }, [width]);
+  const goToPage = (page: number) => {
+    currentPage.current = Math.max(0, Math.min(3, page));
+    list.current?.scrollToOffset({ offset: currentPage.current * width, animated: true });
   };
 
-  const continueFromPage = (
-    index: number,
-  ) => {
-    if (index < 3) {
-      goToPage(index + 1);
-
-      return;
-    }
-
-    navigation.navigate(
-      'PhoneLogin',
-    );
-  };
-
-  const renderPageBody = (
-    index: number,
-  ) => {
-    /*
-     * PAGE 1
-     */
-    if (index === 0) {
-      return (
-        <View
-          style={[
-            styles.pageOneBody,
-            {
-              marginTop:
-                12 * scale,
-            },
-          ]}
-        >
-          <FeatureCard
-            image={
-              artwork.farmerPortrait
-            }
-            scale={scale}
-            title="Sell directly to verified buyers"
-            description="Get better prices for your hard work."
-          />
-
-          <FeatureCard
-            image={
-              artwork.sproutingPlant
-            }
-            scale={scale}
-            title="Manage your crops with ease"
-            description="Track, update and grow your produce."
-          />
-
-          <FeatureCard
-            image={
-              artwork.teamNetwork
-            }
-            scale={scale}
-            title="Be part of a trusted farming community"
-            description="Together for a prosperous tomorrow."
-          />
-
-          <Image
-            source={
-              artwork.betterFarmersQuote
-            }
-            resizeMode="contain"
-            fadeDuration={0}
-            style={{
-              width:
-                250 * scale,
-
-              height:
-                71 * scale,
-
-              marginTop:
-                1 * scale,
-
-              zIndex: 5,
-            }}
-          />
-        </View>
-      );
-    }
-
-    /*
-     * PAGE 2
-     */
-    if (index === 1) {
-      return (
-        <View
-          style={[
-            styles.pageTwoBody,
-            {
-              marginTop:
-                9 * scale,
-            },
-          ]}
-        >
-          <Image
-            source={
-              artwork.producePhone
-            }
-            resizeMode="contain"
-            fadeDuration={0}
-            style={{
-              width:
-                width * 0.88,
-
-              height:
-                contentHeight *
-                0.57,
-            }}
-          />
-        </View>
-      );
-    }
-
-    /*
-     * PAGE 3
-     */
-    if (index === 2) {
-      return (
-        <View
-          style={[
-            styles.pageThreeBody,
-            {
-              marginTop:
-                11 * scale,
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.marketComposition,
-              {
-                height:
-                  270 * scale,
-              },
-            ]}
-          >
-            <Image
-              source={
-                artwork.farmerProduce
-              }
-              resizeMode="contain"
-              fadeDuration={0}
-              style={[
-                styles.marketFarmer,
-                {
-                  width:
-                    width *
-                    0.58,
-
-                  height:
-                    270 *
-                    scale,
-
-                  left:
-                    -18 *
-                    scale,
-
-                  bottom: 0,
-                },
-              ]}
-            />
-
-            <View
-              style={[
-                styles.marketCard,
-                {
-                  width:
-                    width *
-                    0.59,
-
-                  right:
-                    10 *
-                    scale,
-
-                  top:
-                    8 *
-                    scale,
-
-                  borderRadius:
-                    12 *
-                    scale,
-
-                  padding:
-                    9 *
-                    scale,
-                },
-              ]}
-            >
-              <View style={styles.marketHeader}>
-                <Text
-                  style={[
-                    styles.marketTitle,
-                    {
-                      fontSize:
-                        12 *
-                        scale,
-                    },
-                  ]}
-                >
-                  Live Market Price
-                </Text>
-
-                <Text
-                  style={[
-                    styles.viewAll,
-                    {
-                      fontSize:
-                        9.2 *
-                        scale,
-                    },
-                  ]}
-                >
-                  View All →
-                </Text>
-              </View>
-
-              <MarketRow
-                icon="🍅"
-                crop="Tomato"
-                price="₹1,420 / qtl"
-                movement="↑ 2.5%"
-                scale={scale}
-              />
-
-              <MarketRow
-                icon="🧅"
-                crop="Onion"
-                price="₹1,980 / qtl"
-                movement="↓ 1.3%"
-                negative
-                scale={scale}
-              />
-
-              <MarketRow
-                icon="🌾"
-                crop="Wheat"
-                price="₹2,183 / qtl"
-                movement="↑ 3.1%"
-                scale={scale}
-              />
-
-              <MarketRow
-                icon="🫛"
-                crop="Soybean"
-                price="₹3,200 / qtl"
-                movement="↑ 0.8%"
-                scale={scale}
-              />
+  return <View style={styles.root} onLayout={({ nativeEvent }) => setViewport(nativeEvent.layout)}>
+    <StatusBar hidden />
+    <FlatList ref={list} data={pages} horizontal pagingEnabled bounces={false} overScrollMode="never"
+      decelerationRate="fast" initialNumToRender={4} windowSize={5} showsHorizontalScrollIndicator={false}
+      keyExtractor={String} extraData={`${width}:${height}:${safeTop}:${safeBottom}`}
+      getItemLayout={(_, index) => ({ length: width, offset: index * width, index })}
+      onMomentumScrollEnd={({ nativeEvent }) => { currentPage.current = Math.round(nativeEvent.contentOffset.x / width); }}
+      renderItem={({ item: page }) => {
+        const master = masters[page];
+        const quoteNames = ['farmersQuote', null, 'marketsQuote', 'togetherQuote'] as const;
+        const quoteName = quoteNames[page];
+        return <View style={{ width, height, overflow: 'hidden', backgroundColor: '#fffef5' }}>
+          <View style={{ position: 'absolute', top: safeTop, left: 0, width, height: height - safeTop - safeBottom }}>
+            <Art name="leftLeaves" frame={[-35, -36, 326, 425]} map={map} />
+            <Art name="rightLeaves" frame={[789, -36, 326, 425]} map={map} />
+            {/* Continue the ground behind the curved white footer where the
+                panorama's own lower edge is transparent. */}
+            <View style={[map.box([0, master.footer - LANDSCAPE_SEAM_LIFT - 12, DESIGN_WIDTH, DESIGN_HEIGHT - master.footer + LANDSCAPE_SEAM_LIFT + 12]), { backgroundColor: '#39772b' }]} />
+            {page !== 1 && <Landscape page={page} map={map} />}
+            <Art name="logo" frame={master.logo} map={map} label="FarmPrism" />
+            <Heading page={page} map={map} />
+            <Text testID={`subtitle-${page}`} maxFontSizeMultiplier={1.05} style={[
+              map.box(master.subtitle), styles.subtitle, { fontSize: (page === 0 ? 45 : 44) * map.font, lineHeight: 52 * map.font },
+            ]}>{subtitles[page]}</Text>
+            <PageArtwork page={page} map={map} />
+            {/* Foreground fields naturally mask the sleeve's lower canvas edge. */}
+            {page === 1 && <Landscape page={page} map={map} />}
+            {master.quote && quoteName && <Art name={quoteName} frame={master.quote} map={map} />}
+            <View testID={`footer-${page}`} style={[
+              map.box([0, master.footer - LANDSCAPE_SEAM_LIFT, DESIGN_WIDTH, DESIGN_HEIGHT - master.footer + LANDSCAPE_SEAM_LIFT]), styles.footer,
+              { height: (DESIGN_HEIGHT - master.footer + LANDSCAPE_SEAM_LIFT) * map.sy + safeBottom, borderTopLeftRadius: 126 * map.font, borderTopRightRadius: 126 * map.font },
+            ]} />
+            <View style={[map.box([430, master.dots - 36, 220, 72]), styles.dots]}>
+              {pages.map(dot => <Pressable key={dot} accessibilityRole="button" accessibilityLabel={`Go to introduction page ${dot + 1}`}
+                accessibilityState={{ selected: dot === page }} onPress={() => goToPage(dot)} hitSlop={{ top: 6, bottom: 6 }}
+                style={{ width: 52 * map.sx, height: 72 * map.sy, alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ width: 29 * map.font, height: 29 * map.font, borderRadius: 15 * map.font, backgroundColor: dot === page ? '#176731' : '#c0d1b8' }} />
+              </Pressable>)}
             </View>
+            <Pressable testID={`cta-${page}`} accessibilityRole="button" accessibilityLabel={page === 3 ? 'Get Started' : 'Next'}
+              onPress={() => page === 3 ? navigation.navigate('PhoneLogin') : goToPage(page + 1)}
+              style={({ pressed }) => [map.box(master.cta), styles.button, { borderRadius: 24 * map.font }, pressed && styles.pressed]}>
+              <Text maxFontSizeMultiplier={1.2} style={{ color: '#fff', fontWeight: '600', fontSize: 43 * map.font }}>{page === 3 ? 'Get Started' : 'Next'}</Text>
+              <Text accessible={false} style={{ color: '#fff', fontSize: 58 * map.font, marginLeft: 30 * map.sx }}>→</Text>
+            </Pressable>
           </View>
-
-          <Image
-            source={
-              artwork.betterMarketsQuote
-            }
-            resizeMode="contain"
-            fadeDuration={0}
-            style={{
-              width:
-                245 * scale,
-
-              height:
-                70 * scale,
-
-              marginTop:
-                -2 * scale,
-
-              zIndex: 5,
-            }}
-          />
-        </View>
-      );
-    }
-
-    /*
-     * PAGE 4
-     */
-    return (
-      <View
-        style={[
-          styles.pageFourBody,
-          {
-            marginTop:
-              6 * scale,
-          },
-        ]}
-      >
-        <Image
-          source={
-            artwork.teamRoles
-          }
-          resizeMode="contain"
-          fadeDuration={0}
-          style={{
-            width:
-              width * 0.83,
-
-            height:
-              315 * scale,
-          }}
-        />
-
-        <Image
-          source={
-            artwork.togetherTomorrow
-          }
-          resizeMode="contain"
-          fadeDuration={0}
-          style={{
-            width:
-              285 * scale,
-
-            height:
-              83 * scale,
-
-            marginTop:
-              -8 * scale,
-
-            zIndex: 5,
-          }}
-        />
-      </View>
-    );
-  };
-
-  return (
-    <View style={styles.root}>
-      <StatusBar hidden />
-
-      <FlatList
-        ref={listRef}
-        horizontal
-        pagingEnabled
-        bounces={false}
-        overScrollMode="never"
-        decelerationRate="fast"
-        data={[
-          0,
-          1,
-          2,
-          3,
-        ]}
-        keyExtractor={(item) =>
-          `farmprism-get-started-${item}`
-        }
-        showsHorizontalScrollIndicator={false}
-        getItemLayout={(
-          _,
-          index,
-        ) => ({
-          length: width,
-
-          offset:
-            width *
-            index,
-
-          index,
-        })}
-        renderItem={({ item }) => (
-          <View
-            style={[
-              styles.page,
-              {
-                width,
-                height,
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.contentArea,
-                {
-                  height:
-                    contentHeight,
-
-                  paddingTop:
-                    safeTop +
-                    27 *
-                    scale,
-                },
-              ]}
-            >
-              {/* LEFT LEAVES */}
-
-              <Image
-                pointerEvents="none"
-                source={
-                  artwork.topLeftLeaves
-                }
-                resizeMode="contain"
-                fadeDuration={0}
-                style={[
-                  styles.topLeftLeaves,
-                  {
-                    width:
-                      155 *
-                      scale,
-
-                    height:
-                      150 *
-                      scale,
-                  },
-                ]}
-              />
-
-              {/* RIGHT LEAVES */}
-
-              <Image
-                pointerEvents="none"
-                source={
-                  artwork.topRightLeaves
-                }
-                resizeMode="contain"
-                fadeDuration={0}
-                style={[
-                  styles.topRightLeaves,
-                  {
-                    width:
-                      155 *
-                      scale,
-
-                    height:
-                      150 *
-                      scale,
-                  },
-                ]}
-              />
-
-              {/* LOGO */}
-
-              <Image
-                source={artwork.logo}
-                resizeMode="contain"
-                fadeDuration={0}
-                accessibilityLabel="FarmPrism"
-                style={{
-                  width:
-                    96 * scale,
-
-                  height:
-                    96 * scale,
-
-                  zIndex: 5,
-                }}
-              />
-
-              {/* TITLE */}
-
-              <PageTitle
-                index={item}
-                scale={scale}
-              />
-
-              {/* DESCRIPTION */}
-
-              <Text
-                style={[
-                  styles.description,
-                  {
-                    fontSize:
-                      14.2 *
-                      scale,
-
-                    lineHeight:
-                      19 *
-                      scale,
-
-                    marginTop:
-                      7 *
-                      scale,
-                  },
-                ]}
-              >
-                {
-                  descriptions[
-                    item
-                  ]
-                }
-              </Text>
-
-              {/* MAIN PAGE ARTWORK */}
-
-              {renderPageBody(
-                item,
-              )}
-
-              {/* LANDSCAPE */}
-
-              <Image
-                pointerEvents="none"
-                source={
-                  artwork.bottomLandscape
-                }
-                resizeMode="cover"
-                fadeDuration={0}
-                style={[
-                  styles.landscape,
-                  {
-                    height:
-                      landscapeHeight,
-                  },
-                ]}
-              />
-            </View>
-
-            {/* WHITE BOTTOM PANEL */}
-
-            <View
-              style={[
-                styles.footer,
-                {
-                  height:
-                    footerHeight,
-
-                  paddingTop:
-                    6 *
-                    scale,
-
-                  paddingBottom:
-                    safeBottom +
-                    5 *
-                    scale,
-
-                  borderTopLeftRadius:
-                    29 *
-                    scale,
-
-                  borderTopRightRadius:
-                    29 *
-                    scale,
-                },
-              ]}
-            >
-              <Pagination
-                index={item}
-                scale={scale}
-                onPress={goToPage}
-              />
-
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  item === 3
-                    ? 'Get Started'
-                    : 'Next'
-                }
-                onPress={() =>
-                  continueFromPage(
-                    item,
-                  )
-                }
-                style={({ pressed }) => [
-                  styles.primaryButton,
-
-                  {
-                    height:
-                      47 *
-                      scale,
-
-                    borderRadius:
-                      11 *
-                      scale,
-
-                    marginTop:
-                      7 *
-                      scale,
-                  },
-
-                  pressed &&
-                    styles.buttonPressed,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.primaryButtonText,
-                    {
-                      fontSize:
-                        15.5 *
-                        scale,
-                    },
-                  ]}
-                >
-                  {item === 3
-                    ? 'Get Started'
-                    : 'Next'}
-                </Text>
-
-                <Text
-                  style={[
-                    styles.primaryArrow,
-                    {
-                      fontSize:
-                        22 *
-                        scale,
-
-                      right:
-                        22 *
-                        scale,
-                    },
-                  ]}
-                >
-                  →
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-      />
-    </View>
-  );
+        </View>;
+      }} />
+  </View>;
 }
 
-const styles =
-  StyleSheet.create({
-    root: {
-      flex: 1,
-
-      backgroundColor:
-        '#FCFBF3',
-
-      overflow:
-        'hidden',
-    },
-
-    page: {
-      flex: 1,
-
-      backgroundColor:
-        '#FCFBF3',
-    },
-
-    contentArea: {
-      width: '100%',
-
-      position:
-        'relative',
-
-      alignItems:
-        'center',
-
-      overflow:
-        'hidden',
-    },
-
-    topLeftLeaves: {
-      position:
-        'absolute',
-
-      left: -31,
-      top: -22,
-
-      zIndex: 1,
-
-      opacity: 0.95,
-    },
-
-    topRightLeaves: {
-      position:
-        'absolute',
-
-      right: -31,
-      top: -22,
-
-      zIndex: 1,
-
-      opacity: 0.9,
-    },
-
-    title: {
-      width: '94%',
-
-      marginTop: 14,
-
-      textAlign:
-        'center',
-
-      fontFamily:
-        'serif',
-
-      fontWeight:
-        '700',
-
-      zIndex: 5,
-    },
-
-    navy: {
-      color:
-        '#102D42',
-    },
-
-    green: {
-      color:
-        '#176B35',
-    },
-
-    brown: {
-      color:
-        '#8C3515',
-    },
-
-    description: {
-      width: '86%',
-
-      textAlign:
-        'center',
-
-      color:
-        '#536575',
-
-      zIndex: 5,
-    },
-
-    /*
-     * PAGE 1
-     */
-
-    pageOneBody: {
-      width: '88%',
-
-      alignItems:
-        'center',
-
-      gap: 8,
-
-      zIndex: 5,
-    },
-
-    featureCard: {
-      width: '100%',
-
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      backgroundColor:
-        'rgba(249,250,241,0.97)',
-
-      borderWidth: 1,
-
-      borderColor:
-        '#DFE7D4',
-
-      shadowColor:
-        '#304F37',
-
-      shadowOpacity:
-        0.08,
-
-      shadowRadius:
-        5,
-
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-
-      elevation: 2,
-    },
-
-    featureArtworkArea: {
-      height: '100%',
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-    },
-
-    featureCopy: {
-      flex: 1,
-
-      justifyContent:
-        'center',
-
-      paddingRight: 8,
-    },
-
-    featureTitle: {
-      color:
-        '#176B35',
-
-      fontWeight:
-        '800',
-    },
-
-    featureDescription: {
-      marginTop: 3,
-
-      color:
-        '#66737B',
-    },
-
-    /*
-     * PAGE 2
-     */
-
-    pageTwoBody: {
-      flex: 1,
-
-      width: '100%',
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'flex-start',
-
-      zIndex: 5,
-    },
-
-    /*
-     * PAGE 3
-     */
-
-    pageThreeBody: {
-      width: '100%',
-
-      alignItems:
-        'center',
-
-      zIndex: 5,
-    },
-
-    marketComposition: {
-      width: '100%',
-
-      position:
-        'relative',
-    },
-
-    marketFarmer: {
-      position:
-        'absolute',
-
-      zIndex: 3,
-    },
-
-    marketCard: {
-      position:
-        'absolute',
-
-      zIndex: 5,
-
-      backgroundColor:
-        'rgba(255,255,255,0.98)',
-
-      shadowColor:
-        '#284731',
-
-      shadowOpacity:
-        0.13,
-
-      shadowRadius:
-        7,
-
-      shadowOffset: {
-        width: 0,
-        height: 3,
-      },
-
-      elevation: 4,
-    },
-
-    marketHeader: {
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'space-between',
-
-      paddingBottom: 5,
-
-      borderBottomWidth:
-        1,
-
-      borderBottomColor:
-        '#E8ECE5',
-    },
-
-    marketTitle: {
-      color:
-        '#165E34',
-
-      fontWeight:
-        '800',
-    },
-
-    viewAll: {
-      color:
-        '#17723A',
-
-      fontWeight:
-        '700',
-    },
-
-    marketRow: {
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      borderBottomWidth:
-        1,
-
-      borderBottomColor:
-        '#EDF0E9',
-    },
-
-    cropName: {
-      flex: 1,
-
-      color:
-        '#263844',
-
-      fontWeight:
-        '700',
-    },
-
-    priceArea: {
-      width: '48%',
-
-      alignItems:
-        'flex-start',
-    },
-
-    priceText: {
-      color:
-        '#162F44',
-
-      fontWeight:
-        '800',
-    },
-
-    movementText: {
-      marginTop: 1,
-
-      fontWeight:
-        '800',
-    },
-
-    positiveMovement: {
-      color:
-        '#14913C',
-    },
-
-    negativeMovement: {
-      color:
-        '#D9352B',
-    },
-
-    /*
-     * PAGE 4
-     */
-
-    pageFourBody: {
-      width: '100%',
-
-      alignItems:
-        'center',
-
-      zIndex: 5,
-    },
-
-    /*
-     * SHARED LANDSCAPE
-     */
-
-    landscape: {
-      position:
-        'absolute',
-
-      left: -8,
-      right: -8,
-      bottom: -1,
-
-      width: '104%',
-
-      zIndex: 2,
-    },
-
-    /*
-     * FOOTER
-     */
-
-    footer: {
-      position:
-        'absolute',
-
-      left: 0,
-      right: 0,
-      bottom: 0,
-
-      zIndex: 20,
-
-      paddingHorizontal:
-        22,
-
-      backgroundColor:
-        '#FFFFFF',
-
-      shadowColor:
-        '#294732',
-
-      shadowOpacity:
-        0.08,
-
-      shadowRadius:
-        7,
-
-      shadowOffset: {
-        width: 0,
-        height: -2,
-      },
-
-      elevation: 5,
-    },
-
-    pagination: {
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      gap: 10,
-    },
-
-    paginationDotInactive: {
-      backgroundColor:
-        '#C9D9C0',
-    },
-
-    paginationDotActive: {
-      backgroundColor:
-        '#14733A',
-    },
-
-    primaryButton: {
-      width: '100%',
-
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      backgroundColor:
-        '#176C35',
-
-      shadowColor:
-        '#183F25',
-
-      shadowOpacity:
-        0.16,
-
-      shadowRadius:
-        6,
-
-      shadowOffset: {
-        width: 0,
-        height: 3,
-      },
-
-      elevation: 4,
-    },
-
-    primaryButtonText: {
-      color:
-        '#FFFFFF',
-
-      fontWeight:
-        '800',
-    },
-
-    primaryArrow: {
-      position:
-        'absolute',
-
-      color:
-        '#FFFFFF',
-    },
-
-    buttonPressed: {
-      opacity: 0.88,
-
-      transform: [
-        {
-          scale: 0.993,
-        },
-      ],
-    },
-  });*/
-
-    footer: {
-      position:
-        'absolute',
-
-      left: 0,
-      right: 0,
-      bottom: 0,
-
-      zIndex: 20,
-
-      paddingHorizontal:
-        22,
-
-      backgroundColor:
-        '#FFFFFF',
-
-      shadowColor:
-        '#294732',
-
-      shadowOpacity:
-        0.08,
-
-      shadowRadius:
-        7,
-
-      shadowOffset: {
-        width: 0,
-        height: -2,
-      },
-
-      elevation: 5,
-    },
-
-    pagination: {
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      gap: 10,
-    },
-
-    paginationDotInactive: {
-      backgroundColor:
-        '#C9D9C0',
-    },
-
-    paginationDotActive: {
-      backgroundColor:
-        '#14733A',
-    },
-
-    primaryButton: {
-      width: '100%',
-
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      backgroundColor:
-        '#176C35',
-
-      shadowColor:
-        '#183F25',
-
-      shadowOpacity:
-        0.16,
-
-      shadowRadius:
-        6,
-
-      shadowOffset: {
-        width: 0,
-        height: 3,
-      },
-
-      elevation: 4,
-    },
-
-    primaryButtonText: {
-      color:
-        '#FFFFFF',
-
-      fontWeight:
-        '800',
-    },
-
-    primaryArrow: {
-      position:
-        'absolute',
-
-      color:
-        '#FFFFFF',
-    },
-
-    buttonPressed: {
-      opacity: 0.88,
-
-      transform: [
-        {
-          scale: 0.993,
-        },
-      ],
-    },
-  });*/
-
-    footer: {
-      position:
-        'absolute',
-
-      left: 0,
-      right: 0,
-      bottom: 0,
-
-      zIndex: 20,
-
-      paddingHorizontal:
-        22,
-
-      backgroundColor:
-        '#FFFFFF',
-
-      shadowColor:
-        '#294732',
-
-      shadowOpacity:
-        0.08,
-
-      shadowRadius:
-        7,
-
-      shadowOffset: {
-        width: 0,
-        height: -2,
-      },
-
-      elevation: 5,
-    },
-
-    pagination: {
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      gap: 10,
-    },
-
-    paginationDotInactive: {
-      backgroundColor:
-        '#C9D9C0',
-    },
-
-    paginationDotActive: {
-      backgroundColor:
-        '#14733A',
-    },
-
-    primaryButton: {
-      width: '100%',
-
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      backgroundColor:
-        '#176C35',
-
-      shadowColor:
-        '#183F25',
-
-      shadowOpacity:
-        0.16,
-
-      shadowRadius:
-        6,
-
-      shadowOffset: {
-        width: 0,
-        height: 3,
-      },
-
-      elevation: 4,
-    },
-
-    primaryButtonText: {
-      color:
-        '#FFFFFF',
-
-      fontWeight:
-        '800',
-    },
-
-    primaryArrow: {
-      position:
-        'absolute',
-
-      color:
-        '#FFFFFF',
-    },
-
-    buttonPressed: {
-      opacity: 0.88,
-
-      transform: [
-        {
-          scale: 0.993,
-        },
-      ],
-    },
-  });*/
-
-    footer: {
-      position:
-        'absolute',
-
-      left: 0,
-      right: 0,
-      bottom: 0,
-
-      zIndex: 20,
-
-      paddingHorizontal:
-        22,
-
-      backgroundColor:
-        '#FFFFFF',
-
-      shadowColor:
-        '#294732',
-
-      shadowOpacity:
-        0.08,
-
-      shadowRadius:
-        7,
-
-      shadowOffset: {
-        width: 0,
-        height: -2,
-      },
-
-      elevation: 5,
-    },
-
-    pagination: {
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      gap: 10,
-    },
-
-    paginationDotInactive: {
-      backgroundColor:
-        '#C9D9C0',
-    },
-
-    paginationDotActive: {
-      backgroundColor:
-        '#14733A',
-    },
-
-    primaryButton: {
-      width: '100%',
-
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      backgroundColor:
-        '#176C35',
-
-      shadowColor:
-        '#183F25',
-
-      shadowOpacity:
-        0.16,
-
-      shadowRadius:
-        6,
-
-      shadowOffset: {
-        width: 0,
-        height: 3,
-      },
-
-      elevation: 4,
-    },
-
-    primaryButtonText: {
-      color:
-        '#FFFFFF',
-
-      fontWeight:
-        '800',
-    },
-
-    primaryArrow: {
-      position:
-        'absolute',
-
-      color:
-        '#FFFFFF',
-    },
-
-    buttonPressed: {
-      opacity: 0.88,
-
-      transform: [
-        {
-          scale: 0.993,
-        },
-      ],
-    },
-  });
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#fffef5' },
+  heading: { textAlign: 'center', fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }), fontWeight: '700', includeFontPadding: false },
+  navy: { color: '#0c2b3d' }, green: { color: '#125a2b' }, brown: { color: '#78300e' },
+  subtitle: { textAlign: 'center', color: '#4f5f6e', includeFontPadding: false },
+  card: { backgroundColor: '#f5f7e9', borderWidth: 1, borderColor: '#e6ecd8', shadowColor: '#506f39', shadowOpacity: 0.09, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
+  cardTitle: { color: '#17632f', fontWeight: '700', includeFontPadding: false },
+  cardDescription: { color: '#66717a', includeFontPadding: false },
+  market: { backgroundColor: '#fff', shadowColor: '#435d30', shadowOpacity: 0.12, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
+  marketTitle: { color: '#135538', fontWeight: '700' },
+  marketRow: { borderTopWidth: 1, borderTopColor: '#edf0e9', flexDirection: 'row', alignItems: 'center' },
+  roleCaption: { textAlign: 'center', color: '#073d35', fontWeight: '700', includeFontPadding: false },
+  footer: { backgroundColor: '#fff' },
+  dots: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  button: { backgroundColor: '#206632', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  pressed: { opacity: 0.87 },
+});
