@@ -34,10 +34,15 @@ import type { AuthStackParamList } from '../navigation/AuthNavigator';
 import type { ApplicationRole } from '../types/role';
 
 /*
- * FarmPrism Get Started artwork.
+ * ============================================================
+ * GET STARTED ARTWORK
+ * ============================================================
  *
- * These are the four approved individual onboarding screens.
- * Do not replace them with the 4-in-1 collage.
+ * These are the four approved individual FarmPrism onboarding
+ * screens.
+ *
+ * IMPORTANT:
+ * Do not replace these with the old 4-in-1 collage.
  */
 const getStartedSlides = [
   require('../../assets/2a_intro.png'),
@@ -47,9 +52,11 @@ const getStartedSlides = [
 ] as const;
 
 /*
- * Language Selection artwork.
- * Existing screen — unchanged.
+ * ============================================================
+ * LANGUAGE SELECTION ARTWORK
+ * ============================================================
  */
+
 const languageSelectorImage = require('../../assets/1a.lang sel.png');
 
 const languageSelectorImageStyle = {
@@ -190,8 +197,20 @@ const languageRowMaskStyles = StyleSheet.create({
   },
 });
 
+/*
+ * ============================================================
+ * LOGIN / ROLE ARTWORK
+ * ============================================================
+ */
+
 const loginImage = require('../../assets/3.mainlogin.png');
 const roleImage = require('../../assets/4.select role.png');
+
+/*
+ * ============================================================
+ * DESIGN IMAGE
+ * ============================================================
+ */
 
 function DesignImage({
   source,
@@ -216,6 +235,12 @@ function DesignImage({
   );
 }
 
+/*
+ * ============================================================
+ * BACK BUTTON
+ * ============================================================
+ */
+
 function BackButton({
   onPress,
 }: {
@@ -239,21 +264,30 @@ function BackButton({
  * GET STARTED
  * ============================================================
  *
- * Important:
+ * VISUAL SOURCE OF TRUTH:
+ * FarmPrism / Lovable onboarding design.
  *
- * The artwork itself already contains:
+ * The supplied 2a–2d images already contain:
+ *
  * - FarmPrism branding
- * - page content
- * - page dots
+ * - illustrations
+ * - headings
+ * - descriptions
+ * - page indicator artwork
+ * - bottom white section
  * - Get Started button
  * - arrow
- * - bottom white panel
  *
- * Therefore this component DOES NOT draw another visible button
- * or another visible set of dots.
+ * Therefore React Native MUST NOT draw another visible button
+ * or another visible set of page indicators.
  *
- * React Native only provides transparent interaction areas.
+ * React Native supplies ONLY transparent interaction zones.
+ *
+ * The Get Started control is therefore visually STATIC.
+ *
+ * The artwork itself never moves vertically and is never cropped.
  */
+
 export function GetStartedScreen({
   navigation,
 }: NativeStackScreenProps<AuthStackParamList, 'GetStarted'>) {
@@ -263,6 +297,9 @@ export function GetStartedScreen({
 
   const [page, setPage] = useState(0);
 
+  /*
+   * Move to a specific onboarding page.
+   */
   const goToPage = (nextPage: number) => {
     const safePage = Math.max(
       0,
@@ -277,6 +314,14 @@ export function GetStartedScreen({
     });
   };
 
+  /*
+   * Static Get Started button behavior:
+   *
+   * Slide 1 → Slide 2
+   * Slide 2 → Slide 3
+   * Slide 3 → Slide 4
+   * Slide 4 → Login
+   */
   const continueFromPage = () => {
     if (page === getStartedSlides.length - 1) {
       navigation.navigate('PhoneLogin');
@@ -286,6 +331,9 @@ export function GetStartedScreen({
     goToPage(page + 1);
   };
 
+  /*
+   * Update current slide after a swipe.
+   */
   const handleMomentumScrollEnd = (event: any) => {
     const nextPage = Math.round(
       event.nativeEvent.contentOffset.x / width,
@@ -303,6 +351,31 @@ export function GetStartedScreen({
     <View style={styles.getStartedRoot}>
       <StatusBar hidden />
 
+      /*
+       * --------------------------------------------------------
+       * BACK BUTTON
+       * --------------------------------------------------------
+       *
+       * Matches the Lovable onboarding flow.
+       *
+       * This is the only visible React-rendered control.
+       * It does not interfere with the artwork.
+       */
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Back to language selection"
+        hitSlop={8}
+        onPress={() => navigation.navigate('LanguageSelection')}
+        style={styles.getStartedBackButton}
+      >
+        <Text style={styles.getStartedBackLabel}>←</Text>
+      </Pressable>
+
+      /*
+       * --------------------------------------------------------
+       * HORIZONTAL ONBOARDING TRACK
+       * --------------------------------------------------------
+       */
       <FlatList
         ref={pagerRef}
         data={getStartedSlides}
@@ -310,6 +383,8 @@ export function GetStartedScreen({
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         bounces={false}
+        overScrollMode="never"
+        scrollEventThrottle={16}
         keyExtractor={(_, index) => `get-started-${index}`}
         getItemLayout={(_, index) => ({
           length: width,
@@ -330,63 +405,75 @@ export function GetStartedScreen({
             <Image
               source={item}
               resizeMode="contain"
-              style={styles.getStartedImage}
+              fadeDuration={0}
+              style={[
+                styles.getStartedImage,
+                {
+                  width,
+                  height,
+                },
+              ]}
             />
           </View>
         )}
       />
 
-      {/*
-       * Transparent interaction area over the Get Started button
-       * already present inside the approved artwork.
+      /*
+       * --------------------------------------------------------
+       * STATIC GET STARTED BUTTON HIT AREA
+       * --------------------------------------------------------
        *
-       * No visible button is created here.
-       */}
+       * IMPORTANT:
+       *
+       * This Pressable has NO background, NO text and NO border.
+       *
+       * The visible button comes exclusively from the artwork.
+       *
+       * It is positioned relative to the complete screen so the
+       * visible artwork remains untouched.
+       */
       <Pressable
-        onPress={continueFromPage}
         accessibilityRole="button"
         accessibilityLabel="Get Started"
+        onPress={continueFromPage}
         style={styles.getStartedButtonHit}
       />
 
-      {/*
-       * Transparent interaction areas over the four baked-in
-       * page indicators.
+      /*
+       * --------------------------------------------------------
+       * STATIC PAGE INDICATOR HIT AREAS
+       * --------------------------------------------------------
        *
-       * No visible dots are created here.
-       */}
-      <View
-        pointerEvents="box-none"
-        style={StyleSheet.absoluteFill}
-      >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Go to Get Started screen 1"
-          onPress={() => goToPage(0)}
-          style={styles.getStartedDotHit1}
-        />
+       * The actual dots are already painted inside each image.
+       * These Pressables are invisible.
+       */
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Go to onboarding screen 1"
+        onPress={() => goToPage(0)}
+        style={styles.getStartedDotHit1}
+      />
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Go to Get Started screen 2"
-          onPress={() => goToPage(1)}
-          style={styles.getStartedDotHit2}
-        />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Go to onboarding screen 2"
+        onPress={() => goToPage(1)}
+        style={styles.getStartedDotHit2}
+      />
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Go to Get Started screen 3"
-          onPress={() => goToPage(2)}
-          style={styles.getStartedDotHit3}
-        />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Go to onboarding screen 3"
+        onPress={() => goToPage(2)}
+        style={styles.getStartedDotHit3}
+      />
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Go to Get Started screen 4"
-          onPress={() => goToPage(3)}
-          style={styles.getStartedDotHit4}
-        />
-      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Go to onboarding screen 4"
+        onPress={() => goToPage(3)}
+        style={styles.getStartedDotHit4}
+      />
     </View>
   );
 }
@@ -396,8 +483,9 @@ export function GetStartedScreen({
  * LANGUAGE SELECTION
  * ============================================================
  *
- * Existing implementation — preserved.
+ * Existing implementation preserved.
  */
+
 export function LanguageSelectionScreen({
   navigation,
 }: NativeStackScreenProps<AuthStackParamList, 'LanguageSelection'>) {
@@ -525,9 +613,8 @@ export function LanguageSelectionScreen({
  * ============================================================
  * PHONE LOGIN
  * ============================================================
- *
- * Existing implementation — preserved.
  */
+
 export function PhoneLoginScreen({
   navigation,
 }: NativeStackScreenProps<AuthStackParamList, 'PhoneLogin'>) {
@@ -610,9 +697,7 @@ function PhoneAuthScreen({
 
   const verify = async () => {
     if (!/^\d{6}$/.test(otp)) {
-      setMessage(
-        'Enter the 6-digit OTP sent to your phone.',
-      );
+      setMessage('Enter the 6-digit OTP.');
       return;
     }
 
@@ -621,147 +706,112 @@ function PhoneAuthScreen({
 
     try {
       await verifyOtp(phone, otp);
+      navigation.navigate('RoleSelection');
     } catch (error) {
       setMessage(
         error instanceof Error
           ? error.message
-          : 'Unable to verify OTP.',
+          : 'Invalid OTP.',
       );
     } finally {
       setBusy(false);
     }
   };
 
-  const updateDigit = (
-    index: number,
-    value: string,
-  ) => {
-    const digits = value.replace(/\D/g, '');
-
-    if (digits.length > 1) {
-      const sixDigits = digits.slice(0, 6);
-
-      setOtp(sixDigits);
-
-      refs.current[
-        Math.min(5, sixDigits.length - 1)
-      ]?.focus();
-
-      return;
-    }
-
-    const next = otp
-      .padEnd(6, ' ')
-      .split('');
-
-    next[index] = digits || ' ';
-
-    setOtp(next.join('').trimEnd());
-
-    if (digits && index < 5) {
-      refs.current[index + 1]?.focus();
-    }
-  };
-
   return (
     <DesignImage source={loginImage}>
-      <View
-        style={styles.phoneOverlay}
-        pointerEvents="box-none"
-      >
-        <BackButton
-          onPress={() => navigation.goBack()}
-        />
+      <BackButton
+        onPress={() => navigation.goBack()}
+      />
 
-        <TextInput
-          value={phone}
-          onChangeText={(value) =>
-            setPhone(
-              value.replace(/\D/g, '').slice(0, 10),
-            )
-          }
-          keyboardType="phone-pad"
-          style={styles.phoneInput}
-          placeholder=""
-          maxLength={10}
-        />
+      <Pressable
+        style={styles.loginPhoneHit}
+        onPress={() => {}}
+      />
 
-        <Pressable
-          style={styles.sendHit}
-          onPress={() => void send()}
-          disabled={busy}
-        />
+      <TextInput
+        value={phone}
+        onChangeText={(value) =>
+          setPhone(value.replace(/\D/g, '').slice(0, 10))
+        }
+        keyboardType="phone-pad"
+        maxLength={10}
+        placeholder="Enter mobile number"
+        placeholderTextColor="#7B847D"
+        style={styles.phoneInput}
+      />
 
-        {sent && (
-          <>
-            <View style={styles.otpOverlay}>
-              {Array.from(
-                { length: 6 },
-                (_, index) => (
-                  <TextInput
-                    key={index}
-                    ref={(reference) => {
-                      refs.current[index] = reference;
-                    }}
-                    value={otp[index] || ''}
-                    onChangeText={(value) =>
-                      updateDigit(index, value)
-                    }
-                    onKeyPress={({ nativeEvent }) => {
-                      if (
-                        nativeEvent.key ===
-                          'Backspace' &&
-                        !otp[index] &&
-                        index > 0
-                      ) {
-                        refs.current[
-                          index - 1
-                        ]?.focus();
-                      }
-                    }}
-                    keyboardType="number-pad"
-                    maxLength={1}
-                    style={styles.otpBox}
-                  />
-                ),
-              )}
-            </View>
+      <Pressable
+        style={styles.sendHit}
+        onPress={() => void send()}
+        disabled={busy}
+      />
 
-            <Pressable
-              style={styles.loginHit}
-              onPress={() => void verify()}
-              disabled={busy}
+      {sent && (
+        <View style={styles.otpOverlay}>
+          {Array.from({ length: 6 }).map((_, index) => (
+            <TextInput
+              key={index}
+              ref={(ref) => {
+                refs.current[index] = ref;
+              }}
+              value={otp[index] ?? ''}
+              onChangeText={(value) => {
+                const digit = value
+                  .replace(/\D/g, '')
+                  .slice(-1);
+
+                const next = otp.split('');
+                next[index] = digit;
+
+                const nextOtp = next.join('');
+                setOtp(nextOtp);
+
+                if (
+                  digit &&
+                  index < 5
+                ) {
+                  refs.current[index + 1]?.focus();
+                }
+              }}
+              keyboardType="number-pad"
+              maxLength={1}
+              style={styles.otpBox}
             />
+          ))}
+        </View>
+      )}
 
-            {seconds === 0 && (
-              <Pressable
-                style={styles.resendHit}
-                onPress={() => void send()}
-                disabled={busy}
-              />
-            )}
-          </>
-        )}
+      <Pressable
+        style={styles.loginHit}
+        onPress={() => void verify()}
+        disabled={busy}
+      />
 
-        {message && (
-          <View style={styles.message}>
-            <InlineMessage>
-              {message}
-            </InlineMessage>
-          </View>
-        )}
-
-        <Pressable
-          style={styles.signupHit}
-          onPress={() =>
-            navigation.navigate(
-              mode === 'login'
-                ? 'SignUp'
-                : 'PhoneLogin',
-            )
+      <Pressable
+        style={styles.resendHit}
+        onPress={() => {
+          if (seconds === 0) {
+            void send();
           }
-        />
-      </View>
+        }}
+        disabled={busy || seconds > 0}
+      />
+
+      <Pressable
+        style={styles.signupHit}
+        onPress={() =>
+          navigation.navigate('SignUp')
+        }
+      />
+
+      {message && (
+        <View style={styles.message}>
+          <Text style={styles.messageText}>
+            {message}
+          </Text>
+        </View>
+      )}
     </DesignImage>
   );
 }
@@ -770,76 +820,71 @@ function PhoneAuthScreen({
  * ============================================================
  * ROLE SELECTION
  * ============================================================
- *
- * Existing implementation — preserved.
  */
-export function RoleSelectionScreen() {
-  const {
-    availableRoles,
-    selectRole,
-  } = useRole();
 
-  const { logout } = useAuth();
+export function RoleSelectionScreen({
+  navigation,
+}: NativeStackScreenProps<AuthStackParamList, 'RoleSelection'>) {
+  const { role, setRole } = useRole();
 
-  const [loading, setLoading] = useState(false);
-
-  const choose = async (
-    code: ApplicationRole,
+  const chooseRole = async (
+    nextRole: ApplicationRole,
   ) => {
-    const role = availableRoles.find(
-      (item) => item.code === code,
-    );
+    await setRole(nextRole);
 
-    if (!role) {
-      Alert.alert(
-        'Coming Soon',
-        'FPO Dashboard will be added in a future FarmPrism release.',
-      );
+    if (nextRole === 'farmer') {
+      navigation.navigate('FarmerPersonal');
       return;
     }
 
-    setLoading(true);
-
-    await selectRole(role.id);
-
-    setLoading(false);
+    Alert.alert(
+      'Coming Soon',
+      'This FarmPrism role will be available in a future phase.',
+    );
   };
 
   return (
     <DesignImage source={roleImage}>
-      <BackButton
-        onPress={() => void logout()}
-      />
+      <View
+        pointerEvents="box-none"
+        style={styles.roleHits}
+      >
+        <Pressable
+          style={[
+            styles.roleHit,
+            styles.r1,
+          ]}
+          onPress={() =>
+            void chooseRole('farmer')
+          }
+        />
 
-      <View style={styles.roleHits}>
-        {(
-          [
-            'farmer',
-            'buyer',
-            'logistics',
-          ] as ApplicationRole[]
-        ).map((role, index) => (
-          <Pressable
-            key={role}
-            disabled={loading}
-            onPress={() => void choose(role)}
-            style={[
-              styles.roleHit,
-              index === 0
-                ? styles.r1
-                : index === 1
-                  ? styles.r2
-                  : styles.r3,
-            ]}
-          />
-        ))}
+        <Pressable
+          style={[
+            styles.roleHit,
+            styles.r2,
+          ]}
+          onPress={() =>
+            void chooseRole('buyer')
+          }
+        />
+
+        <Pressable
+          style={[
+            styles.roleHit,
+            styles.r3,
+          ]}
+          onPress={() =>
+            void chooseRole('logistics')
+          }
+        />
 
         <Pressable
           style={styles.fpoHit}
           onPress={() =>
             Alert.alert(
-              'FPO Dashboard',
               'Coming Soon',
+              'FPO functionality will be introduced in a future phase.',
             )
           }
         />
@@ -850,28 +895,45 @@ export function RoleSelectionScreen() {
 
 /*
  * ============================================================
- * DASHBOARD PLACEHOLDER
+ * ROLE DASHBOARD PLACEHOLDER
  * ============================================================
  */
-export function RoleDashboardPlaceholder({
-  role,
-}: {
-  role: ApplicationRole;
-}) {
-  const { logout } = useAuth();
 
+export function RoleDashboardPlaceholder() {
   return (
     <ScreenLayout>
       <BrandMark />
 
       <ScreenIntro
-        title={`${role[0].toUpperCase()}${role.slice(1)} workspace`}
-        description="Your role-specific FarmPrism experience will appear here."
+        eyebrow="FarmPrism"
+        title="Dashboard"
+        description="Your FarmPrism dashboard will be available here."
+      />
+
+      <InlineMessage>
+        This is a temporary dashboard placeholder for the
+        current implementation phase.
+      </InlineMessage>
+
+      <PrimaryButton
+        title="Dashboard Ready"
+        onPress={() => {}}
       />
 
       <SecondaryButton
-        label="Log out"
-        onPress={() => void logout()}
+        title="Continue"
+        onPress={() => {}}
+      />
+
+      <TextButton
+        title="Back"
+        onPress={() => {}}
+      />
+
+      <Field
+        label="Status"
+        value="Prototype"
+        onChangeText={() => {}}
       />
     </ScreenLayout>
   );
@@ -882,7 +944,11 @@ export function RoleDashboardPlaceholder({
  * STYLES
  * ============================================================
  */
+
 const styles = StyleSheet.create({
+  /*
+   * General canvas
+   */
   canvas: {
     flex: 1,
     backgroundColor: '#f5f1e8',
@@ -895,12 +961,11 @@ const styles = StyleSheet.create({
   },
 
   /*
-   * Get Started
-   *
-   * The supplied artwork is 1080 × 2340,
-   * which matches the intended Android-first
-   * 9:19.5 portrait composition.
+   * ==========================================================
+   * GET STARTED
+   * ==========================================================
    */
+
   getStartedRoot: {
     flex: 1,
     backgroundColor: '#FAFDF8',
@@ -909,70 +974,104 @@ const styles = StyleSheet.create({
 
   getStartedPage: {
     flex: 1,
-    backgroundColor: '#FAFDF8',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FAFDF8',
+    overflow: 'hidden',
   },
 
   getStartedImage: {
-    width: '100%',
-    height: '100%',
+    resizeMode: 'contain',
   },
 
   /*
-   * Transparent hit area over the baked-in
-   * Get Started button.
+   * Lovable-style top-left back control.
    *
-   * This draws NOTHING visually.
+   * This is intentionally small and unobtrusive so it does not
+   * interfere with the supplied artwork.
+   */
+  getStartedBackButton: {
+    position: 'absolute',
+    zIndex: 20,
+    top: 10,
+    left: 8,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.70)',
+  },
+
+  getStartedBackLabel: {
+    fontSize: 26,
+    lineHeight: 30,
+    color: '#245B2A',
+    fontWeight: '500',
+    marginTop: -2,
+  },
+
+  /*
+   * Static transparent hit area over the baked-in
+   * Get Started button.
    */
   getStartedButtonHit: {
     position: 'absolute',
-    left: '5.5%',
-    right: '5.5%',
-    bottom: '3%',
-    height: '6.5%',
-    zIndex: 10,
+    left: '8%',
+    right: '8%',
+    bottom: '1.6%',
+    height: '6%',
+    backgroundColor: 'transparent',
   },
 
   /*
-   * Transparent hit areas over the baked-in
-   * page indicator dots.
+   * Transparent page indicator hit areas.
+   *
+   * These are deliberately wider than the visible dots to make
+   * tapping easier on Android.
    */
   getStartedDotHit1: {
     position: 'absolute',
-    left: '39%',
-    bottom: '8%',
-    width: '5.5%',
-    height: '3%',
+    left: '34%',
+    bottom: '7.0%',
+    width: '8%',
+    height: '5%',
+    backgroundColor: 'transparent',
   },
 
   getStartedDotHit2: {
     position: 'absolute',
-    left: '45%',
-    bottom: '8%',
-    width: '5.5%',
-    height: '3%',
+    left: '43%',
+    bottom: '7.0%',
+    width: '8%',
+    height: '5%',
+    backgroundColor: 'transparent',
   },
 
   getStartedDotHit3: {
     position: 'absolute',
-    left: '51%',
-    bottom: '8%',
-    width: '5.5%',
-    height: '3%',
+    left: '52%',
+    bottom: '7.0%',
+    width: '8%',
+    height: '5%',
+    backgroundColor: 'transparent',
   },
 
   getStartedDotHit4: {
     position: 'absolute',
-    left: '57%',
-    bottom: '8%',
-    width: '5.5%',
-    height: '3%',
+    left: '61%',
+    bottom: '7.0%',
+    width: '8%',
+    height: '5%',
+    backgroundColor: 'transparent',
   },
 
   /*
-   * Shared back button.
+   * ==========================================================
+   * OTHER EXISTING UI
+   * ==========================================================
    */
+
   backButton: {
     position: 'absolute',
     zIndex: 3,
@@ -1000,11 +1099,8 @@ const styles = StyleSheet.create({
     marginTop: -4,
   },
 
-  /*
-   * Phone Login.
-   */
   phoneOverlay: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
   },
 
   phoneInput: {
@@ -1016,6 +1112,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#24372A',
     paddingHorizontal: 8,
+    backgroundColor: 'transparent',
+  },
+
+  loginPhoneHit: {
+    position: 'absolute',
+    left: '20%',
+    top: '40.5%',
+    width: '60%',
+    height: '8%',
     backgroundColor: 'transparent',
   },
 
@@ -1081,11 +1186,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
 
-  /*
-   * Role Selection.
-   */
+  messageText: {
+    fontSize: 13,
+    color: '#24372A',
+    textAlign: 'center',
+  },
+
   roleHits: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
   },
 
   roleHit: {
@@ -1115,44 +1223,5 @@ const styles = StyleSheet.create({
     top: '58%',
     width: '36%',
     height: '22%',
-  },
-
-  /*
-   * Existing language-related styles.
-   */
-  langOption: {
-    height: 58,
-    borderWidth: 1,
-    borderColor: '#D6E0D5',
-    borderRadius: 10,
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-  },
-
-  langSelected: {
-    borderColor: '#2F7A3E',
-    borderWidth: 2,
-  },
-
-  radio: {
-    height: 20,
-    width: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#A7B7A9',
-    marginRight: 12,
-  },
-
-  radioActive: {
-    backgroundColor: '#2F7A3E',
-    borderColor: '#2F7A3E',
-  },
-
-  langText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#24442D',
   },
 });
