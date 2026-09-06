@@ -58,6 +58,18 @@ const artwork = {
   teamRoles: require(
     '../../assets/3. FarmPrism_Get_started_Assets/getstarted_team_roles.png',
   ),
+
+  betterFarmersQuote: require(
+    '../../assets/3. FarmPrism_Get_started_Assets/getstarted_quote_better_farmers.png',
+  ),
+
+  betterMarketsQuote: require(
+    '../../assets/3. FarmPrism_Get_started_Assets/getstarted_quote_better_markets.png',
+  ),
+
+  togetherTomorrow: require(
+    '../../assets/3. FarmPrism_Get_started_Assets/getstarted_together_tomorrow.png',
+  ),
 };
 
 const descriptions = [
@@ -88,12 +100,19 @@ function PageTitle({
   if (index === 0) {
     return (
       <Text style={commonStyle}>
-        <Text style={styles.navy}>Welcome to</Text>
+        <Text style={styles.navy}>
+          Welcome to
+        </Text>
 
         {'\n'}
 
-        <Text style={styles.green}>Farm</Text>
-        <Text style={styles.brown}>Prism</Text>
+        <Text style={styles.green}>
+          Farm
+        </Text>
+
+        <Text style={styles.brown}>
+          Prism
+        </Text>
       </Text>
     );
   }
@@ -101,11 +120,15 @@ function PageTitle({
   if (index === 1) {
     return (
       <Text style={commonStyle}>
-        <Text style={styles.green}>Grow Smarter</Text>
+        <Text style={styles.green}>
+          Grow Smarter
+        </Text>
 
         {'\n'}
 
-        <Text style={styles.brown}>Every Season</Text>
+        <Text style={styles.brown}>
+          Every Season
+        </Text>
       </Text>
     );
   }
@@ -113,7 +136,9 @@ function PageTitle({
   if (index === 2) {
     return (
       <Text style={commonStyle}>
-        <Text style={styles.navy}>Fair Prices</Text>
+        <Text style={styles.navy}>
+          Fair Prices
+        </Text>
 
         {'\n'}
 
@@ -134,8 +159,13 @@ function PageTitle({
         },
       ]}
     >
-      <Text style={styles.navy}>Stronger </Text>
-      <Text style={styles.green}>Together</Text>
+      <Text style={styles.navy}>
+        Stronger{' '}
+      </Text>
+
+      <Text style={styles.green}>
+        Together
+      </Text>
     </Text>
   );
 }
@@ -173,6 +203,7 @@ function FeatureCard({
         <Image
           source={image}
           resizeMode="contain"
+          fadeDuration={0}
           style={{
             width: 94 * scale,
             height: 76 * scale,
@@ -229,14 +260,14 @@ function MarketRow({
       style={[
         styles.marketRow,
         {
-          minHeight: 43 * scale,
+          minHeight: 42 * scale,
         },
       ]}
     >
       <Text
         style={{
-          fontSize: 21 * scale,
-          width: 31 * scale,
+          width: 30 * scale,
+          fontSize: 20 * scale,
         }}
       >
         {icon}
@@ -258,7 +289,7 @@ function MarketRow({
           style={[
             styles.priceText,
             {
-              fontSize: 11.5 * scale,
+              fontSize: 11.2 * scale,
             },
           ]}
         >
@@ -269,8 +300,9 @@ function MarketRow({
           style={[
             styles.movementText,
             {
-              fontSize: 10.5 * scale,
+              fontSize: 10.2 * scale,
             },
+
             negative
               ? styles.negativeMovement
               : styles.positiveMovement,
@@ -301,10 +333,11 @@ function Pagination({
           accessibilityLabel={`Go to introduction screen ${
             dot + 1
           }`}
-          onPress={() => onPress(dot)}
           hitSlop={8}
+          onPress={() => onPress(dot)}
           style={[
             styles.paginationDot,
+
             {
               width: 10 * scale,
               height: 10 * scale,
@@ -349,15 +382,19 @@ export function GetStartedScreen({
   );
 
   /*
-   * Permanent FarmPrism rule:
-   * interactive elements stay above
+   * FARMPRISM GLOBAL RULE:
+   * No interactive UI may overlap
    * Android system navigation.
    */
   const safeBottom =
     Math.max(insets.bottom, 12);
 
+  /*
+   * Compact footer like the approved
+   * Get Started reference.
+   */
   const footerHeight =
-    110 * scale +
+    94 * scale +
     safeBottom;
 
   const contentHeight =
@@ -366,14 +403,15 @@ export function GetStartedScreen({
       height - footerHeight,
     );
 
+  /*
+   * Stronger farmland section,
+   * closer to the reference design.
+   */
   const landscapeHeight =
-    168 * scale;
+    198 * scale;
 
   const safeTop =
-    Math.max(
-      insets.top,
-      0,
-    );
+    Math.max(insets.top, 0);
 
   const goToPage = (
     nextPage: number,
@@ -411,80 +449,278 @@ export function GetStartedScreen({
     );
   };
 
-const renderPageBody = (
-  index: number,
-) => {
-  /*
-   * PAGE 1
-   * Feature cards + quote in normal flow.
-   */
-  if (index === 0) {
-    return (
-      <View
-        style={[
-          styles.pageOneBody,
-          {
-            marginTop:
-              10 * scale,
-          },
-        ]}
-      >
-        <FeatureCard
-          scale={scale}
-          image={
-            artwork.farmerPortrait
-          }
-          title="Sell directly to verified buyers"
-          description="Get better prices for your hard work."
-        />
-
-        <FeatureCard
-          scale={scale}
-          image={
-            artwork.sproutingPlant
-          }
-          title="Manage your crops with ease"
-          description="Track, update and grow your produce."
-        />
-
-        <FeatureCard
-          scale={scale}
-          image={
-            artwork.teamNetwork
-          }
-          title="Be part of a trusted farming community"
-          description="Together for a prosperous tomorrow."
-        />
-
-        <Text
+  const renderPageBody = (
+    index: number,
+  ) => {
+    /*
+     * PAGE 1
+     * Welcome to FarmPrism
+     */
+    if (index === 0) {
+      return (
+        <View
           style={[
-            styles.inlineQuote,
+            styles.pageOneBody,
             {
-              fontSize:
-                15 * scale,
+              marginTop:
+                10 * scale,
+            },
+          ]}
+        >
+          <FeatureCard
+            scale={scale}
+            image={
+              artwork.farmerPortrait
+            }
+            title="Sell directly to verified buyers"
+            description="Get better prices for your hard work."
+          />
 
-              lineHeight:
-                18 * scale,
+          <FeatureCard
+            scale={scale}
+            image={
+              artwork.sproutingPlant
+            }
+            title="Manage your crops with ease"
+            description="Track, update and grow your produce."
+          />
 
+          <FeatureCard
+            scale={scale}
+            image={
+              artwork.teamNetwork
+            }
+            title="Be part of a trusted farming community"
+            description="Together for a prosperous tomorrow."
+          />
+
+          <Image
+            source={
+              artwork.betterFarmersQuote
+            }
+            resizeMode="contain"
+            fadeDuration={0}
+            style={{
+              width:
+                215 * scale,
+
+              height:
+                58 * scale,
+
+              marginTop:
+                3 * scale,
+            }}
+          />
+        </View>
+      );
+    }
+
+    /*
+     * PAGE 2
+     * Grow Smarter Every Season
+     */
+    if (index === 1) {
+      return (
+        <View
+          style={[
+            styles.pageTwoBody,
+            {
               marginTop:
                 5 * scale,
             },
           ]}
         >
-          {'“Better Farmers\nBrighter Tomorrows”'}
-        </Text>
-      </View>
-    );
-  }
+          <Image
+            source={
+              artwork.producePhone
+            }
+            resizeMode="contain"
+            fadeDuration={0}
+            style={{
+              width:
+                width * 0.82,
 
-  /*
-   * PAGE 2
-   */
-  if (index === 1) {
+              height:
+                Math.min(
+                  contentHeight *
+                    0.53,
+
+                  400 * scale,
+                ),
+            }}
+          />
+        </View>
+      );
+    }
+
+    /*
+     * PAGE 3
+     * Fair Prices
+     */
+    if (index === 2) {
+      return (
+        <View
+          style={[
+            styles.pageThreeBody,
+            {
+              marginTop:
+                7 * scale,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.marketComposition,
+              {
+                height:
+                  245 * scale,
+              },
+            ]}
+          >
+            <Image
+              source={
+                artwork.farmerProduce
+              }
+              resizeMode="contain"
+              fadeDuration={0}
+              style={[
+                styles.marketFarmer,
+                {
+                  width:
+                    width *
+                    0.52,
+
+                  height:
+                    230 *
+                    scale,
+
+                  left:
+                    -13 *
+                    scale,
+
+                  bottom: 0,
+                },
+              ]}
+            />
+
+            <View
+              style={[
+                styles.marketCard,
+                {
+                  width:
+                    width *
+                    0.58,
+
+                  right:
+                    10 *
+                    scale,
+
+                  top:
+                    2 *
+                    scale,
+
+                  borderRadius:
+                    13 *
+                    scale,
+
+                  padding:
+                    10 *
+                    scale,
+                },
+              ]}
+            >
+              <View style={styles.marketHeader}>
+                <Text
+                  style={[
+                    styles.marketTitle,
+                    {
+                      fontSize:
+                        12.5 *
+                        scale,
+                    },
+                  ]}
+                >
+                  Live Market Price
+                </Text>
+
+                <Text
+                  style={[
+                    styles.viewAll,
+                    {
+                      fontSize:
+                        10 *
+                        scale,
+                    },
+                  ]}
+                >
+                  View All →
+                </Text>
+              </View>
+
+              <MarketRow
+                scale={scale}
+                icon="🍅"
+                crop="Tomato"
+                price="₹1,420 / qtl"
+                movement="↑ 2.5%"
+              />
+
+              <MarketRow
+                scale={scale}
+                icon="🧅"
+                crop="Onion"
+                price="₹1,980 / qtl"
+                movement="↓ 1.3%"
+                negative
+              />
+
+              <MarketRow
+                scale={scale}
+                icon="🌾"
+                crop="Wheat"
+                price="₹2,183 / qtl"
+                movement="↑ 3.1%"
+              />
+
+              <MarketRow
+                scale={scale}
+                icon="🫛"
+                crop="Soybean"
+                price="₹3,200 / qtl"
+                movement="↑ 0.8%"
+              />
+            </View>
+          </View>
+
+          <Image
+            source={
+              artwork.betterMarketsQuote
+            }
+            resizeMode="contain"
+            fadeDuration={0}
+            style={{
+              width:
+                220 * scale,
+
+              height:
+                58 * scale,
+
+              marginTop:
+                4 * scale,
+            }}
+          />
+        </View>
+      );
+    }
+
+    /*
+     * PAGE 4
+     * Stronger Together
+     */
     return (
       <View
         style={[
-          styles.pageTwoBody,
+          styles.pageFourBody,
           {
             marginTop:
               5 * scale,
@@ -493,271 +729,39 @@ const renderPageBody = (
       >
         <Image
           source={
-            artwork.producePhone
+            artwork.teamRoles
           }
           resizeMode="contain"
           fadeDuration={0}
           style={{
             width:
-              width * 0.82,
+              width * 0.74,
 
             height:
-              Math.min(
-                contentHeight *
-                  0.53,
-
-                400 * scale,
-              ),
+              275 * scale,
           }}
-        />
-      </View>
-    );
-  }
-
-  /*
-   * PAGE 3
-   * Market artwork and quote get separate vertical zones.
-   */
-  if (index === 2) {
-    return (
-      <View
-        style={[
-          styles.pageThreeBody,
-          {
-            marginTop:
-              7 * scale,
-          },
-        ]}
-      >
-        <View
-          style={[
-            styles.marketComposition,
-            {
-              height:
-                245 * scale,
-            },
-          ]}
-        >
-          <Image
-            source={
-              artwork.farmerProduce
-            }
-            resizeMode="contain"
-            fadeDuration={0}
-            style={[
-              styles.marketFarmer,
-              {
-                width:
-                  width * 0.52,
-
-                height:
-                  230 * scale,
-
-                left:
-                  -13 * scale,
-
-                bottom: 0,
-              },
-            ]}
-          />
-
-          <View
-            style={[
-              styles.marketCard,
-              {
-                width:
-                  width * 0.58,
-
-                right:
-                  10 * scale,
-
-                top:
-                  2 * scale,
-
-                borderRadius:
-                  13 * scale,
-
-                padding:
-                  10 * scale,
-              },
-            ]}
-          >
-            <View
-              style={
-                styles.marketHeader
-              }
-            >
-              <Text
-                style={[
-                  styles.marketTitle,
-                  {
-                    fontSize:
-                      12.5 *
-                      scale,
-                  },
-                ]}
-              >
-                Live Market Price
-              </Text>
-
-              <Text
-                style={[
-                  styles.viewAll,
-                  {
-                    fontSize:
-                      10 *
-                      scale,
-                  },
-                ]}
-              >
-                View All →
-              </Text>
-            </View>
-
-            <MarketRow
-              scale={scale}
-              icon="🍅"
-              crop="Tomato"
-              price="₹1,420 / qtl"
-              movement="↑ 2.5%"
-            />
-
-            <MarketRow
-              scale={scale}
-              icon="🧅"
-              crop="Onion"
-              price="₹1,980 / qtl"
-              movement="↓ 1.3%"
-              negative
-            />
-
-            <MarketRow
-              scale={scale}
-              icon="🌾"
-              crop="Wheat"
-              price="₹2,183 / qtl"
-              movement="↑ 3.1%"
-            />
-
-            <MarketRow
-              scale={scale}
-              icon="🫛"
-              crop="Soybean"
-              price="₹3,200 / qtl"
-              movement="↑ 0.8%"
-            />
-          </View>
-        </View>
-
-        <Text
-          style={[
-            styles.inlineQuote,
-            {
-              fontSize:
-                15 * scale,
-
-              lineHeight:
-                18 * scale,
-
-              marginTop:
-                4 * scale,
-            },
-          ]}
-        >
-          {'Better Markets\nBrighter Tomorrows'}
-        </Text>
-      </View>
-    );
-  }
-
-  /*
-   * PAGE 4
-   * Network followed by tagline instead of overlaying it.
-   */
-  return (
-    <View
-      style={[
-        styles.pageFourBody,
-        {
-          marginTop:
-            5 * scale,
-        },
-      ]}
-    >
-      <Image
-        source={
-          artwork.teamRoles
-        }
-        resizeMode="contain"
-        fadeDuration={0}
-        style={{
-          width:
-            width * 0.74,
-
-          height:
-            275 * scale,
-        }}
-      />
-
-      <Text
-        style={[
-          styles.togetherText,
-          {
-            fontSize:
-              17 * scale,
-
-            lineHeight:
-              20 * scale,
-
-            marginTop:
-              -3 * scale,
-          },
-        ]}
-      >
-        {'Together\nWe Build a Better Tomorrow'}
-      </Text>
-
-      <View
-        style={[
-          styles.sproutDivider,
-          {
-            marginTop:
-              4 * scale,
-          },
-        ]}
-      >
-        <View
-          style={
-            styles.sproutLine
-          }
         />
 
         <Image
           source={
-            artwork.sproutingPlant
+            artwork.togetherTomorrow
           }
           resizeMode="contain"
+          fadeDuration={0}
           style={{
             width:
-              25 * scale,
+              260 * scale,
 
             height:
-              25 * scale,
+              72 * scale,
 
-            marginHorizontal:
-              8 * scale,
+            marginTop:
+              -2 * scale,
           }}
         />
-
-        <View
-          style={
-            styles.sproutLine
-          }
-        />
       </View>
-    </View>
-  );
-};
+    );
+  };
 
   return (
     <View style={styles.root}>
@@ -765,7 +769,12 @@ const renderPageBody = (
 
       <FlatList
         ref={listRef}
-        data={[0, 1, 2, 3]}
+        data={[
+          0,
+          1,
+          2,
+          3,
+        ]}
         horizontal
         pagingEnabled
         bounces={false}
@@ -781,8 +790,11 @@ const renderPageBody = (
           index,
         ) => ({
           length: width,
+
           offset:
-            width * index,
+            width *
+            index,
+
           index,
         })}
         renderItem={({ item }) => (
@@ -795,7 +807,7 @@ const renderPageBody = (
               },
             ]}
           >
-            {/* Main content area */}
+            {/* Main UI */}
             <View
               style={[
                 styles.contentArea,
@@ -805,25 +817,30 @@ const renderPageBody = (
 
                   paddingTop:
                     safeTop +
-                    8 * scale,
+                    8 *
+                    scale,
                 },
               ]}
             >
               {/* Decorative leaves */}
+
               <Image
                 pointerEvents="none"
                 source={
                   artwork.topLeftLeaves
                 }
                 resizeMode="contain"
+                fadeDuration={0}
                 style={[
                   styles.topLeftLeaves,
                   {
                     width:
-                      150 * scale,
+                      150 *
+                      scale,
 
                     height:
-                      145 * scale,
+                      145 *
+                      scale,
                   },
                 ]}
               />
@@ -834,19 +851,23 @@ const renderPageBody = (
                   artwork.topRightLeaves
                 }
                 resizeMode="contain"
+                fadeDuration={0}
                 style={[
                   styles.topRightLeaves,
                   {
                     width:
-                      150 * scale,
+                      150 *
+                      scale,
 
                     height:
-                      145 * scale,
+                      145 *
+                      scale,
                   },
                 ]}
               />
 
-              {/* Common FarmPrism logo */}
+              {/* Common approved logo */}
+
               <Image
                 source={artwork.logo}
                 resizeMode="contain"
@@ -856,31 +877,40 @@ const renderPageBody = (
                   styles.logo,
                   {
                     width:
-                      91 * scale,
+                      91 *
+                      scale,
 
                     height:
-                      91 * scale,
+                      91 *
+                      scale,
                   },
                 ]}
               />
+
+              {/* Real coded title */}
 
               <PageTitle
                 index={item}
                 scale={scale}
               />
 
+              {/* Real coded description */}
+
               <Text
                 style={[
                   styles.description,
                   {
                     fontSize:
-                      15 * scale,
+                      15 *
+                      scale,
 
                     lineHeight:
-                      20 * scale,
+                      20 *
+                      scale,
 
                     marginTop:
-                      8 * scale,
+                      8 *
+                      scale,
                   },
                 ]}
               >
@@ -891,68 +921,14 @@ const renderPageBody = (
                 }
               </Text>
 
+              {/* Page specific content */}
+
               {renderPageBody(
                 item,
               )}
 
-              {/* Page 4 tagline */}
-              {item === 3 && (
-                <View
-                  style={[
-                    styles.togetherArea,
-                    {
-                      bottom:
-                        landscapeHeight -
-                        4 * scale,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.togetherText,
-                      {
-                        fontSize:
-                          18 *
-                          scale,
+              {/* Shared farm landscape */}
 
-                        lineHeight:
-                          22 *
-                          scale,
-                      },
-                    ]}
-                  >
-                    {'Together\nWe Build a Better Tomorrow'}
-                  </Text>
-
-                  <View style={styles.sproutDivider}>
-                    <View style={styles.sproutLine} />
-
-                    <Image
-                      source={
-                        artwork.sproutingPlant
-                      }
-                      resizeMode="contain"
-                      style={{
-                        width:
-                          27 *
-                          scale,
-
-                        height:
-                          27 *
-                          scale,
-
-                        marginHorizontal:
-                          8 *
-                          scale,
-                      }}
-                    />
-
-                    <View style={styles.sproutLine} />
-                  </View>
-                </View>
-              )}
-
-              {/* Shared bottom landscape */}
               <Image
                 pointerEvents="none"
                 source={
@@ -970,7 +946,8 @@ const renderPageBody = (
               />
             </View>
 
-            {/* Bottom white footer */}
+            {/* Footer */}
+
             <View
               style={[
                 styles.footer,
@@ -978,18 +955,22 @@ const renderPageBody = (
                   height:
                     footerHeight,
 
+                  paddingTop:
+                    8 *
+                    scale,
+
                   paddingBottom:
                     safeBottom +
-                    9 * scale,
-
-                  paddingTop:
-                    10 * scale,
+                    9 *
+                    scale,
 
                   borderTopLeftRadius:
-                    28 * scale,
+                    31 *
+                    scale,
 
                   borderTopRightRadius:
-                    28 * scale,
+                    31 *
+                    scale,
                 },
               ]}
             >
@@ -1011,19 +992,21 @@ const renderPageBody = (
                     item,
                   )
                 }
-                style={({
-                  pressed,
-                }) => [
+                style={({ pressed }) => [
                   styles.primaryButton,
+
                   {
                     height:
-                      54 * scale,
+                      50 *
+                      scale,
 
                     borderRadius:
-                      12 * scale,
+                      12 *
+                      scale,
 
                     marginTop:
-                      12 * scale,
+                      9 *
+                      scale,
                   },
 
                   pressed &&
@@ -1050,7 +1033,12 @@ const renderPageBody = (
                     styles.primaryArrow,
                     {
                       fontSize:
-                        25 * scale,
+                        24 *
+                        scale,
+
+                      right:
+                        22 *
+                        scale,
                     },
                   ]}
                 >
@@ -1068,37 +1056,49 @@ const renderPageBody = (
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+
     backgroundColor:
       '#FCFBF3',
+
     overflow: 'hidden',
   },
 
   page: {
     flex: 1,
+
     backgroundColor:
       '#FCFBF3',
   },
 
   contentArea: {
     width: '100%',
+
     alignItems: 'center',
+
     position: 'relative',
+
     overflow: 'hidden',
   },
 
   topLeftLeaves: {
     position: 'absolute',
+
     left: -29,
     top: -22,
+
     zIndex: 0,
+
     opacity: 0.94,
   },
 
   topRightLeaves: {
     position: 'absolute',
+
     right: -30,
     top: -23,
+
     zIndex: 0,
+
     opacity: 0.86,
   },
 
@@ -1108,11 +1108,13 @@ const styles = StyleSheet.create({
 
   title: {
     width: '94%',
+
     marginTop: 5,
 
     textAlign: 'center',
 
     fontFamily: 'serif',
+
     fontWeight: '700',
 
     zIndex: 3,
@@ -1140,9 +1142,17 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
 
+  /*
+   * PAGE 1
+   */
+
   pageOneBody: {
     width: '88%',
-    gap: 9,
+
+    alignItems: 'center',
+
+    gap: 8,
+
     zIndex: 3,
   },
 
@@ -1150,20 +1160,25 @@ const styles = StyleSheet.create({
     width: '100%',
 
     flexDirection: 'row',
+
     alignItems: 'center',
 
     backgroundColor:
       'rgba(248,250,239,0.96)',
 
     borderWidth: 1,
+
     borderColor:
       '#E2E8D5',
 
     shadowColor:
       '#36543B',
 
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
+    shadowOpacity:
+      0.08,
+
+    shadowRadius:
+      6,
 
     shadowOffset: {
       width: 0,
@@ -1177,16 +1192,19 @@ const styles = StyleSheet.create({
     height: '100%',
 
     alignItems: 'center',
+
     justifyContent: 'center',
   },
 
   featureTextArea: {
     flex: 1,
+
     paddingRight: 5,
   },
 
   featureTitle: {
     color: '#176B35',
+
     fontWeight: '800',
   },
 
@@ -1196,29 +1214,44 @@ const styles = StyleSheet.create({
     color: '#66717A',
   },
 
+  /*
+   * PAGE 2
+   */
+
   pageTwoBody: {
     flex: 1,
 
     width: '100%',
 
     alignItems: 'center',
-    justifyContent: 'flex-start',
+
+    justifyContent:
+      'flex-start',
 
     zIndex: 3,
   },
 
-  pageThreeBody: {
-    flex: 1,
+  /*
+   * PAGE 3
+   */
 
+  pageThreeBody: {
+    width: '100%',
+
+    alignItems: 'center',
+
+    zIndex: 3,
+  },
+
+  marketComposition: {
     width: '100%',
 
     position: 'relative',
-
-    zIndex: 3,
   },
 
   marketFarmer: {
     position: 'absolute',
+
     zIndex: 2,
   },
 
@@ -1226,13 +1259,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
 
     backgroundColor:
-      'rgba(255,255,255,0.97)',
+      'rgba(255,255,255,0.98)',
 
     shadowColor:
       '#27452F',
 
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
+    shadowOpacity:
+      0.12,
+
+    shadowRadius:
+      8,
 
     shadowOffset: {
       width: 0,
@@ -1248,6 +1284,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
 
     alignItems: 'center',
+
     justifyContent:
       'space-between',
 
@@ -1261,11 +1298,13 @@ const styles = StyleSheet.create({
 
   marketTitle: {
     color: '#165C34',
+
     fontWeight: '800',
   },
 
   viewAll: {
     color: '#1A7139',
+
     fontWeight: '700',
   },
 
@@ -1289,19 +1328,21 @@ const styles = StyleSheet.create({
   },
 
   priceArea: {
+    width: '47%',
+
     alignItems:
       'flex-start',
-
-    width: '47%',
   },
 
   priceText: {
     color: '#172D43',
+
     fontWeight: '800',
   },
 
   movementText: {
     marginTop: 1,
+
     fontWeight: '800',
   },
 
@@ -1313,9 +1354,11 @@ const styles = StyleSheet.create({
     color: '#D9342B',
   },
 
-  pageFourBody: {
-    flex: 1,
+  /*
+   * PAGE 4
+   */
 
+  pageFourBody: {
     width: '100%',
 
     alignItems: 'center',
@@ -1323,72 +1366,26 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
 
-  quote: {
-    position: 'absolute',
-
-    left: 0,
-    right: 0,
-
-    zIndex: 5,
-
-    color: '#177239',
-
-    textAlign: 'center',
-
-    fontFamily: 'serif',
-
-    fontStyle: 'italic',
-    fontWeight: '700',
-  },
-
-  togetherArea: {
-    position: 'absolute',
-
-    left: 0,
-    right: 0,
-
-    zIndex: 5,
-
-    alignItems: 'center',
-  },
-
-  togetherText: {
-    color: '#1A3850',
-
-    textAlign: 'center',
-
-    fontWeight: '500',
-  },
-
-  sproutDivider: {
-    width: 125,
-
-    flexDirection: 'row',
-
-    alignItems: 'center',
-
-    marginTop: 5,
-  },
-
-  sproutLine: {
-    flex: 1,
-    height: 1,
-
-    backgroundColor:
-      '#477B4F',
-  },
+  /*
+   * Shared farmland
+   */
 
   landscape: {
     position: 'absolute',
 
-    left: 0,
-    right: 0,
-    bottom: -1,
+    left: -8,
+    right: -8,
 
-    width: '100%',
+    bottom: -3,
+
+    width: '104%',
 
     zIndex: 1,
   },
+
+  /*
+   * Footer
+   */
 
   footer: {
     position: 'absolute',
@@ -1407,8 +1404,11 @@ const styles = StyleSheet.create({
     shadowColor:
       '#2D4A35',
 
-    shadowOpacity: 0.08,
-    shadowRadius: 9,
+    shadowOpacity:
+      0.08,
+
+    shadowRadius:
+      9,
 
     shadowOffset: {
       width: 0,
@@ -1422,6 +1422,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
 
     alignItems: 'center',
+
     justifyContent: 'center',
 
     gap: 10,
@@ -1445,6 +1446,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
 
     alignItems: 'center',
+
     justifyContent: 'center',
 
     backgroundColor:
@@ -1453,8 +1455,11 @@ const styles = StyleSheet.create({
     shadowColor:
       '#173F25',
 
-    shadowOpacity: 0.16,
-    shadowRadius: 7,
+    shadowOpacity:
+      0.16,
+
+    shadowRadius:
+      7,
 
     shadowOffset: {
       width: 0,
@@ -1466,11 +1471,17 @@ const styles = StyleSheet.create({
 
   primaryButtonText: {
     color: '#FFFFFF',
+
     fontWeight: '800',
   },
 
+  /*
+   * Arrow is absolute so
+   * Next/Get Started remains
+   * perfectly centered.
+   */
   primaryArrow: {
-    marginLeft: 18,
+    position: 'absolute',
 
     color: '#FFFFFF',
   },
