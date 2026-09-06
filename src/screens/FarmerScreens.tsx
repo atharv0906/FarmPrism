@@ -60,8 +60,14 @@ export function FarmerPersonalScreen({ navigation }: NativeStackScreenProps<Farm
 
   return (
     <Canvas>
-      <Pressable accessibilityRole="button" accessibilityLabel="Choose a different role" style={styles.back} onPress={clearSelectedRole} />
-      <Pressable style={styles.help} onPress={() => Alert.alert('Help', 'Enter your personal details exactly as shown on your official farmer record.')} />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Choose a different role"
+        style={styles.back}
+        onPress={clearSelectedRole}
+      >
+        <Text style={styles.backText}>← Change Role</Text>
+      </Pressable>     <Pressable style={styles.help} onPress={() => Alert.alert('Help', 'Enter your personal details exactly as shown on your official farmer record.')} />
       <TextInput value={draft.fullName} onChangeText={v => update({ fullName: v })} placeholder="" style={[styles.pInput, styles.name]} />
       <TextInput value={draft.farmerId} onChangeText={v => update({ farmerId: v.replace(/\D/g, '').slice(0, 11) })} keyboardType="number-pad" placeholder="" style={[styles.pInput, styles.farmerId]} />
       <TextInput value={draft.mobileNumber || user?.phone?.replace('+91', '') || ''} onChangeText={v => update({ mobileNumber: v.replace(/\D/g, '').slice(0, 10) })} keyboardType="phone-pad" placeholder="" style={[styles.pInput, styles.mobile]} />
@@ -138,8 +144,27 @@ export function ProfileSubmittedScreen({ navigation }: NativeStackScreenProps<Fa
 
 const styles = StyleSheet.create({
   canvas: { flex: 1, backgroundColor: '#fff' },
-  back: { position: 'absolute', left: '5%', top: '3%', width: '9%', height: '5%' },
-  help: { position: 'absolute', right: '5%', top: '3%', width: '13%', height: '5%' },
+back: {
+  position: 'absolute',
+  left: '5%',
+  top: '3%',
+  minWidth: 120,
+  height: 42,
+  paddingHorizontal: 12,
+  borderRadius: 12,
+  backgroundColor: 'rgba(255,255,255,0.94)',
+  borderWidth: 1,
+  borderColor: '#1B6B35',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 20,
+},
+
+backText: {
+  color: '#1B6B35',
+  fontSize: 14,
+  fontWeight: '700',
+},  help: { position: 'absolute', right: '5%', top: '3%', width: '13%', height: '5%' },
   pInput: { position: 'absolute', left: '8%', width: '48%', height: '4.2%', backgroundColor: 'transparent', color: '#24352B', fontSize: 14 },
   name: { top: '25.0%' },
   farmerId: { top: '30.2%' },

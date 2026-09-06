@@ -15,6 +15,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import { useAuth } from '../hooks/useAuth';
 import { useRole } from '../hooks/useRole';
 import type { OnboardingStackParamList } from '../navigation/OnboardingNavigator';
 import type { ApplicationRole } from '../types/role';
@@ -83,6 +84,8 @@ const roleCards: RoleCardDefinition[] = [
 export function RoleSelectionScreen({ navigation }: Props) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const { logout } = useAuth();
+
   const {
     availableRoles,
     error: roleError,
@@ -504,9 +507,17 @@ export function RoleSelectionScreen({ navigation }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Back"
             onPress={() => {
-              if (navigation.canGoBack()) {
-                navigation.goBack();
-              }
+              Alert.alert(
+                'Back to Login?',
+                'You will be signed out and returned to the login flow.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Go Back',
+                    onPress: () => void logout(),
+                  },
+                ],
+              );
             }}
             style={({ pressed }) => [
               styles.backButton,
