@@ -176,7 +176,6 @@ export function LanguageSelectionScreen({
 
       {/* Top left decorative leaves */}
       <Image
-        pointerEvents="none"
         source={artwork.topLeftLeaves}
         resizeMode="contain"
         style={[
@@ -190,7 +189,6 @@ export function LanguageSelectionScreen({
 
       {/* Top right decorative leaves */}
       <Image
-        pointerEvents="none"
         source={artwork.topRightLeaves}
         resizeMode="contain"
         style={[
@@ -660,7 +658,6 @@ export function LanguageSelectionScreen({
 
       {/* Footer above landscape */}
       <View
-        pointerEvents="none"
         style={[
           styles.footerOverlay,
           {
@@ -724,7 +721,6 @@ export function LanguageSelectionScreen({
 
       {/* Landscape ends ABOVE Android navigation */}
       <Image
-        pointerEvents="none"
         source={
           artwork.bottomLandscape
         }
@@ -744,7 +740,6 @@ export function LanguageSelectionScreen({
 
       {/* Protect Android navigation area */}
       <View
-        pointerEvents="none"
         style={[
           styles.systemBottomGuard,
           {

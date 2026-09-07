@@ -166,7 +166,6 @@ export function RoleSelectionScreen({ navigation }: Props) {
         source={assets.topLeftLeaves}
         resizeMode="contain"
         fadeDuration={0}
-        pointerEvents="none"
         style={{
           position: 'absolute',
           left: -19 * s,
@@ -181,7 +180,6 @@ export function RoleSelectionScreen({ navigation }: Props) {
         source={assets.topRightLeaves}
         resizeMode="contain"
         fadeDuration={0}
-        pointerEvents="none"
         style={{
           position: 'absolute',
           right: -18 * s,
@@ -244,7 +242,6 @@ export function RoleSelectionScreen({ navigation }: Props) {
             source={assets.dividerSprout}
             resizeMode="contain"
             fadeDuration={0}
-            pointerEvents="none"
             style={{
               width: 195 * s,
               height: 64 * s,
@@ -391,7 +388,6 @@ export function RoleSelectionScreen({ navigation }: Props) {
 
                 {isFpo && (
                   <View
-                    pointerEvents="none"
                     style={[
                       styles.comingSoonDot,
                       {
@@ -426,7 +422,6 @@ export function RoleSelectionScreen({ navigation }: Props) {
             source={assets.bottomLeafCluster}
             resizeMode="contain"
             fadeDuration={0}
-            pointerEvents="none"
             style={{
               position: 'absolute',
               left: 28 * s,
@@ -466,7 +461,6 @@ export function RoleSelectionScreen({ navigation }: Props) {
             source={assets.bottomLeafCluster}
             resizeMode="contain"
             fadeDuration={0}
-            pointerEvents="none"
             style={{
               position: 'absolute',
               right: 10 * s,
@@ -602,7 +596,6 @@ export function RoleSelectionScreen({ navigation }: Props) {
             marginTop: -4 * s,
             overflow: 'hidden',
           }}
-          pointerEvents="none"
         >
           <Image
             source={assets.bottomLandscape}

@@ -261,7 +261,6 @@ function ReferenceIllustration({
 }) {
   return (
     <View
-      pointerEvents="none"
       style={[
         styles.referenceIllustrationFrame,
         {
@@ -503,7 +502,6 @@ export function LanguageSelectionScreen({
       />
 
       <View
-        pointerEvents="none"
         style={StyleSheet.absoluteFill}
       >
         <View style={languageRowMaskStyles.englishTop} />

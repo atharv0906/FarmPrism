@@ -229,7 +229,6 @@ export function SplashScreen() {
 
       {/* Bottom content */}
       <View
-        pointerEvents="none"
         style={[
           styles.lowerContent,
           {
@@ -343,7 +342,7 @@ const styles = StyleSheet.create({
   },
 
   background: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     width: '100%',
     height: '100%',
   },

@@ -202,7 +202,6 @@ export function PhoneLoginScreen({ navigation }: Props) {
                             resizeMode="contain"
                             fadeDuration={0}
                             style={[styles.absolute, box(-12, -15, 258, 210)]}
-                            pointerEvents="none"
                         />
 
                         <Image
@@ -210,11 +209,9 @@ export function PhoneLoginScreen({ navigation }: Props) {
                             resizeMode="contain"
                             fadeDuration={0}
                             style={[styles.absolute, box(620, -12, 250, 210)]}
-                            pointerEvents="none"
                         />
 
                         <View
-                            pointerEvents="none"
                             style={[
                                 styles.quoteWrap,
                                 {
@@ -264,7 +261,6 @@ export function PhoneLoginScreen({ navigation }: Props) {
                                     box(0, 0, 617, 1296),
                                     { overflow: 'hidden', borderRadius: 54 * scale },
                                 ]}
-                                pointerEvents="none"
                             />
 
                             <View
@@ -598,7 +594,6 @@ export function PhoneLoginScreen({ navigation }: Props) {
                                             source={assets.actionLeaf}
                                             resizeMode="contain"
                                             fadeDuration={0}
-                                            pointerEvents="none"
                                             style={{
                                                 position: 'absolute',
                                                 right: 23 * scale,
@@ -669,7 +664,6 @@ export function PhoneLoginScreen({ navigation }: Props) {
                                     source={assets.actionLeaf}
                                     resizeMode="contain"
                                     fadeDuration={0}
-                                    pointerEvents="none"
                                     style={{
                                         position: 'absolute',
                                         right: 18 * scale,
@@ -728,7 +722,6 @@ export function PhoneLoginScreen({ navigation }: Props) {
                         />
 
                         <View
-                            pointerEvents="none"
                             style={[
                                 styles.absolute,
                                 box(160, 435, 533, 182),
@@ -777,7 +770,6 @@ export function PhoneLoginScreen({ navigation }: Props) {
                             source={assets.dividerSprout}
                             resizeMode="contain"
                             fadeDuration={0}
-                            pointerEvents="none"
                             style={[styles.absolute, box(329, 625, 195, 49)]}
                         />
                     </View>
