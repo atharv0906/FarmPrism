@@ -1,4 +1,17 @@
+import type { ImageSourcePropType } from 'react-native';
 import { dashboardAssets as a } from './dashboardAssets';
+
+export type DashboardOpportunity = {
+  cropId: string;
+  cropName: string;
+  image: ImageSourcePropType;
+  demandLevel?: string;
+  verifiedBuyerCount?: number;
+  highestOffer?: number;
+  marketReference?: number;
+  differencePerUnit?: number;
+  unit: string;
+};
 
 export type DashboardProfile = {
   fullName: string; village: string; district: string; state: string;
@@ -13,7 +26,7 @@ export type DashboardData = {
   fullName: string; location: string;
   farm: { crops: number; acres: string; quintals: string };
   notifications: { unreadCount: number };
-  opportunity: { crop: string; buyers: string; price: string; reference: string; advantage: string };
+  opportunity: DashboardOpportunity | null;
   market: { name: string; price: string; trend: string; image: number }[];
   activity: (Action & { value: string; action: string })[];
   quickActions: Action[];
@@ -23,7 +36,7 @@ export type DashboardData = {
 // Approved UI prototype only. These values do not represent backend records.
 const prototype: Omit<DashboardData, 'fullName' | 'location' | 'farm'> = {
   notifications: { unreadCount: 0 },
-  opportunity: { crop: 'Tomato', buyers: '3 verified buyers are interested', price: '₹2,550', reference: '₹2,350', advantage: '₹200 more' },
+  opportunity: { cropId: 'prototype-tomato', cropName: 'Tomato', image: a.tomato, demandLevel: 'High Demand', verifiedBuyerCount: 3, highestOffer: 2550, marketReference: 2350, differencePerUnit: 200, unit: 'Quintal' },
   market: [
     { name: 'Onion', price: '₹1,800', trend: '+2.5%', image: a.onion },
     { name: 'Potato', price: '₹2,200', trend: '+1.8%', image: a.potato },
@@ -49,9 +62,13 @@ const prototype: Omit<DashboardData, 'fullName' | 'location' | 'farm'> = {
   ],
 };
 
-export function createDashboardData(draft: DashboardProfile): DashboardData {
+export function createDashboardData(
+  draft: DashboardProfile,
+  opportunity: DashboardOpportunity | null = prototype.opportunity,
+): DashboardData {
   return {
     ...prototype,
+    opportunity,
     fullName: draft.fullName.trim() || 'Farmer',
     location: [draft.village, draft.district, draft.state].map(value => value.trim()).filter(Boolean).join(', ') || 'Your farm location',
     farm: { crops: draft.crops.length, acres: draft.farmSize.trim() || '—', quintals: '12' },
