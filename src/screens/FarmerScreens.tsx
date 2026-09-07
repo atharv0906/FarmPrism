@@ -176,17 +176,13 @@ function FitCanvas({ children }: { children: ReactNode }) {
 
   const safeBottom = Math.max(insets.bottom, 18);
 
-  // IMPORTANT:
-  // Scale from WIDTH only.
-  // The 853×1844 references were designed to fill the phone width.
-  // Do not shrink the complete design just to force it above Android nav.
+  // Scale from WIDTH only so the 853×1844 reference keeps its visual size.
   const scale = width / DESIGN_W;
 
   const scaledW = DESIGN_W * scale;
   const scaledH = DESIGN_H * scale;
 
-  // React Native scales around the center of the design View.
-  // These offsets keep the scaled visual aligned to the wrapper.
+  // React Native scales around the center; compensate to align design (0,0).
   const offsetX = (DESIGN_W - scaledW) / 2;
   const offsetY = (DESIGN_H - scaledH) / 2;
 
@@ -534,7 +530,13 @@ function SecondaryButton({ box, onPress }: { box: Frame; onPress: () => void }) 
   );
 }
 
-function Footer({ submitted = false }: { submitted?: boolean }) {
+function Footer({
+  submitted = false,
+  review = false,
+}: {
+  submitted?: boolean;
+  review?: boolean;
+}) {
   if (submitted) {
     return (
       <>
@@ -545,13 +547,49 @@ function Footer({ submitted = false }: { submitted?: boolean }) {
           style={frame([315, 1270, 225, 55])}
         />
         <Text style={[frame([240, 1310, 375, 100]), styles.submittedQuote]}>
-          Together{`\n`}for a Better Tomorrow
+          Together{`
+`}for a Better Tomorrow
         </Text>
         <Image
           source={A.submittedLandscape}
           resizeMode="cover"
           fadeDuration={0}
           style={frame([0, 1380, 853, 464])}
+        />
+      </>
+    );
+  }
+
+  if (review) {
+    return (
+      <>
+        <Image
+          source={A.divider}
+          resizeMode="contain"
+          fadeDuration={0}
+          style={frame([325, 1595, 205, 45])}
+        />
+        <Text style={[frame([265, 1628, 325, 60]), styles.footerQuote]}>
+          “Better Farmers{`
+`}Brighter Tomorrows”
+        </Text>
+        <Image
+          source={A.landscape}
+          resizeMode="cover"
+          fadeDuration={0}
+          style={frame([0, 1660, 853, 184])}
+        />
+        <Image
+          source={A.bottomLeft}
+          resizeMode="contain"
+          fadeDuration={0}
+          style={frame([-22, 1605, 215, 239])}
+        />
+        <Image
+          source={A.bottomRight}
+          resizeMode="contain"
+          fadeDuration={0}
+          style={frame([660, 1605, 215, 239])}
         />
       </>
     );
@@ -566,7 +604,8 @@ function Footer({ submitted = false }: { submitted?: boolean }) {
         style={frame([325, 1584, 205, 45])}
       />
       <Text style={[frame([280, 1620, 295, 58]), styles.footerQuote]}>
-        “Better Farmers{`\n`}Brighter Tomorrows”
+        “Better Farmers{`
+`}Brighter Tomorrows”
       </Text>
       <Image
         source={A.landscape}
@@ -1032,18 +1071,62 @@ function ReviewSection({
 }) {
   return (
     <View style={[frame(box), styles.reviewCard]}>
-      <Image source={icon} resizeMode="contain" fadeDuration={0} style={frame([22, 20, 82, 82])} />
-      <Text style={[frame([128, 28, 400, 45]), styles.reviewTitle]}>{title}</Text>
-      <Pressable onPress={onEdit} style={[frame([625, 25, 110, 48]), styles.editButton]}>
+      <Image
+        source={icon}
+        resizeMode="contain"
+        fadeDuration={0}
+        style={frame([22, 20, 92, 92])}
+      />
+
+      <Text
+        numberOfLines={1}
+        style={[
+          frame([128, 27, 420, 50]),
+          styles.reviewTitle,
+          { fontSize: 34, lineHeight: 43 },
+        ]}
+      >
+        {title}
+      </Text>
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Edit ${title}`}
+        onPress={onEdit}
+        style={[frame([615, 24, 120, 52]), styles.editButton]}
+      >
         <Text style={styles.editPen}>✎</Text>
         <Text style={styles.editText}>Edit</Text>
       </Pressable>
 
-      <View style={frame([128, 98, 580, box[3] - 115])}>
+      <View style={frame([128, 100, 580, box[3] - 115])}>
         {rows.map((row, index) => (
-          <View key={row.label} style={[styles.reviewRow, { top: index * 47 }]}>
-            <Text style={styles.reviewLabel}>{row.label}</Text>
-            <Text style={styles.reviewValue}>{row.value}</Text>
+          <View
+            key={row.label}
+            style={[
+              styles.reviewRow,
+              {
+                top: index * 50,
+                height: 45,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.reviewLabel,
+                { fontSize: 23, lineHeight: 31 },
+              ]}
+            >
+              {row.label}
+            </Text>
+            <Text
+              style={[
+                styles.reviewValue,
+                { fontSize: 23, lineHeight: 31 },
+              ]}
+            >
+              {row.value}
+            </Text>
           </View>
         ))}
       </View>
@@ -1066,22 +1149,39 @@ export function FarmerReviewScreen({
   return (
     <FitCanvas>
       <Background />
-      <Header step={3} review onBack={() => navigation.goBack()} />
+
+      {/* Review reference places the whole header slightly higher than steps 1–2. */}
+      <View
+        pointerEvents="box-none"
+        style={[
+          StyleSheet.absoluteFill,
+          { transform: [{ translateY: -45 }] },
+        ]}
+      >
+        <Header
+          step={3}
+          review
+          onBack={() => navigation.goBack()}
+        />
+      </View>
 
       <ReviewSection
-        box={[48, 540, 757, 250]}
+        box={[48, 550, 757, 260]}
         icon={A.person}
         title="Personal Details"
         onEdit={() => navigation.navigate('Personal')}
         rows={[
           { label: 'Full Name', value: draft.fullName },
           { label: 'Farmer ID', value: draft.farmerId },
-          { label: 'Mobile Number', value: draft.mobileNumber ? `+91 ${draft.mobileNumber}` : '' },
+          {
+            label: 'Mobile Number',
+            value: draft.mobileNumber ? `+91 ${draft.mobileNumber}` : '',
+          },
         ]}
       />
 
       <ReviewSection
-        box={[48, 810, 757, 395]}
+        box={[48, 825, 757, 405]}
         icon={A.farm}
         title="Farm Details"
         onEdit={() => navigation.navigate('FarmDetails')}
@@ -1090,23 +1190,52 @@ export function FarmerReviewScreen({
           { label: 'District', value: draft.district },
           { label: 'Taluka / Tehsil', value: draft.taluka },
           { label: 'Village', value: draft.village },
-          { label: 'Farm Size (in acres)', value: draft.farmSize ? `${draft.farmSize} Acres` : '' },
-          { label: 'Main Crops Grown', value: draft.crops.join(', ') },
+          {
+            label: 'Farm Size (in acres)',
+            value: draft.farmSize ? `${draft.farmSize} Acres` : '',
+          },
+          {
+            label: 'Main Crops Grown',
+            value: draft.crops.join(', '),
+          },
         ]}
       />
 
-      <View style={[frame([48, 1225, 757, 175]), styles.infoCard]}>
-        <Image source={A.shield} resizeMode="contain" fadeDuration={0} style={frame([30, 33, 100, 105])} />
-        <Text style={[frame([155, 35, 470, 35]), styles.infoTitle]}>Your details are ready</Text>
-        <Text style={[frame([155, 78, 485, 65]), styles.infoBody]}>
+      <View style={[frame([48, 1245, 757, 180]), styles.infoCard]}>
+        <Image
+          source={A.shield}
+          resizeMode="contain"
+          fadeDuration={0}
+          style={frame([30, 34, 104, 108])}
+        />
+        <Text style={[frame([155, 35, 490, 36]), styles.infoTitle]}>
+          Your details are ready
+        </Text>
+        <Text style={[frame([155, 79, 500, 70]), styles.infoBody]}>
           Please check your information carefully before submitting.
         </Text>
-        <Image source={A.leaf} resizeMode="contain" fadeDuration={0} style={frame([650, 90, 75, 60])} />
+        <Image
+          source={A.leaf}
+          resizeMode="contain"
+          fadeDuration={0}
+          style={frame([650, 92, 78, 64])}
+        />
       </View>
 
-      <PrimaryButton label="Submit" box={[48, 1415, 757, 78]} onPress={submit} loading={submitting} disabled={submitting} />
-      <SecondaryButton box={[48, 1510, 757, 70]} onPress={() => navigation.goBack()} />
-      <Footer />
+      <PrimaryButton
+        label="Submit"
+        box={[48, 1440, 757, 82]}
+        onPress={submit}
+        loading={submitting}
+        disabled={submitting}
+      />
+
+      <SecondaryButton
+        box={[48, 1535, 757, 72]}
+        onPress={() => navigation.goBack()}
+      />
+
+      <Footer review />
     </FitCanvas>
   );
 }
@@ -1146,203 +1275,35 @@ export function ProfileSubmittedScreen({
   );
 }
 
-type DashboardMetric = {
-  icon: string;
-  label: string;
-  value: string;
-  detail: string;
-};
-
-type DashboardAction = {
-  icon: string;
-  label: string;
-};
-
-const dashboardMetrics: DashboardMetric[] = [
-  { icon: '◌', label: 'Produce listed', value: '12.4 Ton', detail: '↑ 8%' },
-  { icon: '⌁', label: 'Market offers', value: '4', detail: '↑ 2' },
-  { icon: '□', label: 'Active orders', value: '6', detail: '↑ 1' },
-  { icon: '₹', label: 'This month', value: '₹ 1,24,560', detail: '↑ 12%' },
-];
-
-const dashboardActions: DashboardAction[] = [
-  { icon: '▤', label: 'Add Produce' },
-  { icon: '⌁', label: 'Sell Produce' },
-  { icon: '▢', label: 'Orders' },
-  { icon: '▱', label: 'Logistics' },
-  { icon: '•••', label: 'Feedback' },
-];
-
-const dashboardActivity = [
-  { icon: '⌁', text: 'New offer received for Tomato', time: '2m ago' },
-  { icon: '□', text: 'Order confirmed by GreenMart Traders', time: '4h ago' },
-  { icon: '▱', text: 'Delivery completed successfully', time: '1d ago' },
-  { icon: '★', text: 'New feedback received', time: '1d ago' },
-];
-
-const dashboardPrices = [
-  { crop: 'Onion', price: '₹1,980', change: '↑ 2.5%' },
-  { crop: 'Tomato', price: '₹1,420', change: '↑ 1.8%' },
-  { crop: 'Potato', price: '₹1,760', change: '↓ 0.8%' },
-];
-
 export function FarmerDashboardScreen() {
   const insets = useSafeAreaInsets();
-  const { draft } = useDraft();
   const { clearSelectedRole } = useRole();
-  const [activeTab, setActiveTab] = useState('Home');
-  const firstName = draft.fullName.trim().split(/\s+/)[0] || 'Farmer';
-  const location = [draft.village, draft.district, draft.state].filter(Boolean).join(', ') || 'Your farm location';
-  const greeting = new Date().getHours() < 12 ? 'Good morning,' : 'Welcome back,';
-
-  const showComingSoon = (label: string) => {
-    Alert.alert(label, `${label} will be available in the next FarmPrism phase.`);
-  };
 
   return (
-    <View style={styles.dashboardRoot}>
-      <StatusBar hidden />
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120 + Math.max(insets.bottom, 18) }}
-      >
-        <View style={[styles.dashboardHero, { paddingTop: Math.max(insets.top, 18) + 16 }]}>
-          <Image source={A.landscape} resizeMode="cover" fadeDuration={0} style={styles.dashboardLandscape} />
-          <View style={styles.dashboardHeroShade} />
-          <View style={styles.dashboardHeroContent}>
-            <Image source={A.logo} resizeMode="contain" fadeDuration={0} style={styles.dashboardLogo} />
-            <View style={styles.dashboardIdentity}>
-              <Text style={styles.dashboardGreeting}>{greeting}</Text>
-              <Text numberOfLines={1} style={styles.dashboardName}>{firstName}</Text>
-              <Text numberOfLines={1} style={styles.dashboardLocation}>⌖  {location}</Text>
-            </View>
-            <Pressable accessibilityRole="button" accessibilityLabel="Notifications" onPress={() => showComingSoon('Notifications')} style={styles.notificationButton}>
-              <Text style={styles.notificationIcon}>♧</Text>
-              <View style={styles.notificationBadge}><Text style={styles.notificationBadgeText}>3</Text></View>
-            </Pressable>
-          </View>
-        </View>
-
-        <View style={styles.dashboardSection}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.dashboardSectionTitle}>Your Farm at a Glance</Text>
-            <Text style={styles.periodLabel}>This week  ⌄</Text>
-          </View>
-          <View style={styles.metricGrid}>
-            {dashboardMetrics.map((metric) => (
-              <View key={metric.label} style={styles.metricCard}>
-                <Text style={styles.metricIcon}>{metric.icon}</Text>
-                <Text style={styles.metricLabel}>{metric.label}</Text>
-                <Text numberOfLines={1} style={styles.metricValue}>{metric.value}</Text>
-                <Text style={styles.metricChange}>{metric.detail}</Text>
-              </View>
-            ))}
-          </View>
-          <View style={styles.trustPanel}>
-            <Text style={styles.trustIcon}>♢</Text>
-            <View style={styles.trustCopy}>
-              <Text style={styles.trustTitle}>Your profile is ready</Text>
-              <Text style={styles.trustBody}>Keep your produce and location details up to date.</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.dashboardSection}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.dashboardSectionTitle}>Top Opportunity for You</Text>
-            <Text style={styles.opportunityTag}>New</Text>
-          </View>
-          <Pressable onPress={() => showComingSoon('Market opportunity')} style={({ pressed }) => [styles.opportunityCard, pressed && styles.pressed]}>
-            <View style={styles.opportunityIcon}><Text style={styles.opportunityIconText}>↗</Text></View>
-            <View style={styles.opportunityCopy}>
-              <Text style={styles.opportunityTitle}>Sell at a better price this week</Text>
-              <Text style={styles.opportunityBody}>Buyers are looking for Onion, Tomato and Potato in your region.</Text>
-            </View>
-            <Text style={styles.cardArrow}>›</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.dashboardSection}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.dashboardSectionTitle}>Today&apos;s Market Prices</Text>
-            <Pressable onPress={() => showComingSoon('Market prices')}><Text style={styles.viewAll}>View all</Text></Pressable>
-          </View>
-          {dashboardPrices.map((row) => (
-            <View key={row.crop} style={styles.priceRow}>
-              <View style={styles.cropDot}><Text style={styles.cropDotText}>{row.crop[0]}</Text></View>
-              <Text style={styles.priceCrop}>{row.crop}</Text>
-              <Text style={styles.priceValue}>{row.price}</Text>
-              <Text style={styles.priceChange}>{row.change}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.dashboardSection}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.dashboardSectionTitle}>Your Selling Activity</Text>
-            <Text style={styles.periodLabel}>This month</Text>
-          </View>
-          <View style={styles.activitySummary}>
-            <View><Text style={styles.activityNumber}>6</Text><Text style={styles.activityLabel}>Orders completed</Text></View>
-            <View><Text style={styles.activityNumber}>12.4</Text><Text style={styles.activityLabel}>Ton sold</Text></View>
-            <View><Text style={styles.activityNumber}>₹1.2L</Text><Text style={styles.activityLabel}>Earned</Text></View>
-          </View>
-        </View>
-
-        <View style={styles.dashboardSection}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.dashboardSectionTitle}>Quick Actions</Text>
-            <Pressable onPress={() => showComingSoon('Quick actions')}><Text style={styles.viewAll}>View all</Text></Pressable>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.actionList}>
-            {dashboardActions.map((action) => (
-              <Pressable key={action.label} onPress={() => showComingSoon(action.label)} style={({ pressed }) => [styles.actionItem, pressed && styles.pressed]}>
-                <View style={styles.actionIcon}><Text style={styles.actionIconText}>{action.icon}</Text></View>
-                <Text numberOfLines={2} style={styles.actionLabel}>{action.label}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
-
-        <View style={styles.dashboardSection}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.dashboardSectionTitle}>Recent Activity</Text>
-            <Pressable onPress={() => showComingSoon('Recent activity')}><Text style={styles.viewAll}>View all</Text></Pressable>
-          </View>
-          <View style={styles.activityList}>
-            {dashboardActivity.map((item) => (
-              <View key={item.text} style={styles.activityRow}>
-                <Text style={styles.activityIcon}>{item.icon}</Text>
-                <Text numberOfLines={2} style={styles.activityText}>{item.text}</Text>
-                <Text style={styles.activityTime}>{item.time}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <Pressable onPress={() => showComingSoon('FarmPrism insights')} style={styles.dashboardBanner}>
-          <Text style={styles.bannerIcon}>♢</Text>
-          <View style={styles.bannerCopy}><Text style={styles.bannerTitle}>Build your trust, grow your business.</Text><Text style={styles.bannerBody}>Maintain quality and timely deliveries to grow with FarmPrism.</Text></View>
-          <Text style={styles.bannerAction}>Learn more</Text>
-        </Pressable>
-        <Pressable onPress={clearSelectedRole} style={styles.changeRole}><Text style={styles.changeRoleText}>Change Role</Text></Pressable>
-      </ScrollView>
-
-      <View style={[styles.dashboardNav, { paddingBottom: Math.max(insets.bottom, 18) }]}>
-        {['Home', 'My Farm', 'Sell', 'Insights', 'Profile'].map((tab) => (
-          <Pressable key={tab} onPress={() => tab === 'Home' ? setActiveTab(tab) : showComingSoon(tab)} style={styles.dashboardNavItem}>
-            <Text style={[styles.dashboardNavIcon, activeTab === tab && styles.dashboardNavActive]}>{tab === 'Home' ? '⌂' : tab === 'My Farm' ? '♧' : tab === 'Sell' ? '↗' : tab === 'Insights' ? '▥' : '○'}</Text>
-            <Text style={[styles.dashboardNavLabel, activeTab === tab && styles.dashboardNavActive]}>{tab}</Text>
-          </Pressable>
-        ))}
-      </View>
+    <View
+      style={[
+        styles.dashboard,
+        {
+          paddingTop: Math.max(insets.top, 18) + 18,
+          paddingBottom: Math.max(insets.bottom, 18) + 18,
+        },
+      ]}
+    >
+      <Image source={A.logo} resizeMode="contain" fadeDuration={0} style={styles.dashboardLogo} />
+      <Text style={styles.dashboardTitle}>Farmer Dashboard</Text>
+      <Text style={styles.dashboardBody}>
+        Your profile setup is complete. The full Farmer Dashboard UI is the next phase.
+      </Text>
+      <Pressable onPress={clearSelectedRole} style={styles.changeRole}>
+        <Text style={styles.changeRoleText}>← Change Role</Text>
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.cream },
-  designBackground: { ...StyleSheet.absoluteFill, backgroundColor: C.cream },
+  designBackground: { ...StyleSheet.absoluteFillObject, backgroundColor: C.cream },
   whiteProfilePanel: {
     position: 'absolute',
     left: 28,
@@ -1444,74 +1405,10 @@ const styles = StyleSheet.create({
   photoPreviewCircle: { width: 290, height: 290, borderRadius: 145, overflow: 'hidden', borderWidth: 3, borderColor: '#FFFFFF', backgroundColor: '#222222' },
   photoPreviewImage: { width: '100%', height: '100%' },
   photoPreviewHint: { marginTop: 24, color: '#D8D8D8', fontSize: 15, textAlign: 'center' },
-  dashboardRoot: { flex: 1, backgroundColor: '#F7F6EC' },
-  dashboardHero: { minHeight: 218, overflow: 'hidden', backgroundColor: '#DCE7C9' },
-  dashboardLandscape: { ...StyleSheet.absoluteFill, opacity: 0.72 },
-  dashboardHeroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(255, 252, 235, 0.28)' },
-  dashboardHeroContent: { flex: 1, paddingHorizontal: 18, paddingBottom: 18, flexDirection: 'row', alignItems: 'center' },
-  dashboardLogo: { width: 132, height: 132 },
-  dashboardIdentity: { flex: 1, marginLeft: 10 },
-  dashboardGreeting: { color: '#31404A', fontSize: 17 },
-  dashboardName: { marginTop: 3, color: '#11191C', fontFamily: serif, fontSize: 30, fontWeight: '700' },
-  dashboardLocation: { marginTop: 9, paddingHorizontal: 10, paddingVertical: 7, alignSelf: 'flex-start', maxWidth: '100%', borderRadius: 14, backgroundColor: 'rgba(255, 255, 246, 0.82)', color: '#314A3A', fontSize: 13 },
-  notificationButton: { width: 42, height: 48, alignItems: 'center', justifyContent: 'center' },
-  notificationIcon: { color: '#152017', fontSize: 28 },
-  notificationBadge: { position: 'absolute', top: 0, right: -1, width: 21, height: 21, borderRadius: 11, backgroundColor: '#B74427', alignItems: 'center', justifyContent: 'center' },
-  notificationBadgeText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  dashboardSection: { marginHorizontal: 14, marginTop: 14, padding: 16, borderRadius: 18, borderWidth: 1, borderColor: '#E2E2D2', backgroundColor: '#FFFDF6', shadowColor: '#5C684B', shadowOpacity: 0.07, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
-  sectionHeaderRow: { minHeight: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  dashboardSectionTitle: { flex: 1, color: '#172023', fontFamily: serif, fontSize: 21, fontWeight: '700' },
-  periodLabel: { color: '#56605C', fontSize: 13 },
-  viewAll: { color: C.greenDark, fontSize: 15, fontWeight: '700' },
-  metricGrid: { marginTop: 13, flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  metricCard: { width: '48%', minHeight: 132, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: '#E1E0D1', backgroundColor: '#FCFBF1' },
-  metricIcon: { color: C.greenDark, fontSize: 23, fontWeight: '700' },
-  metricLabel: { marginTop: 8, color: '#4A555A', fontSize: 13 },
-  metricValue: { marginTop: 8, color: '#12191C', fontSize: 20, fontWeight: '700' },
-  metricChange: { marginTop: 7, color: C.greenDark, fontSize: 15, fontWeight: '700' },
-  trustPanel: { marginTop: 12, padding: 12, borderRadius: 13, backgroundColor: '#F2F5E4', flexDirection: 'row', alignItems: 'center' },
-  trustIcon: { width: 48, color: C.greenDark, fontSize: 42, textAlign: 'center' },
-  trustCopy: { flex: 1, marginLeft: 10 },
-  trustTitle: { color: '#1C3824', fontSize: 16, fontWeight: '700' },
-  trustBody: { marginTop: 3, color: '#53625A', fontSize: 13, lineHeight: 18 },
-  opportunityTag: { paddingHorizontal: 9, paddingVertical: 4, borderRadius: 9, backgroundColor: '#E8F0D7', color: C.greenDark, fontSize: 12, fontWeight: '700' },
-  opportunityCard: { marginTop: 12, padding: 13, borderRadius: 14, backgroundColor: '#EEF5E3', flexDirection: 'row', alignItems: 'center' },
-  opportunityIcon: { width: 45, height: 45, borderRadius: 23, backgroundColor: '#DDECCB', alignItems: 'center', justifyContent: 'center' },
-  opportunityIconText: { color: C.greenDark, fontSize: 28, fontWeight: '700' },
-  opportunityCopy: { flex: 1, marginHorizontal: 12 },
-  opportunityTitle: { color: '#203A27', fontSize: 16, fontWeight: '700' },
-  opportunityBody: { marginTop: 4, color: '#56655A', fontSize: 13, lineHeight: 18 },
-  cardArrow: { color: C.greenDark, fontSize: 30 },
-  priceRow: { minHeight: 52, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#E4E4D8', flexDirection: 'row', alignItems: 'center' },
-  cropDot: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#E6F0D4', alignItems: 'center', justifyContent: 'center' },
-  cropDotText: { color: C.greenDark, fontSize: 15, fontWeight: '700' },
-  priceCrop: { flex: 1, marginLeft: 10, color: '#354249', fontSize: 15 },
-  priceValue: { marginRight: 12, color: '#182125', fontSize: 15, fontWeight: '700' },
-  priceChange: { width: 55, color: C.greenDark, fontSize: 13, fontWeight: '700', textAlign: 'right' },
-  activitySummary: { marginTop: 13, flexDirection: 'row', justifyContent: 'space-between' },
-  activityNumber: { color: '#182125', fontSize: 22, fontWeight: '700' },
-  activityLabel: { marginTop: 4, color: '#65706D', fontSize: 12 },
-  actionList: { paddingTop: 14, paddingRight: 4, gap: 12 },
-  actionItem: { width: 82, alignItems: 'center' },
-  actionIcon: { width: 68, height: 68, borderRadius: 16, borderWidth: 1, borderColor: '#DADFCB', backgroundColor: '#F7F8E9', alignItems: 'center', justifyContent: 'center' },
-  actionIconText: { color: C.greenDark, fontSize: 27, fontWeight: '700' },
-  actionLabel: { marginTop: 8, color: '#343E40', fontSize: 12, lineHeight: 16, textAlign: 'center' },
-  activityList: { marginTop: 10, borderWidth: 1, borderColor: '#E4E4D8', borderRadius: 12, overflow: 'hidden' },
-  activityRow: { minHeight: 48, paddingHorizontal: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#E4E4D8', flexDirection: 'row', alignItems: 'center' },
-  activityIcon: { width: 29, color: C.greenDark, fontSize: 20, textAlign: 'center' },
-  activityText: { flex: 1, marginHorizontal: 8, color: '#354047', fontSize: 13 },
-  activityTime: { color: '#65706D', fontSize: 11 },
-  dashboardBanner: { marginHorizontal: 14, marginTop: 14, padding: 15, borderRadius: 18, borderWidth: 1, borderColor: '#DDE5C8', backgroundColor: '#F1F5E5', flexDirection: 'row', alignItems: 'center' },
-  bannerIcon: { width: 42, color: C.greenDark, fontSize: 37, textAlign: 'center' },
-  bannerCopy: { flex: 1, marginHorizontal: 10 },
-  bannerTitle: { color: '#23412D', fontSize: 15, fontWeight: '700' },
-  bannerBody: { marginTop: 4, color: '#5C6A61', fontSize: 12, lineHeight: 17 },
-  bannerAction: { color: C.greenDark, fontSize: 13, fontWeight: '700' },
-  dashboardNav: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: 9, borderTopWidth: 1, borderTopColor: '#E0E0D4', backgroundColor: '#FFFDF7', flexDirection: 'row', justifyContent: 'space-around' },
-  dashboardNavItem: { minWidth: 58, alignItems: 'center' },
-  dashboardNavIcon: { color: '#566269', fontSize: 23 },
-  dashboardNavLabel: { marginTop: 3, color: '#566269', fontSize: 11 },
-  dashboardNavActive: { color: C.greenDark, fontWeight: '700' },
-  changeRole: { marginTop: 18, marginBottom: 8, alignSelf: 'center', minHeight: 44, paddingHorizontal: 18, borderRadius: 12, borderWidth: 1, borderColor: C.green, alignItems: 'center', justifyContent: 'center' },
-  changeRoleText: { color: C.green, fontSize: 14, fontWeight: '700' },
+  dashboard: { flex: 1, paddingHorizontal: 28, backgroundColor: C.cream, alignItems: 'center', justifyContent: 'center' },
+  dashboardLogo: { width: 140, height: 140 },
+  dashboardTitle: { marginTop: 18, color: C.greenDark, fontFamily: serif, fontSize: 31, fontWeight: '700' },
+  dashboardBody: { marginTop: 12, color: C.muted, fontSize: 16, lineHeight: 23, textAlign: 'center' },
+  changeRole: { marginTop: 30, minHeight: 54, paddingHorizontal: 22, borderRadius: 14, borderWidth: 1, borderColor: C.green, alignItems: 'center', justifyContent: 'center' },
+  changeRoleText: { color: C.green, fontSize: 16, fontWeight: '700' },
 });
