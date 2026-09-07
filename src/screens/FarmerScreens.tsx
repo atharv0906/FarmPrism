@@ -171,31 +171,47 @@ function frame([left, top, width, height]: Frame) {
 }
 
 function FitCanvas({ children }: { children: ReactNode }) {
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+
   const safeBottom = Math.max(insets.bottom, 18);
-  const availableHeight = Math.max(1, height - insets.top - safeBottom);
-  const scale = Math.min(width / DESIGN_W, availableHeight / DESIGN_H);
+
+  // IMPORTANT:
+  // Scale from WIDTH only.
+  // The 853×1844 references were designed to fill the phone width.
+  // Do not shrink the complete design just to force it above Android nav.
+  const scale = width / DESIGN_W;
+
   const scaledW = DESIGN_W * scale;
   const scaledH = DESIGN_H * scale;
+
+  // React Native scales around the center of the design View.
+  // These offsets keep the scaled visual aligned to the wrapper.
   const offsetX = (DESIGN_W - scaledW) / 2;
   const offsetY = (DESIGN_H - scaledH) / 2;
 
   return (
     <View style={styles.root}>
       <StatusBar hidden />
+
       <ScrollView
         bounces={false}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        contentInsetAdjustmentBehavior="never"
         contentContainerStyle={{
-          minHeight: insets.top + availableHeight,
           alignItems: 'center',
-          justifyContent: 'flex-start',
           paddingTop: insets.top,
+          paddingBottom: safeBottom,
         }}
       >
-        <View style={{ width: scaledW, height: scaledH, overflow: 'hidden' }}>
+        <View
+          style={{
+            width: scaledW,
+            height: scaledH,
+            overflow: 'hidden',
+          }}
+        >
           <View
             style={{
               position: 'absolute',
