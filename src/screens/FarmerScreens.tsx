@@ -174,7 +174,7 @@ function FitCanvas({ children }: { children: ReactNode }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const safeBottom = Math.max(insets.bottom, 18);
-  const availableHeight = Math.max(1, height - safeBottom);
+  const availableHeight = Math.max(1, height - insets.top - safeBottom);
   const scale = Math.min(width / DESIGN_W, availableHeight / DESIGN_H);
   const scaledW = DESIGN_W * scale;
   const scaledH = DESIGN_H * scale;
@@ -189,10 +189,10 @@ function FitCanvas({ children }: { children: ReactNode }) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
-          minHeight: availableHeight,
+          minHeight: insets.top + availableHeight,
           alignItems: 'center',
           justifyContent: 'flex-start',
-          paddingBottom: safeBottom,
+          paddingTop: insets.top,
         }}
       >
         <View style={{ width: scaledW, height: scaledH, overflow: 'hidden' }}>
