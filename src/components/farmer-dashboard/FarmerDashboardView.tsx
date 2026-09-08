@@ -1,23 +1,23 @@
 import { useRef, type PropsWithChildren } from 'react';
-import { Alert, Image, ImageBackground, Pressable, ScrollView, Text as NativeText, View, useWindowDimensions, type StyleProp, type ViewStyle, type TextProps } from 'react-native';
+import { ActivityIndicator, RefreshControl, Image, ImageBackground, Pressable, ScrollView, Text as NativeText, View, useWindowDimensions, type StyleProp, type ViewStyle, type TextProps } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { dashboardAssets as a } from './dashboardAssets';
-import { createDashboardData, type DashboardData, type DashboardProfile, type Destination } from './dashboardData';
+import { type DashboardData, type DashboardProfile, type Destination } from './dashboardData';
 import { s } from './dashboardStyles';
+import { useFarmerHome } from '../../hooks/useFarmerHome';
+import { useFarmerHomeAction, type HomeActionContext } from '../../hooks/useFarmerHomeAction';
 
 function Text(props: TextProps) {
   return <NativeText {...props} style={[{ includeFontPadding: false }, props.style]} />;
 }
 
-function comingSoon(destination: Destination, detail?: string) {
-  Alert.alert('Coming Soon', `${destination}${detail ? ` — ${detail}` : ''} will be available soon.`);
-}
 function Icon({ source, size = 24 }: { source: number; size?: number }) {
   return <Image source={source} resizeMode="contain" fadeDuration={0} style={{ width: size, height: size }} />;
 }
-function Action({ destination, label, children, style, detail }: PropsWithChildren<{ destination: Destination; label: string; style?: StyleProp<ViewStyle>; detail?: string }>) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => comingSoon(destination, detail)} style={({ pressed }) => [style, pressed && s.pressed]}>{children}</Pressable>;
+function Action({ destination, label, children, style, detail }: PropsWithChildren<{ destination: Destination; label: string; style?: StyleProp<ViewStyle>; detail?: HomeActionContext }>) {
+  const open = useFarmerHomeAction();
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => open(destination, detail)} style={({ pressed }) => [style, pressed && s.pressed]}>{children}</Pressable>;
 }
 function Heading({ icon, title, action }: { icon: number; title: string; action?: { label: string; destination: Destination } }) {
   return <View style={s.heading}><Icon source={icon} /><Text style={s.title}>{title}</Text>{action && <Action destination={action.destination} label={action.label} style={s.link}><Text style={s.linkText}>{action.label} ›</Text></Action>}</View>;
@@ -44,12 +44,12 @@ function FarmOverviewCard({ data }: { data: DashboardData }) {
   const stats = [
     { value: String(data.farm.crops), unit: 'Crops', label: 'You Grow', icon: a.farm },
     { value: data.farm.acres, unit: 'Acres', label: 'Total Land', icon: a.navMyFarm },
-    { value: data.farm.quintals, unit: 'Quintals', label: 'Available to Sell', icon: a.orders },
+    { value: data.farm.quintals, unit: data.farm.quantityUnit, label: 'Available to Sell', icon: a.orders },
   ];
   return <View style={s.card}><Heading icon={a.farm} title="Your Farm at a Glance" action={{ label: 'View Details', destination: 'My Farm' }} /><View style={s.row}>
     {stats.map(stat => <View key={stat.unit} style={s.stat}><View style={s.statIcon}><Icon source={stat.icon} size={22} /></View><View style={s.statCopy}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5} style={s.value}>{stat.value}</Text><Text style={s.unit}>{stat.unit}</Text><Text style={s.statLabel}>{stat.label}</Text></View></View>)}
     <Action destination="My Farm" label="Manage My Farm" style={s.manage}><Text style={s.arrow}>›</Text><Text style={s.manageText}>Manage{ '\n' }My Farm</Text></Action>
-  </View></View>;
+  </View>{data.farm.crops === 0 && <Text style={s.meta}>No crops yet. Add crops in My Farm to get started.</Text>}</View>;
 }
 const currency = (value: number) => `₹${value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
@@ -60,28 +60,28 @@ export function TopOpportunityCard({ data }: { data: Pick<DashboardData, 'opport
   const item = data.opportunity;
   const hasOffer = item?.highestOffer != null;
   return (
-    <View style={[s.card, s.opportunity]}>
+    <Action destination="Sell > Buyer Offers" detail={item ? { cropId: item.cropId, cropName: item.cropName } : undefined} label={item ? `${item.cropName} buyer offers` : 'Buyer Offers'} style={[s.card, s.opportunity]}>
       <View style={s.opportunityHeading}>
         <View style={s.opportunityTitleGroup}>
           <Icon source={a.opportunity} />
           <Text style={s.title}>Top Opportunity for You</Text>
         </View>
         {item?.demandLevel && <Text style={s.badge}>{item.demandLevel}</Text>}
-        <Action destination="Sell > Buyer Opportunities" label="View All" style={s.link}>
+        <Action destination="Sell > Buyer Offers" label="View All" style={s.link}>
           <Text style={s.linkText}>View All ›</Text>
         </Action>
       </View>
       {!item ? (
         <View style={s.opportunityEmpty}>
           <Text style={s.cropTitle}>No offers yet</Text>
-          <Action destination="Sell > Buyer Opportunities" label="Find Buyers" style={s.link}>
+          <Action destination="Sell > Buyer Offers" label="Find Buyers" style={s.link}>
             <Text style={s.linkText}>Find Buyers →</Text>
           </Action>
         </View>
       ) : (
         <View style={s.opportunityBody}>
           <View style={s.opportunityArtwork}><Image source={item.image} resizeMode="contain" style={[s.opportunityImage, { width: cropSize, height: cropSize }]} /></View>
-          <Action destination="Sell > Buyer Opportunities" detail={item.cropId} label={`${item.cropName} buyer opportunities`} style={s.details}>
+          <Action destination="Sell > Buyer Offers" detail={{ cropId: item.cropId, cropName: item.cropName }} label={`${item.cropName} buyer opportunities`} style={s.details}>
             <Text style={s.cropTitle}>{item.cropName}</Text>
             {item.verifiedBuyerCount != null && (
               <Text style={s.meta}>{item.verifiedBuyerCount} verified {item.verifiedBuyerCount === 1 ? 'buyer is' : 'buyers are'} interested</Text>
@@ -103,37 +103,45 @@ export function TopOpportunityCard({ data }: { data: Pick<DashboardData, 'opport
                 </View>
               </View>
             )}
-            <Action destination={hasOffer ? 'Sell > Compare Offers' : 'Sell > Buyer Opportunities'} detail={item.cropId} label={hasOffer ? 'View Offers' : 'Find Buyers'} style={s.offers}>
+            <Action destination={hasOffer ? 'Sell > Buyer Offers' : 'Sell > Buyer Offers'} detail={{ cropId: item.cropId, cropName: item.cropName }} label={hasOffer ? 'View Offers' : 'Find Buyers'} style={s.offers}>
               <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={s.offersText}>{hasOffer ? 'View Offers' : 'Find Buyers'} →</Text>
             </Action>
           </View>
         </View>
       )}
-    </View>
+    </Action>
   );
 }
 function MarketPriceSection({ data }: { data: DashboardData }) {
-  return <View style={s.card}><Heading icon={a.market} title="Today’s Market Prices" action={{ label: 'View Market', destination: 'Insights > Market Prices' }} /><View style={s.row}>{data.market.map(item => <Action key={item.name} destination="Insights > Crop Market Detail" detail={item.name} label={`${item.name} market details`} style={s.marketTile}><Image source={item.image} resizeMode="contain" style={s.cropImage} /><View style={s.marketCopy}><Text style={s.cropName}>{item.name}</Text><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={s.price}>{item.price}</Text><Text style={s.meta}>/ Quintal</Text><Text style={s.trend}>↗ {item.trend}</Text></View></Action>)}</View></View>;
+  return <View style={s.card}><Heading icon={a.market} title="Today’s Market Prices" action={{ label: 'View Market', destination: 'Insights > Market Prices' }} />{data.market.length === 0 && <Text style={s.meta}>Market prices are not available yet.</Text>}<View style={s.row}>{data.market.map(item => <Action key={item.name} destination="Insights > Crop Market Details" detail={{ cropId: item.cropId, cropName: item.name }} label={`${item.name} market details`} style={s.marketTile}><Image source={item.image} resizeMode="contain" style={s.cropImage} /><View style={s.marketCopy}><Text style={s.cropName}>{item.name}</Text><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={s.price}>{item.price}</Text><Text style={s.meta}>/ {item.unit}</Text><Text style={s.trend}>{item.direction} {item.trend}</Text></View></Action>)}</View></View>;
 }
 function SellingActivitySection({ data }: { data: DashboardData }) {
-  return <View style={s.card}><Heading icon={a.listing} title="Your Selling Activity" /><View style={s.row}>{data.activity.map(item => <Action key={item.label} destination={item.destination} label={item.action} style={[s.tile, s[item.tone]]}><View style={s.activityTop}><View style={s.activityIcon}><Icon source={item.icon} size={28} /></View><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.activityValue}>{item.value}</Text></View><Text style={s.unit}>{item.label}</Text><Text style={s.activityAction}>{item.action} ›</Text></Action>)}</View></View>;
+  return <View style={s.card}><Heading icon={a.listing} title="Your Selling Activity" /><View style={s.row}>{data.activity.map(item => <Action key={item.label} destination={item.destination} label={item.action} style={[s.tile, s[item.tone]]}><View style={s.activityTop}><View style={s.activityIcon}><Icon source={item.icon} size={28} /></View><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.activityValue}>{item.value}</Text></View><Text style={s.unit}>{item.label}</Text>{item.emptyMessage && <Text style={s.meta}>{item.emptyMessage}</Text>}<Text style={s.activityAction}>{item.action} ›</Text></Action>)}</View></View>;
 }
 function QuickActionsGrid({ data }: { data: DashboardData }) {
   return <View style={s.card}><Heading icon={a.opportunity} title="Quick Actions" /><View style={s.row}>{data.quickActions.map(item => <Action key={item.label} destination={item.destination} label={item.label} style={[s.tile, s.quick, s[item.tone]]}><View style={s.activityIcon}><Icon source={item.icon} size={32} /></View><Text style={s.quickLabel}>{item.label}</Text></Action>)}</View></View>;
 }
 function FarmerBottomNav({ data, safeBottom, onHome }: { data: DashboardData; safeBottom: number; onHome: () => void }) {
+  const open = useFarmerHomeAction();
   return <View style={[s.nav, { paddingBottom: safeBottom }]}>{data.nav.map(item => {
     const selected = item.destination === null;
-    return <Pressable key={item.label} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected }} onPress={() => item.destination ? comingSoon(item.destination) : onHome()} style={({ pressed }) => [s.navItem, pressed && s.pressed]}><View style={[s.navIcon, selected && s.selected]}><Icon source={item.icon} size={28} /></View><Text style={[s.navLabel, selected && s.selectedLabel]}>{item.label}</Text></Pressable>;
+    return <Pressable key={item.label} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected }} onPress={() => item.destination ? open(item.destination) : onHome()} style={({ pressed }) => [s.navItem, pressed && s.pressed]}><View style={[s.navIcon, selected && s.selected]}><Icon source={item.icon} size={28} /></View><Text style={[s.navLabel, selected && s.selectedLabel]}>{item.label}</Text></Pressable>;
   })}</View>;
 }
 export function FarmerDashboardView({ draft }: { draft: DashboardProfile }) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const scroll = useRef<ScrollView>(null);
-  const data = createDashboardData(draft);
-  return <View style={s.root}><StatusBar hidden /><ScrollView ref={scroll} style={s.scroll} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+  const { data, loading, error, refresh } = useFarmerHome(draft);
+  if (!data) return <View style={[s.root, { paddingTop: Math.max(insets.top, 8), justifyContent: 'center', paddingHorizontal: 24, gap: 16 }]}>
+    <StatusBar hidden />
+    {loading ? <ActivityIndicator accessibilityLabel="Loading Farmer Home" size="large" color="#12642D" /> : <>
+      <Text accessibilityRole="alert" style={s.subtitle}>{error ?? 'Home is not available yet.'}</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel="Retry Home" onPress={() => void refresh()} style={s.offers}><Text style={s.offersText}>Retry</Text></Pressable>
+    </>}
+  </View>;
+  return <View style={s.root}><StatusBar hidden /><ScrollView ref={scroll} style={s.scroll} contentContainerStyle={s.content} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void refresh()} tintColor="#12642D" />}>
     <DashboardHeader data={data} top={Math.max(insets.top, 8)} compact={width < 400} />
-    <View style={s.body}><FarmOverviewCard data={data} /><TopOpportunityCard data={data} /><MarketPriceSection data={data} /><SellingActivitySection data={data} /><QuickActionsGrid data={data} /></View>
+    <View style={s.body}>{error && <View accessibilityRole="alert" style={s.card}><Text style={s.meta}>{error}</Text><Pressable accessibilityRole="button" onPress={() => void refresh()} style={s.link}><Text style={s.linkText}>Retry</Text></Pressable></View>}<FarmOverviewCard data={data} /><TopOpportunityCard data={data} /><MarketPriceSection data={data} /><SellingActivitySection data={data} /><QuickActionsGrid data={data} /></View>
   </ScrollView><FarmerBottomNav data={data} safeBottom={Math.max(insets.bottom, 18)} onHome={() => scroll.current?.scrollTo({ y: 0, animated: true })} /></View>;
 }

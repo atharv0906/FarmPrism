@@ -1,4 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Alert, Pressable, Text } from 'react-native';
+import { useAuth } from '../hooks/useAuth';
+import { NotificationsScreen } from '../screens/NotificationsScreen';
 
 import {
   FarmerDashboardScreen,
@@ -14,24 +17,27 @@ export type FarmerStackParamList = {
   Review: undefined;
   Submitted: undefined;
   Dashboard: undefined;
+  Notifications: undefined;
 };
 
 const Stack = createNativeStackNavigator<FarmerStackParamList>();
 
 export function FarmerNavigator() {
+  const { demoAccount, logout } = useAuth();
   return (
     <Stack.Navigator
-      initialRouteName="Personal"
+      initialRouteName={demoAccount?.role === 'farmer' ? 'Dashboard' : 'Personal'}
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
       }}
     >
-      <Stack.Screen name="Personal" component={FarmerPersonalScreen} />
+      <Stack.Screen name="Personal" component={FarmerPersonalScreen} options={{ headerShown: true, title: 'Farmer Profile', headerTintColor: '#12642D', headerRight: () => <Pressable accessibilityRole="button" accessibilityLabel="Sign out" style={{ padding: 8 }} onPress={() => void logout().catch(e => Alert.alert('Unable to sign out', e instanceof Error ? e.message : 'Please retry.'))}><Text style={{ color: '#12642D' }}>Sign out</Text></Pressable> }} />
       <Stack.Screen name="FarmDetails" component={FarmerDetailsScreen} />
       <Stack.Screen name="Review" component={FarmerReviewScreen} />
       <Stack.Screen name="Submitted" component={ProfileSubmittedScreen} />
       <Stack.Screen name="Dashboard" component={FarmerDashboardScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: true, title: 'Notifications', headerTintColor: '#12642D', headerStyle: { backgroundColor: '#FAFAF2' } }} />
     </Stack.Navigator>
   );
 }

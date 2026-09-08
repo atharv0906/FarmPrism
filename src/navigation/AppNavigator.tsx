@@ -43,7 +43,7 @@ function RoleFlowNavigator({ role }: { role: ApplicationRole }) {
 }
 
 export function AppNavigator() {
-  const { authenticated, loading: authLoading } = useAuth();
+  const { authenticated, loading: authLoading, user } = useAuth();
   const { loading: languageLoading } = useLanguage();
   const { loading: roleLoading, selectedRole } = useRole();
   const splashCompleted = useSplashCompleted();
@@ -60,5 +60,5 @@ export function AppNavigator() {
     return <OnboardingNavigator />;
   }
 
-  return <RoleFlowNavigator role={selectedRole.code} />;
+  return <RoleFlowNavigator key={user?.id} role={selectedRole.code} />;
 }

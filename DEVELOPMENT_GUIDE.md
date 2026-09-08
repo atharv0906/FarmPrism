@@ -80,6 +80,16 @@ Android requires an emulator/device. iOS requires macOS and Xcode. Web is suppor
 
 ## Validation
 
+### Farmer Home demo integration (1.8.4D)
+
+Development mock OTP accepts any six digits. The app normalizes Indian phone numbers and looks up the fixed demo identity with `get_demo_account_by_phone`. Fixed accounts bypass role selection and farmer profile setup. Their role is revalidated through the RPC on restoration; no role switcher is offered. Sign out to use another account. Unknown phones retain the existing role-selection/profile flow, with phone-scoped remembered roles.
+
+Configure the existing public Supabase URL and publishable key in an ignored `.env.local`. Demo mode creates no Supabase Auth session and stores no OTP/password/token. Language remains local for mock identities. Real Auth behavior stays behind the existing non-mock path.
+
+The typed demo service calls the existing Home summary, notification list, and mark-read RPCs. Home refreshes on focus and pull-to-refresh; failed loads show Retry, and empty accounts show explicit empty states. Only non-demo previews use the centralized empty fallback. Missing business screens use Coming Soon with their canonical destination and crop context. My Farm and Profile open the existing setup screens; Notifications is a native stack screen.
+
+Behavior checks: `node --test tests/farmer-home.test.cjs`. Also test farmer1, farmer2, buyer1 and logistics1 on the emulator. Marking a demo notification read persists through the existing RPC, so subsequent farmer1 runs may correctly start with no unread dot.
+
 TypeScript:
 
 ```powershell

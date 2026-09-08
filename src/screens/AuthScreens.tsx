@@ -871,50 +871,12 @@ export function RoleDashboardPlaceholder({
 }: {
   role: ApplicationRole;
 }) {
-  const { clearSelectedRole } = useRole();
-
-  return (
-    <ScreenLayout>
-      <BrandMark />
-
-      <ScreenIntro
-        title="Dashboard"
-        description={`Your ${role} dashboard will be available here.`}
-      />
-
-      <InlineMessage tone="info">
-        This is a temporary dashboard placeholder for the
-        current implementation phase.
-      </InlineMessage>
-
-      <PrimaryButton
-        label="Dashboard Ready"
-        onPress={() => {}}
-      />
-
-      <SecondaryButton
-        label="Continue"
-        onPress={() => {}}
-      />
-
-<TextButton
-  label="← Back to Role Selection"
-  onPress={clearSelectedRole}
-/>
-
-      <Field
-        label="Status"
-        value="Prototype"
-        onChangeText={() => {}}
-        placeholder="Status"
-      />
-    </ScreenLayout>
-  );
+  const { demoAccount, logout } = useAuth();
+  return <ScreenLayout><BrandMark /><ScreenIntro title={demoAccount?.fullName ?? 'Dashboard'} description={`Your ${role} dashboard will be available here.`} />
+    <InlineMessage tone="info">Coming Soon</InlineMessage>
+    <TextButton label="Sign out" onPress={() => void logout().catch(e => Alert.alert('Unable to sign out', e instanceof Error ? e.message : 'Please retry.'))} />
+  </ScreenLayout>;
 }
-
-/* ============================================================
- * STYLES
- * ============================================================ */
 
 const styles = StyleSheet.create({
   canvas: {

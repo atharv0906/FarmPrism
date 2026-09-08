@@ -739,8 +739,7 @@ export function FarmerPersonalScreen({
   navigation,
 }: NativeStackScreenProps<FarmerStackParamList, 'Personal'>) {
   const { draft, update } = useDraft();
-  const { user } = useAuth();
-  const { clearSelectedRole } = useRole();
+  const { user, logout } = useAuth();
   const [message, setMessage] = useState('');
   const [pendingPhoto, setPendingPhoto] = useState('');
 
@@ -814,11 +813,13 @@ export function FarmerPersonalScreen({
     ]);
   };
 
-  const changeRole = () =>
-    Alert.alert('Change role?', 'Your current farmer form will stay in this session.', [
+  const changeRole = () => {
+    if (navigation.canGoBack()) { navigation.goBack(); return; }
+    Alert.alert('Sign out?', 'Sign out to use another account.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Change Role', onPress: clearSelectedRole },
+      { text: 'Sign out', onPress: () => void logout().catch(e => Alert.alert('Unable to sign out', e instanceof Error ? e.message : 'Please retry.')) },
     ]);
+  };
 
   return (
     <FitCanvas>

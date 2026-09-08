@@ -124,3 +124,7 @@ The current phase excludes:
 
 ## 23. Current Development Phase
 Phase 1C common UI is in progress: approved common-flow layouts, phone OTP authentication UI and service integration, language persistence, role persistence, protected placeholder destinations, and the Farmer Personal/Farm Details/Review/Submitted navigation flow. Farmer business functionality, Buyer business functionality, and Logistics business functionality are not implemented.
+
+### Approved Phase 1.8.4D demo exception
+
+Farmer Home now consumes the existing demo RPC data during mock OTP development. Fixed demo accounts have one RPC-defined role and route directly to their dashboard; unknown phones retain role selection and farmer setup. Notifications load and mark read through the supplied RPCs. Home supports loading, retry, refresh and empty states, while unbuilt business workflows remain Coming Soon. This phase does not add production SMS, real auction/order workflows, database schema changes, additional roles, or a Home redesign.

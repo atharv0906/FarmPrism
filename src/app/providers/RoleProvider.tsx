@@ -43,7 +43,8 @@ export function RoleProvider({ children }: PropsWithChildren) {
   }, [user, demoAccount]);
   useEffect(() => { void reloadRoles(); }, [reloadRoles]);
   const value = useMemo<RoleContextValue>(() => ({
-    loading, availableRoles, selectedRole, error, reloadRoles,
+    loading: demoAccount ? false : loading, availableRoles,
+    selectedRole: demoAccount ? MOCK_ROLES.find(r => r.code === demoAccount.role)! : selectedRole, error, reloadRoles,
     selectRole: async roleId => {
       if (!user) return;
       const assigned = availableRoles.find(r => r.id === roleId);
