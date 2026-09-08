@@ -11,7 +11,8 @@ import {
 import { LanguageContext, type LanguageContextValue } from '../../hooks/useLanguage';
 
 export function LanguageProvider({ children }: PropsWithChildren) {
-  const { user } = useAuth();
+  const { user, authMode } = useAuth();
+  const preferenceUserId = authMode === 'development-mock' ? null : user?.id;
   const [language, setLanguageState] = useState<LanguageCode>(DEFAULT_LANGUAGE_CODE);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<PreferencesServiceError | null>(null);
@@ -23,7 +24,7 @@ export function LanguageProvider({ children }: PropsWithChildren) {
       const localLanguage = await preferencesService.getLocalLanguage();
       const fallbackLanguage = localLanguage ?? DEFAULT_LANGUAGE_CODE;
 
-      if (!user) {
+      if (!preferenceUserId) {
         if (mounted) {
           setLanguageState(fallbackLanguage);
           setError(null);
@@ -32,7 +33,7 @@ export function LanguageProvider({ children }: PropsWithChildren) {
         return;
       }
 
-      const result = await preferencesService.syncAuthenticatedLanguage(user.id, localLanguage);
+      const result = await preferencesService.syncAuthenticatedLanguage(preferenceUserId, localLanguage);
       if (!mounted) {
         return;
       }
@@ -45,7 +46,7 @@ export function LanguageProvider({ children }: PropsWithChildren) {
     return () => {
       mounted = false;
     };
-  }, [user?.id]);
+  }, [preferenceUserId]);
 
   const value = useMemo<LanguageContextValue>(
     () => ({
@@ -55,11 +56,11 @@ export function LanguageProvider({ children }: PropsWithChildren) {
       supportedLanguages: SUPPORTED_LANGUAGE_CODES,
       setLanguage: async (nextLanguage) => {
         setLanguageState(nextLanguage);
-        const persistenceError = await preferencesService.setLanguage(user?.id ?? null, nextLanguage);
+        const persistenceError = await preferencesService.setLanguage(preferenceUserId ?? null, nextLanguage);
         setError(persistenceError);
       },
     }),
-    [error, language, loading, user?.id],
+    [error, language, loading, preferenceUserId],
   );
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;

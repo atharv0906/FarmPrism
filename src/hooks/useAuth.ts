@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 
 import type { AuthServiceError } from '../services/auth/auth.types';
+import type { DemoAccount } from '../services/demo/demo.types';
 
 export interface AuthContextValue {
   loading: boolean;
@@ -9,6 +10,7 @@ export interface AuthContextValue {
   user: User | null;
   session: Session | null;
   authMode: 'supabase' | 'development-mock';
+  demoAccount: DemoAccount | null;
   error: AuthServiceError | null;
   requestOtp: (phone: string) => Promise<{ phone: string }>;
   verifyOtp: (phone: string, token: string) => Promise<{
