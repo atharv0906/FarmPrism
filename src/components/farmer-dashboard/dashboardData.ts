@@ -19,7 +19,7 @@ export type DashboardProfile = {
 };
 export type Destination = 'Notifications' | 'My Farm' | 'Sell > Buyer Opportunities'
   | 'Sell > Compare Offers' | 'Insights > Market Prices' | 'Insights > Crop Market Detail'
-  | 'Sell > My Listings' | 'Sell > Offer Details' | 'Sales History'
+  | 'Sell > My Auctions' | 'Sell > Offer Details' | 'Sales History'
   | 'Sell > Create Listing' | 'Orders' | 'Sell' | 'Insights' | 'Farmer Profile';
 type Action = { label: string; icon: number; destination: Destination; tone: 'green' | 'orange' | 'blue' | 'purple' };
 export type DashboardData = {
@@ -43,14 +43,14 @@ const prototype: Omit<DashboardData, 'fullName' | 'location' | 'farm'> = {
     { name: 'Tomato', price: '₹2,400', trend: '+3.1%', image: a.tomato },
   ],
   activity: [
-    { value: '2', label: 'Active Listings', action: 'View Listings', icon: a.listing, tone: 'green', destination: 'Sell > My Listings' },
+    { value: '2', label: 'Active Auctions', action: 'View Auctions', icon: a.listing, tone: 'green', destination: 'Sell > My Auctions' },
     { value: '1', label: 'New Offer', action: 'Review Now', icon: a.offer, tone: 'orange', destination: 'Sell > Offer Details' },
     { value: '₹18,500', label: 'Sold This Month', action: 'View History', icon: a.rupee, tone: 'blue', destination: 'Sales History' },
   ],
   quickActions: [
     { label: 'List Produce', icon: a.plus, tone: 'green', destination: 'Sell > Create Listing' },
-    { label: 'Check Prices', icon: a.market, tone: 'orange', destination: 'Insights > Market Prices' },
-    { label: 'Find Buyers', icon: a.buyers, tone: 'blue', destination: 'Sell > Buyer Opportunities' },
+    { label: 'Market Prices', icon: a.market, tone: 'orange', destination: 'Insights > Market Prices' },
+    { label: 'Buyer Offers', icon: a.buyers, tone: 'blue', destination: 'Sell > Buyer Opportunities' },
     { label: 'My Orders', icon: a.orders, tone: 'purple', destination: 'Orders' },
   ],
   nav: [

@@ -13,7 +13,7 @@ function Text(props: TextProps) {
 function comingSoon(destination: Destination, detail?: string) {
   Alert.alert('Coming Soon', `${destination}${detail ? ` — ${detail}` : ''} will be available soon.`);
 }
-function Icon({ source, size = 20 }: { source: number; size?: number }) {
+function Icon({ source, size = 24 }: { source: number; size?: number }) {
   return <Image source={source} resizeMode="contain" fadeDuration={0} style={{ width: size, height: size }} />;
 }
 function Action({ destination, label, children, style, detail }: PropsWithChildren<{ destination: Destination; label: string; style?: StyleProp<ViewStyle>; detail?: string }>) {
@@ -42,12 +42,12 @@ function DashboardHeader({ data, top, compact }: { data: DashboardData; top: num
 }
 function FarmOverviewCard({ data }: { data: DashboardData }) {
   const stats = [
-    { value: String(data.farm.crops), unit: 'Crops', label: 'You Grow' },
-    { value: data.farm.acres, unit: 'Acres', label: 'Total Land' },
-    { value: data.farm.quintals, unit: 'Quintals', label: 'Available to Sell' },
+    { value: String(data.farm.crops), unit: 'Crops', label: 'You Grow', icon: a.farm },
+    { value: data.farm.acres, unit: 'Acres', label: 'Total Land', icon: a.navMyFarm },
+    { value: data.farm.quintals, unit: 'Quintals', label: 'Available to Sell', icon: a.orders },
   ];
   return <View style={s.card}><Heading icon={a.farm} title="Your Farm at a Glance" action={{ label: 'View Details', destination: 'My Farm' }} /><View style={s.row}>
-    {stats.map(stat => <View key={stat.unit} style={s.stat}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5} style={s.value}>{stat.value}</Text><Text style={s.unit}>{stat.unit}</Text><Text style={s.meta}>{stat.label}</Text></View>)}
+    {stats.map(stat => <View key={stat.unit} style={s.stat}><View style={s.statIcon}><Icon source={stat.icon} size={22} /></View><View style={s.statCopy}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5} style={s.value}>{stat.value}</Text><Text style={s.unit}>{stat.unit}</Text><Text style={s.statLabel}>{stat.label}</Text></View></View>)}
     <Action destination="My Farm" label="Manage My Farm" style={s.manage}><Text style={s.arrow}>›</Text><Text style={s.manageText}>Manage{ '\n' }My Farm</Text></Action>
   </View></View>;
 }
@@ -55,8 +55,8 @@ const currency = (value: number) => `₹${value.toLocaleString('en-IN', { maximu
 
 export function TopOpportunityCard({ data }: { data: Pick<DashboardData, 'opportunity'> }) {
   const { width } = useWindowDimensions();
-  // Screen gutters (24), card padding/borders (18), and two body gaps (12).
-  const cropSize = (width - 54) * 0.26;
+  // Screen gutters (24), card padding/borders (26), and two body gaps (12).
+  const cropSize = (width - 62) * 0.28;
   const item = data.opportunity;
   const hasOffer = item?.highestOffer != null;
   return (
@@ -90,7 +90,7 @@ export function TopOpportunityCard({ data }: { data: Pick<DashboardData, 'opport
               <Text style={s.meta}>{hasOffer ? 'Highest offer' : 'No offers yet'}</Text>
               {item.highestOffer != null && <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={s.offerPrice}>{currency(item.highestOffer)}<Text style={s.offerUnit}> / {item.unit}</Text></Text>}
             </View>
-            {item.marketReference != null && <Text style={s.marketReference}>Market: {currency(item.marketReference)} / {item.unit}</Text>}
+            {item.marketReference != null && <Text style={s.marketReference}>Mandi: {currency(item.marketReference)} / {item.unit}</Text>}
           </Action>
           <View style={s.aside}>
             {item.differencePerUnit != null && (
@@ -116,10 +116,10 @@ function MarketPriceSection({ data }: { data: DashboardData }) {
   return <View style={s.card}><Heading icon={a.market} title="Today’s Market Prices" action={{ label: 'View Market', destination: 'Insights > Market Prices' }} /><View style={s.row}>{data.market.map(item => <Action key={item.name} destination="Insights > Crop Market Detail" detail={item.name} label={`${item.name} market details`} style={s.marketTile}><Image source={item.image} resizeMode="contain" style={s.cropImage} /><View style={s.marketCopy}><Text style={s.cropName}>{item.name}</Text><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={s.price}>{item.price}</Text><Text style={s.meta}>/ Quintal</Text><Text style={s.trend}>↗ {item.trend}</Text></View></Action>)}</View></View>;
 }
 function SellingActivitySection({ data }: { data: DashboardData }) {
-  return <View style={s.card}><Heading icon={a.listing} title="Your Selling Activity" /><View style={s.row}>{data.activity.map(item => <Action key={item.label} destination={item.destination} label={item.action} style={[s.tile, s[item.tone]]}><View style={s.activityTop}><Icon source={item.icon} size={25} /><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.activityValue}>{item.value}</Text></View><Text style={s.unit}>{item.label}</Text><Text style={s.activityAction}>{item.action} ›</Text></Action>)}</View></View>;
+  return <View style={s.card}><Heading icon={a.listing} title="Your Selling Activity" /><View style={s.row}>{data.activity.map(item => <Action key={item.label} destination={item.destination} label={item.action} style={[s.tile, s[item.tone]]}><View style={s.activityTop}><View style={s.activityIcon}><Icon source={item.icon} size={28} /></View><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.activityValue}>{item.value}</Text></View><Text style={s.unit}>{item.label}</Text><Text style={s.activityAction}>{item.action} ›</Text></Action>)}</View></View>;
 }
 function QuickActionsGrid({ data }: { data: DashboardData }) {
-  return <View style={s.card}><Heading icon={a.opportunity} title="Quick Actions" /><View style={s.row}>{data.quickActions.map(item => <Action key={item.label} destination={item.destination} label={item.label} style={[s.tile, s.quick, s[item.tone]]}><Icon source={item.icon} size={30} /><Text style={s.quickLabel}>{item.label}</Text></Action>)}</View></View>;
+  return <View style={s.card}><Heading icon={a.opportunity} title="Quick Actions" /><View style={s.row}>{data.quickActions.map(item => <Action key={item.label} destination={item.destination} label={item.label} style={[s.tile, s.quick, s[item.tone]]}><View style={s.activityIcon}><Icon source={item.icon} size={32} /></View><Text style={s.quickLabel}>{item.label}</Text></Action>)}</View></View>;
 }
 function FarmerBottomNav({ data, safeBottom, onHome }: { data: DashboardData; safeBottom: number; onHome: () => void }) {
   return <View style={[s.nav, { paddingBottom: safeBottom }]}>{data.nav.map(item => {
