@@ -26,15 +26,17 @@ function Heading({ icon, title, action }: { icon: number; title: string; action?
 function DashboardHeader({ data, top, compact }: { data: DashboardData; top: number; compact: boolean }) {
   const { width } = useWindowDimensions();
   const artworkWidth = (width - 32) * 0.45;
-  const farmerWidth = artworkWidth * 0.864;
+  const farmerWidth = Math.min(145, artworkWidth - 20);
+  const farmerHeight = farmerWidth * 1402 / 1122;
+  const calloutSize = Image.resolveAssetSource(a.heroCallout);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good Morning,' : hour < 18 ? 'Good Afternoon,' : 'Good Evening,';
   return <ImageBackground source={a.heroBackground} resizeMode="cover" style={[s.hero, { paddingTop: top }]}>
 
     <View style={s.heroWash} pointerEvents="none" /><View style={s.top}><Image source={a.logo} resizeMode="contain" style={s.logo} /><Action destination="Notifications" label="Notifications" style={s.bell}><Icon source={a.notification} size={23} /><View style={s.bellMask} />{data.notifications.unreadCount > 0 && <View style={s.dot} />}</Action></View>
-    <View style={s.heroRow}>
+    <View style={[s.heroRow, { minHeight: Math.max(120, farmerHeight - 40) }]}>
       <View style={s.greetingBlock}><Text style={s.greeting}>{greeting}</Text><Text style={[s.name, { fontSize: compact ? 26 : 28 }]}>{data.fullName}</Text><Text style={s.subtitle}>Better markets. Brighter futures.</Text><Text style={s.location}>⌖ {data.location}</Text></View>
-      <View style={s.artwork}><Image source={a.hero} resizeMode="contain" style={[s.farmer, { width: farmerWidth, height: farmerWidth * 1402 / 1122 }]} /><Image source={a.heroCallout} resizeMode="contain" style={[s.callout, { width: artworkWidth * 0.26, height: artworkWidth * 0.26 * 971 / 1619 }]} /></View>
+      <View style={s.artwork}><Image source={a.hero} resizeMode="contain" style={[s.farmer, { width: farmerWidth, height: farmerHeight }]} /><Image source={a.heroCallout} resizeMode="contain" style={[s.callout, { width: 62, height: 62 * calloutSize.height / calloutSize.width }]} /></View>
     </View>
   </ImageBackground>;
 }
@@ -52,6 +54,9 @@ function FarmOverviewCard({ data }: { data: DashboardData }) {
 const currency = (value: number) => `₹${value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
 export function TopOpportunityCard({ data }: { data: Pick<DashboardData, 'opportunity'> }) {
+  const { width } = useWindowDimensions();
+  // Screen gutters (24), card padding/borders (18), and two body gaps (12).
+  const cropSize = (width - 54) * 0.26;
   const item = data.opportunity;
   const hasOffer = item?.highestOffer != null;
   return (
@@ -75,7 +80,7 @@ export function TopOpportunityCard({ data }: { data: Pick<DashboardData, 'opport
         </View>
       ) : (
         <View style={s.opportunityBody}>
-          <Image source={item.image} resizeMode="contain" style={s.opportunityImage} />
+          <View style={s.opportunityArtwork}><Image source={item.image} resizeMode="contain" style={[s.opportunityImage, { width: cropSize, height: cropSize }]} /></View>
           <Action destination="Sell > Buyer Opportunities" detail={item.cropId} label={`${item.cropName} buyer opportunities`} style={s.details}>
             <Text style={s.cropTitle}>{item.cropName}</Text>
             {item.verifiedBuyerCount != null && (
@@ -83,23 +88,23 @@ export function TopOpportunityCard({ data }: { data: Pick<DashboardData, 'opport
             )}
             <View>
               <Text style={s.meta}>{hasOffer ? 'Highest offer' : 'No offers yet'}</Text>
-              {item.highestOffer != null && <>
-                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={s.offerPrice}>{currency(item.highestOffer)}</Text>
-                <Text style={s.meta}>/ {item.unit}</Text>
-              </>}
+              {item.highestOffer != null && <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={s.offerPrice}>{currency(item.highestOffer)}<Text style={s.offerUnit}> / {item.unit}</Text></Text>}
             </View>
-            {item.marketReference != null && <Text style={s.meta}>Market: {currency(item.marketReference)} / {item.unit}</Text>}
+            {item.marketReference != null && <Text style={s.marketReference}>Market: {currency(item.marketReference)} / {item.unit}</Text>}
           </Action>
           <View style={s.aside}>
             {item.differencePerUnit != null && (
               <View style={s.advantage}>
-                <Text style={s.arrow}>{item.differencePerUnit > 0 ? '↗' : item.differencePerUnit < 0 ? '↘' : '→'}</Text>
-                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={s.advantageValue}>{currency(Math.abs(item.differencePerUnit))} {item.differencePerUnit > 0 ? 'more' : item.differencePerUnit < 0 ? 'less' : ''}</Text>
-                <Text style={s.meta}>/ {item.unit}</Text>
+                <Text style={s.advantageTrend}>{item.differencePerUnit > 0 ? '↗' : item.differencePerUnit < 0 ? '↘' : '→'}</Text>
+                <View style={s.advantageCopy}>
+                  <Text style={s.advantageLabel}>{item.differencePerUnit > 0 ? 'You can get' : 'Offer difference'}</Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={s.advantageValue}>{currency(Math.abs(item.differencePerUnit))} {item.differencePerUnit > 0 ? 'more' : item.differencePerUnit < 0 ? 'less' : ''}</Text>
+                  <Text style={s.meta}>/ {item.unit}</Text>
+                </View>
               </View>
             )}
             <Action destination={hasOffer ? 'Sell > Compare Offers' : 'Sell > Buyer Opportunities'} detail={item.cropId} label={hasOffer ? 'View Offers' : 'Find Buyers'} style={s.offers}>
-              <Text style={s.offersText}>{hasOffer ? 'View Offers' : 'Find Buyers'} →</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={s.offersText}>{hasOffer ? 'View Offers' : 'Find Buyers'} →</Text>
             </Action>
           </View>
         </View>

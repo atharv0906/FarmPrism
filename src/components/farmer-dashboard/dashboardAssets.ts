@@ -2,7 +2,7 @@ export const dashboardAssets = {
   logo: require('../../../assets/FarmPrism_Farmer_Dashboard_Assets/farmer_dashboard_logo.png'),
   hero: require('../../../assets/FarmPrism_Farmer_Dashboard_Assets/farmer_dashboard_hero.png'),
   heroBackground: require('../../../assets/FarmPrism_Farmer_Dashboard_Assets/farmer_dashboard_hero_background.png'),
-  heroCallout: require('../../../assets/FarmPrism_Farmer_Dashboard_Assets/farmer_dashboard_hero_callout.png'),
+  heroCallout: require('../../../assets/FarmPrism_Farmer_Dashboard_Assets/optimized/farmer_dashboard_hero_callout_trimmed.png'),
   tomato: require('../../../assets/FarmPrism_Farmer_Dashboard_Assets/farmer_dashboard_tomato.png'),
   onion: require('../../../assets/FarmPrism_Farmer_Dashboard_Assets/farmer_dashboard_onion.png'),
   potato: require('../../../assets/FarmPrism_Farmer_Dashboard_Assets/farmer_dashboard_potato.png'),
