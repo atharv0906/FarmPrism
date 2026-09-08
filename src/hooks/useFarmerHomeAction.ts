@@ -10,8 +10,7 @@ export function useFarmerHomeAction() {
   const navigation = useNavigation<NativeStackNavigationProp<FarmerStackParamList>>();
   return (destination: Destination, context?: HomeActionContext) => {
     if (destination === 'Notifications') { navigation.navigate('Notifications'); return; }
-    if (destination === 'Farmer Profile') { navigation.navigate('Personal'); return; }
-    if (destination === 'My Farm') { navigation.navigate('FarmDetails'); return; }
+    if (destination === 'My Farm') { navigation.navigate('MyFarm'); return; }
     // Unbuilt feature intent stays explicit and does not select an unavailable tab.
     Alert.alert('Coming Soon', `${destination}${context ? ` — ${context.cropName}` : ''} will be available soon.`);
   };

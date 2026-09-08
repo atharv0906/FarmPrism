@@ -19,7 +19,7 @@ function load(relative) {
     if (id === '@react-navigation/native') return { useNavigation: () => ({ navigate: (...args) => navigations.push(args) }) };
     if (id.endsWith('/client')) return { requireSupabaseClient: () => fakeClient };
     if (id.endsWith('/otp.strategy')) return { isDevelopmentMockOtpEnabled: () => mock };
-    if (id === './dashboardAssets') return { dashboardAssets: new Proxy({}, { get: (_, key) => String(key) }) };
+    if (id.endsWith('/dashboardAssets')) return { dashboardAssets: new Proxy({}, { get: (_, key) => String(key) }) };
     if (id.startsWith('.')) return load(path.relative(root, path.resolve(path.dirname(filename), id + '.ts')));
     return require(id);
   };
@@ -73,7 +73,7 @@ test('every canonical Home destination navigates or responds with context', () =
   const { useFarmerHomeAction } = load('src/hooks/useFarmerHomeAction.ts');
   const open = useFarmerHomeAction();
   open('Notifications'); open('My Farm'); open('Farmer Profile');
-  assert.deepEqual(navigations, [['Notifications'], ['FarmDetails'], ['Personal']]);
+  assert.deepEqual(navigations, [['Notifications'], ['MyFarm'], ['Personal']]);
   const destinations = ['Sell > Buyer Offers', 'Insights > Market Prices', 'Insights > Crop Market Details',
     'Sell > My Auctions', 'Offer Details', 'Sell > Selling History', 'Sell > Create Listing', 'Orders', 'Sell', 'Insights'];
   for (const destination of destinations) {
@@ -83,5 +83,16 @@ test('every canonical Home destination navigates or responds with context', () =
     assert.ok(alerts.at(-1)[1].includes('Onion'));
     assert.ok(!alerts.at(-1)[1].includes('onion-id'), 'Do not display internal IDs in product copy');
   }
-  assert.equal(navigations.length, 3, 'Unavailable tabs must not navigate or change Home selection');
+  assert.equal(navigations.length, 3, 'Unavailable tabs must not navigate or change selection');
+});
+
+test('My Farm prototype keeps kg totals consistent and supports both empty states', () => {
+  const { myFarmPrototype, myFarmEmptyStates, quintals, myFarmIntentMessage } = load('src/components/farmer-my-farm/myFarmData.ts');
+  assert.equal(myFarmPrototype.summary.cropCount, myFarmPrototype.crops.length);
+  assert.equal(myFarmPrototype.summary.totalAvailableKg, myFarmPrototype.crops.reduce((sum, crop) => sum + crop.availableKg, 0));
+  assert.equal(quintals(1200), '12 Quintals');
+  assert.equal(myFarmEmptyStates.noCrops.crops.length, 0);
+  assert.equal(myFarmEmptyStates.noCrops.summary.totalAvailableKg, 0);
+  assert.ok(myFarmEmptyStates.noAvailableProduce.crops.every(crop => crop.availableKg === 0 && crop.batchCount === 0));
+  assert.match(myFarmIntentMessage({ type: 'BATCHES', cropId: 'test', cropName: 'Onion' }), /Physical batches — Onion/);
 });

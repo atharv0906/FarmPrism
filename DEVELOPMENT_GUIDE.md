@@ -86,7 +86,7 @@ Development mock OTP accepts any six digits. The app normalizes Indian phone num
 
 Configure the existing public Supabase URL and publishable key in an ignored `.env.local`. Demo mode creates no Supabase Auth session and stores no OTP/password/token. Language remains local for mock identities. Real Auth behavior stays behind the existing non-mock path.
 
-The typed demo service calls the existing Home summary, notification list, and mark-read RPCs. Home refreshes on focus and pull-to-refresh; failed loads show Retry, and empty accounts show explicit empty states. Only non-demo previews use the centralized empty fallback. Missing business screens use Coming Soon with their canonical destination and crop context. My Farm and Profile open the existing setup screens; Notifications is a native stack screen.
+The typed demo service calls the existing Home summary, notification list, and mark-read RPCs. Home refreshes on focus and pull-to-refresh; failed loads show Retry, and empty accounts show explicit empty states. Only non-demo previews use the centralized empty fallback. Missing business screens use Coming Soon with their canonical destination and crop context. My Farm opens its dedicated authenticated root; Profile retains its existing screen, and Notifications is a native stack screen.
 
 Behavior checks: `node --test tests/farmer-home.test.cjs`. Also test farmer1, farmer2, buyer1 and logistics1 on the emulator. Marking a demo notification read persists through the existing RPC, so subsequent farmer1 runs may correctly start with no unread dot.
 
@@ -145,3 +145,9 @@ npx expo export --platform android
 ```
 
 For authentication and role issues, verify the local public environment values, Supabase Auth configuration, assigned `user_roles`, and the existing RLS policies without modifying them.
+
+### My Farm root (Phase 1.9.0)
+
+Authenticated `MyFarm` is separate from onboarding `FarmDetails`. All Home My Farm intents resolve to this dedicated screen. Bottom Home pops to Dashboard; Android Back returns to the previous screen. Missing crop, batch, produce, edit, activity and map destinations use typed Coming Soon intents.
+
+`src/components/farmer-my-farm/myFarmData.ts` owns the UI-only prototype and no-crops/no-produce fixtures. `FarmerMyFarmView` accepts this model as a prop for later service wiring. Quantities are stored in kg and converted to quintals for display. No Supabase calls or changes were added. The map area is a labeled placeholder; artwork reuses existing FarmPrism assets.

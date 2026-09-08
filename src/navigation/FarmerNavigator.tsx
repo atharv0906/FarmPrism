@@ -2,6 +2,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Alert, Pressable, Text } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
+import { FarmerMyFarmScreen } from '../screens/FarmerMyFarmScreen';
 
 import {
   FarmerDashboardScreen,
@@ -17,6 +18,7 @@ export type FarmerStackParamList = {
   Review: undefined;
   Submitted: undefined;
   Dashboard: undefined;
+  MyFarm: undefined;
   Notifications: undefined;
 };
 
@@ -37,6 +39,7 @@ export function FarmerNavigator() {
       <Stack.Screen name="Review" component={FarmerReviewScreen} />
       <Stack.Screen name="Submitted" component={ProfileSubmittedScreen} />
       <Stack.Screen name="Dashboard" component={FarmerDashboardScreen} />
+      <Stack.Screen name="MyFarm" component={FarmerMyFarmScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: true, title: 'Notifications', headerTintColor: '#12642D', headerStyle: { backgroundColor: '#FAFAF2' } }} />
     </Stack.Navigator>
   );
