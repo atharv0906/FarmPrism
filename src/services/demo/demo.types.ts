@@ -39,6 +39,32 @@ export type FarmerHomeSummary = {
   notifications: { unreadCount: number };
 };
 
+export type FarmerMyFarmSummary = {
+  farm: {
+    id: string;
+    name: string | null;
+    location: string;
+    area: number | null;
+    areaUnit: 'acre';
+  };
+  summary: {
+    cropCount: number;
+    totalAvailableKg: number;
+    activeBatchCount: number;
+  };
+  crops: Array<{
+    id: string;
+    name: 'Onion' | 'Tomato' | 'Potato';
+    status: 'active' | 'inactive';
+    availableKg: number;
+    batchCount: number;
+  }>;
+  activities: {
+    cropsAdded: number;
+    updatesThisMonth: number;
+  };
+};
+
 export type DemoNotification = {
   id: string; title: string; body: string; type: string;
   readAt: string | null; createdAt: string;

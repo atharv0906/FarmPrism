@@ -1,6 +1,6 @@
 import { requireSupabaseClient } from '../../lib/supabase/client';
 import { isDevelopmentMockOtpEnabled } from '../auth/otp.strategy';
-import { parseDemoAccount, parseFarmerHome, parseNotifications } from './demo.parsers';
+import { parseDemoAccount, parseFarmerHome, parseFarmerMyFarm, parseNotifications } from './demo.parsers';
 
 function client() {
   if (!isDevelopmentMockOtpEnabled()) throw new Error('Demo data is only available in mock OTP development mode.');
@@ -19,6 +19,11 @@ export const demoService = {
     const { data, error } = await client().rpc('get_demo_farmer_home_summary', { p_phone: phone });
     if (error) throw new Error(`Unable to load Farmer Home: ${error.message}`);
     return parseFarmerHome(data);
+  },
+  async farmerMyFarm(phone: string) {
+    const { data, error } = await client().rpc('get_demo_farmer_my_farm_summary', { p_phone: phone });
+    if (error) throw new Error(`Unable to load My Farm: ${error.message}`);
+    return parseFarmerMyFarm(data);
   },
   async notifications(phone: string) {
     const { data, error } = await client().rpc('get_demo_notifications', { p_phone: phone });

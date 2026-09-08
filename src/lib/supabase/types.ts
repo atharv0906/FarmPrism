@@ -44,6 +44,7 @@ export interface Database {
     Functions: {
       get_demo_account_by_phone: { Args: { p_phone: string }; Returns: Json };
       get_demo_farmer_home_summary: { Args: { p_phone: string }; Returns: Json };
+      get_demo_farmer_my_farm_summary: { Args: { p_phone: string }; Returns: Json };
       get_demo_notifications: { Args: { p_phone: string }; Returns: Json };
       mark_demo_notification_read: { Args: { p_phone: string; p_notification_id: string }; Returns: boolean };
     };
