@@ -38,6 +38,9 @@ export function rating(value: unknown): number {
 export function otp(value: unknown): string {
   return typeof value === 'string' && /^\d{6}$/.test(value) ? value : invalid();
 }
+export function grade(value: unknown): 'A' | 'B' | 'C' {
+  return value === 'A' || value === 'B' || value === 'C' ? value : invalid();
+}
 export function source(value: unknown): 'actual' | 'simulated' {
   return value === 'actual' || value === 'simulated' ? value : invalid();
 }

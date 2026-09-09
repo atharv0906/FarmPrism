@@ -10,6 +10,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { marketplaceMutations as mutations } from '../../services/api/mutation.client';
 import { Button, Card, Page, Field, money, date } from '../../components/trading/TradingUI';
 import { ProfileCard } from './SharedScreens';
+import { ApiError } from '../../services/api/api.client';
 type Props<K extends keyof TradingRoutes> = NativeStackScreenProps<TradingRoutes, K>;
 
 export function BuyerHomeScreen({ navigation }: Props<'BuyerHome'> | Props<'BuyerMarket'>) {
@@ -81,7 +82,7 @@ export function JobsScreen({ navigation, route }: Props<'Jobs'> | Props<'Active'
 }
 export function JobScreen({ route, navigation }: Props<'Job'>) {
   const state = useTrading(), action = useTradingAction(state.refresh), { demoApiToken } = useAuth();
-  const [fee, setFee] = useState(''), [otp, setOtp] = useState(''), [latitude, setLatitude] = useState(''), [longitude, setLongitude] = useState('');
+  const [fee, setFee] = useState(''), [otp, setOtp] = useState(''), [otpMessage, setOtpMessage] = useState<string | null>(null), [latitude, setLatitude] = useState(''), [longitude, setLongitude] = useState('');
   const job = state.data?.jobs.find(j => j.id === route.params.jobId), order = state.data?.orders.find(o => o.id === job?.orderId), options = { bearerToken: demoApiToken ?? '' };
   const assigned = job?.logisticsId === state.data?.me.id;
   async function actualLocation() {
@@ -91,7 +92,7 @@ export function JobScreen({ route, navigation }: Props<'Job'>) {
     const point = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
     await mutations.updateTracking(job.id, { latitude: point.coords.latitude, longitude: point.coords.longitude, source: 'actual' }, options);
   }
-  return <Page title="Logistics Job" loading={state.loading} error={action.error ?? state.error} retry={() => void state.refresh()}>
+  return <Page title="Logistics Job" loading={state.loading} error={otpMessage ?? action.error ?? state.error} retry={() => void state.refresh()}>
     {job ? <><Card title={job.orderCode + ' · ' + job.crop}><Text>{job.quantityKg} KG · {job.status}</Text>
       <Text>{job.pickup ?? 'Pickup unavailable'} → {job.delivery ?? 'Delivery unavailable'}</Text><Text>Fee: {money(job.fee)} · {job.feeStatus}</Text>
       {job.status === 'available' && <Button title="Claim Job" disabled={action.pending} onPress={() => void action.run(() => mutations.claimLogisticsJob(job.id, options))} />}
@@ -105,7 +106,12 @@ export function JobScreen({ route, navigation }: Props<'Job'>) {
             onPress={() => void action.run(() => mutations.updateTracking(job.id, { latitude: Number(latitude), longitude: Number(longitude), source: 'simulated' }, options))} /></Card>}
       </>}
       {assigned && order?.status === 'delivery_otp_pending' && <><Field label="Buyer Delivery OTP" value={otp} onChange={setOtp} numeric secure />
-        <Button title="Verify Delivery OTP" disabled={action.pending || !/^\d{6}$/.test(otp)} onPress={() => void action.run(() => mutations.verifyDeliveryOtp(job.orderId, { otp }, options), () => setOtp(''))} />
+        <Button title="Verify Delivery OTP" disabled={action.pending || !/^\d{6}$/.test(otp)} onPress={() => { setOtpMessage(null); void action.run(() => mutations.verifyDeliveryOtp(job.orderId, { otp }, options), () => { setOtp(''); setOtpMessage('Delivery verified. Balance pending.'); }, error => {
+          if (error instanceof ApiError && (error.code === 'INVALID_OTP' || error.code === 'OTP_ATTEMPTS_EXCEEDED')) {
+            const attemptsRemaining = typeof error.details?.attemptsRemaining === 'number' ? error.details.attemptsRemaining : 0;
+            setOtpMessage(attemptsRemaining > 0 ? `Incorrect delivery OTP. ${attemptsRemaining} attempts remaining.` : 'Too many incorrect attempts. Ask the buyer to generate a new delivery OTP.');
+          }
+        }); }} />
         <Text>Successful OTP verification confirms delivery. There is no additional confirmation step.</Text></>}
       {assigned && <Button title="View Order / Feedback" onPress={() => navigation.navigate('Order', { orderId: job.orderId })} />}
     </Card><ProfileCard profile={state.data?.profiles.find(p => p.id === order?.farmerId)} /><ProfileCard profile={state.data?.profiles.find(p => p.id === order?.buyerId)} /></> : state.data && <Text>This job is no longer available to this account. Refresh Jobs.</Text>}

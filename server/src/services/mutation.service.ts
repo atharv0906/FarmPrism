@@ -13,6 +13,18 @@ type Command = {
 
 // Each command validates only API input. All state transitions stay inside its one RPC.
 export const commands: Record<keyof MutationResults, Command> = {
+  setBatchQuality: {
+    role: 'farmer', rpc: 'demo_set_batch_quality',
+    params: (actor, id, body) => {
+      const input = v.object(body ?? {}, ['grade', 'notes']);
+      return {
+        p_farmer_account_id: v.uuid(actor.accountId),
+        p_batch_id: v.uuid(id),
+        p_grade: v.grade(input.grade),
+        p_notes: v.nullableText(input.notes),
+      };
+    },
+  },
   createAuction: {
     role: 'farmer', rpc: 'demo_create_auction',
     params: (actor, id, body) => {
@@ -127,6 +139,20 @@ export const commands: Record<keyof MutationResults, Command> = {
       };
     },
   },
+  rejectBid: {
+    role: 'farmer', rpc: 'demo_reject_bid',
+    params: (actor, id, body) => {
+      v.object(body ?? {}, []);
+      return { p_farmer_account_id: v.uuid(actor.accountId), p_bid_id: v.uuid(id) };
+    },
+  },
+  rejectPurchaseRequest: {
+    role: 'farmer', rpc: 'demo_reject_purchase_request',
+    params: (actor, id, body) => {
+      v.object(body ?? {}, []);
+      return { p_farmer_account_id: v.uuid(actor.accountId), p_request_id: v.uuid(id) };
+    },
+  },
   payFarmerAdvance: {
     role: 'buyer', rpc: 'demo_pay_farmer_advance',
     params: (actor, id, body) => {
@@ -213,7 +239,7 @@ export const commands: Record<keyof MutationResults, Command> = {
     },
   },
   verifyDeliveryOtp: {
-    role: 'logistics', rpc: 'demo_verify_delivery_otp',
+    role: 'logistics', rpc: 'demo_verify_delivery_otp_v2',
     params: (actor, id, body) => {
       const input = v.object(body ?? {}, ['otp']);
       return {
@@ -273,6 +299,44 @@ export function createMutationService(
       const args = definition.params(actor, id, body);
       const raw = await rpc(definition.rpc, args);
       if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new ApiError(500, 'server_error', 'Invalid server response.');
+      if (command === 'verifyDeliveryOtp') {
+        const response = raw as Record<string, unknown>;
+        if (typeof response.verified !== 'boolean' ||
+          typeof response.attemptCount !== 'number' || !Number.isFinite(response.attemptCount) ||
+          typeof response.attemptsRemaining !== 'number' || !Number.isFinite(response.attemptsRemaining)) {
+          throw new ApiError(500, 'server_error', 'Invalid server response.');
+        }
+        if (!response.verified) {
+          const errorCode = typeof response.errorCode === 'string' ? response.errorCode : 'INVALID_OTP';
+          const status = errorCode === 'OTP_ATTEMPTS_EXCEEDED' ? 409 : 400;
+          throw new ApiError(status, errorCode, errorCode === 'OTP_ATTEMPTS_EXCEEDED'
+            ? 'Too many incorrect delivery OTP attempts.'
+            : 'Invalid delivery OTP.', { attemptCount: response.attemptCount, attemptsRemaining: response.attemptsRemaining });
+        }
+        if (typeof response.orderId !== 'string') throw new ApiError(500, 'server_error', 'Invalid server response.');
+        return {
+          verified: true,
+          orderId: response.orderId,
+          status: typeof response.status === 'string' ? response.status : 'balance_pending',
+          attemptCount: response.attemptCount,
+          attemptsRemaining: response.attemptsRemaining,
+        } as MutationResults[K];
+      }
+      if (command === 'setBatchQuality') {
+        const response = raw as Record<string, unknown>;
+        if (typeof response.batchId !== 'string' ||
+          (response.grade !== 'A' && response.grade !== 'B' && response.grade !== 'C') ||
+          (response.notes !== null && typeof response.notes !== 'string') ||
+          typeof response.status !== 'string') {
+          throw new ApiError(500, 'server_error', 'Invalid server response.');
+        }
+        return {
+          batchId: response.batchId,
+          grade: response.grade,
+          notes: response.notes,
+          status: response.status,
+        } as MutationResults[K];
+      }
       // Only fields in the verified RPC response contract are exposed.
       const result: Record<string, unknown> = {};
       for (const key of responseFields[command]) {
@@ -297,6 +361,9 @@ const numericFields = new Set(['acceptedQuantityKg', 'totalAmount', 'amount', 'f
 const booleanFields = new Set(['revised', 'accepted']);
 
 const responseFields: Record<keyof MutationResults, readonly string[]> = {
+  setBatchQuality: ['batchId', 'grade', 'notes', 'status'],
+  rejectBid: ['bidId', 'status'],
+  rejectPurchaseRequest: ['requestId', 'status'],
   createAuction: ['auctionId', 'status'],
   closeAuction: ['auctionId', 'status'],
   createFixedListing: ['listingId', 'status', 'expiresAt'],
@@ -315,7 +382,7 @@ const responseFields: Record<keyof MutationResults, readonly string[]> = {
   confirmPickup: ['jobId', 'orderId', 'status'],
   updateTracking: ['trackingPointId', 'jobId', 'source'],
   generateDeliveryOtp: ['orderId', 'otp', 'expiresAt'],
-  verifyDeliveryOtp: ['orderId', 'status'],
+  verifyDeliveryOtp: ['verified', 'orderId', 'status', 'attemptCount', 'attemptsRemaining'],
   payFinalBalances: ['orderId', 'status', 'farmerBalance', 'logisticsBalance'],
   submitFeedback: ['orderId', 'toAccountId', 'rating'],
   raiseDispute: ['disputeId', 'orderId', 'status'],

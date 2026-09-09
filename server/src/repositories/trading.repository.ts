@@ -31,7 +31,7 @@ export async function tradingWorkspace(accountId: string, role: Role): Promise<T
   const me = profiles.find(p => p.id === accountId);
   if (!me) throw new ApiError(401, 'invalid_session', 'Session account no longer exists.');
   const batches: Batch[] = batchRows.map(b => ({ id: b.id, farmerId: b.farmer_account_id, code: b.batch_code, crop: b.crop_name,
-    quantityKg: n(b.remaining_quantity_kg), grade: b.quality_grade, status: b.status }));
+    quantityKg: n(b.remaining_quantity_kg), grade: b.quality_grade, qualityNotes: b.quality_notes ?? b.qualityNotes ?? null, status: b.status }));
   const batch = (id: string) => {
     const result = batches.find(b => b.id === id);
     if (!result) throw new ApiError(503, 'DATA_UNAVAILABLE', 'Batch data is unavailable.');

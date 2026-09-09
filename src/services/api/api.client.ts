@@ -8,7 +8,7 @@ let currentDemoApiToken: string | null = null;
 let unauthorized: (() => void) | null = null;
 export function onApiUnauthorized(handler: (() => void) | null) { unauthorized = handler; }
 export class ApiError extends Error {
-  constructor(public status: number, public code: string, message: string) { super(message); }
+  constructor(public status: number, public code: string, message: string, public details?: Record<string, unknown>) { super(message); }
 }
 
 export function setCurrentDemoApiToken(token: string | null) {
@@ -37,12 +37,13 @@ export async function apiRequest<T>(path: string, options: { method?: 'GET' | 'P
     ...(options.body ? { body: JSON.stringify(options.body) } : {}),
   }).finally(() => clearTimeout(timeout));
 
-  const payload = (await response.json().catch(() => null)) as T | { error?: { code?: string; message?: string } } | null;
+  const payload = (await response.json().catch(() => null)) as T | { error?: { code?: string; message?: string }; details?: Record<string, unknown> } | null;
 
   if (!response.ok) {
     const error = payload && typeof payload === 'object' && 'error' in payload ? payload.error : undefined;
     if (response.status === 401 && resolvedBearerToken === currentDemoApiToken) unauthorized?.();
-    throw new ApiError(response.status, error?.code ?? 'REQUEST_FAILED', error?.message ?? 'Request failed.');
+    const details = payload !== null && typeof payload === 'object' && 'details' in payload ? payload.details : undefined;
+    throw new ApiError(response.status, error?.code ?? 'REQUEST_FAILED', error?.message ?? 'Request failed.', details);
   }
 
   return payload as T;

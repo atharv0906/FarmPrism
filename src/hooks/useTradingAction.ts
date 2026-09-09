@@ -6,13 +6,14 @@ export function useTradingAction(refresh: () => Promise<void>) {
   const lock = useRef(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  async function run<T>(action: () => Promise<T>, success?: (result: T) => void) {
+  async function run<T>(action: () => Promise<T>, success?: (result: T) => void, failure?: (error: unknown) => void) {
     if (lock.current) return;
     lock.current = true; setPending(true); setError(null);
     try { const result = await action(); await refresh(); success?.(result); }
     catch (e) {
       setError(e instanceof Error ? e.message : 'Unable to complete this action.');
       if (e instanceof ApiError && e.status === 409) await refresh();
+      failure?.(e);
     } finally { lock.current = false; setPending(false); }
   }
   function pay(action: () => Promise<unknown>) {

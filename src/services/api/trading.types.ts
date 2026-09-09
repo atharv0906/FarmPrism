@@ -1,6 +1,6 @@
 export type Role = 'farmer' | 'buyer' | 'logistics';
 export type Profile = { id: string; loginLabel: string; name: string; role: Role; trustScore: number | null; completedTransactions: number | null; qualityConsistency: number | null; paymentReliability: number | null; deliveryReliability: number | null; verification: string | null; location: string | null; area: number | null; farmerCode: string | null; vehicle: string | null; capacity: number | null };
-export type Batch = { id: string; farmerId: string; code: string; crop: string; quantityKg: number; grade: 'A' | 'B' | 'C' | null; status: string };
+export type Batch = { id: string; farmerId: string; code: string; crop: string; quantityKg: number; grade: 'A' | 'B' | 'C' | null; qualityNotes?: string | null; status: string };
 export type SellingItem = { id: string; kind: 'auction' | 'fixed'; batch: Batch; offeredKg: number; remainingKg: number; pricePerKg: number; startsAt: string; endsAt: string; status: string };
 export type Offer = { id: string; kind: 'auction' | 'fixed'; itemId: string; buyerId: string; quantityKg: number; remainingKg: number; pricePerKg: number; advancePercent: number; delivery: string | null; latitude: number | null; longitude: number | null; status: string; createdAt: string; updatedAt: string };
 export type Order = { id: string; code: string; kind: 'auction' | 'fixed'; batch: Batch; buyerId: string; farmerId: string; quantityKg: number; pricePerKg: number; total: number; advancePercent: number; status: string; createdAt: string };

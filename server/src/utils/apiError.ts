@@ -1,5 +1,5 @@
 export class ApiError extends Error {
-  constructor(public readonly status: number, public readonly code: string, message: string) {
+  constructor(public readonly status: number, public readonly code: string, message: string, public readonly details?: Record<string, unknown>) {
     super(message);
   }
 }
@@ -13,13 +13,14 @@ const conflicts = new Set([
   'LISTING_NOT_ACTIVE', 'BID_NOT_WITHDRAWABLE', 'REQUEST_NOT_WITHDRAWABLE',
   'LOGISTICS_NOT_ASSIGNED', 'LOGISTICS_NOT_READY', 'LOGISTICS_FEE_NOT_READY',
   'NO_FEE_PROPOSAL', 'ORDER_NOT_COMPLETED',
+  'BATCH_CURRENTLY_LISTED', 'BID_NOT_REJECTABLE', 'REQUEST_NOT_REJECTABLE',
 ]);
 
 export function mapRpcError(error: { message: string }): ApiError {
   // Match the complete exception token, never return SQL, details, hints or arbitrary messages.
   const code = error.message.trim();
-  if (code === 'INVALID_INPUT' || code === 'INVALID_OTP') {
-    return new ApiError(400, code, code === 'INVALID_OTP' ? 'Invalid delivery OTP.' : 'Invalid input.');
+  if (code === 'INVALID_INPUT' || code === 'INVALID_OTP' || code === 'INVALID_QUALITY_GRADE') {
+    return new ApiError(400, code, code === 'INVALID_OTP' ? 'Invalid delivery OTP.' : code === 'INVALID_QUALITY_GRADE' ? 'Quality grade must be A, B, or C.' : 'Invalid input.');
   }
   if (code === 'FORBIDDEN') return new ApiError(403, code, 'This action is not allowed.');
   if (/^[A-Z_]+_NOT_FOUND$/.test(code)) return new ApiError(404, code, 'Resource not found.');

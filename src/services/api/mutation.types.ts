@@ -9,6 +9,7 @@ export type FeeInput = { fee: number };
 export type FeeResponseInput = { accept: boolean };
 export type TrackingInput = { latitude: number; longitude: number; source: 'actual' | 'simulated' };
 export type VerifyDeliveryInput = { otp: string };
+export type SetBatchQualityInput = { grade: 'A' | 'B' | 'C'; notes?: string | null };
 export type FeedbackInput = { toAccountId: string; rating: number; comment?: string | null };
 export type DisputeInput = { againstAccountId: string | null; reason: string; description?: string | null };
 export type OrderContract = {
@@ -19,6 +20,9 @@ export type OrderContract = {
 };
 export type AcceptanceResult = { orderId: string; orderCode: string; status: string; acceptedQuantityKg: number; totalAmount: number; order: OrderContract };
 export type MutationResults = {
+  setBatchQuality: { batchId: string; grade: 'A' | 'B' | 'C'; notes: string | null; status: string };
+  rejectBid: { bidId: string; status: string };
+  rejectPurchaseRequest: { requestId: string; status: string };
   createAuction: { auctionId: string; status: string };
   closeAuction: { auctionId: string; status: string };
   createFixedListing: { listingId: string; status: string; expiresAt: string };
@@ -37,7 +41,7 @@ export type MutationResults = {
   confirmPickup: { jobId: string; orderId: string; status: string };
   updateTracking: { trackingPointId: string; jobId: string; source: 'actual' | 'simulated' };
   generateDeliveryOtp: { orderId: string; otp: string; expiresAt: string };
-  verifyDeliveryOtp: { orderId: string; status: string };
+  verifyDeliveryOtp: { verified: boolean; orderId: string; status: string; attemptCount: number; attemptsRemaining: number; errorCode?: string };
   payFinalBalances: { orderId: string; status: string; farmerBalance: number; logisticsBalance: number; simulated: true };
   submitFeedback: { orderId: string; toAccountId: string; rating: number };
   raiseDispute: { disputeId: string; orderId: string; status: string };

@@ -1,6 +1,6 @@
 import { validListing, marketSourceLabel } from '../../services/api/trading.validation';
-import { useCallback, useState } from 'react';
-import { Text } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, Text } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { TradingRoutes } from '../../navigation/TradingRoutes';
 import { useTrading } from '../../hooks/useTrading';
@@ -12,6 +12,7 @@ import { tradingClient } from '../../services/api/trading.client';
 import { Button, Card, Field, Page, money, date } from '../../components/trading/TradingUI';
 import { ProfileCard } from './SharedScreens';
 import { MarketDetailsBody } from './MarketScreens';
+import { ApiError } from '../../services/api/api.client';
 
 type Props<K extends keyof TradingRoutes> = NativeStackScreenProps<TradingRoutes, K>;
 const active = (status: string) => ['open', 'active', 'partially_sold'].includes(status);
@@ -46,11 +47,28 @@ export function SelectBatchScreen({ navigation }: Props<'SelectBatch'>) {
   </Page>;
 }
 export function QualityScreen({ route, navigation }: Props<'Quality'>) {
-  const state = useTrading(), batch = state.data?.batches.find(b => b.id === route.params.batchId);
-  return <Page title="Farmer Declared Quality" {...state} retry={() => void state.refresh()}>
+  const state = useTrading(), action = useTradingAction(state.refresh), { demoApiToken } = useAuth();
+  const batch = state.data?.batches.find(b => b.id === route.params.batchId);
+  const [grade, setGrade] = useState<'A' | 'B' | 'C'>('A'), [notes, setNotes] = useState(''), [localError, setLocalError] = useState<string | null>(null);
+  useEffect(() => {
+    if (batch) { setGrade(batch.grade ?? 'A'); setNotes(batch.qualityNotes ?? ''); }
+  }, [batch?.id, batch?.grade, batch?.qualityNotes]);
+  function continueToInsight() {
+    if (!batch || !demoApiToken) return;
+    setLocalError(null);
+    const notesValue = notes.trim() || null;
+    const changed = batch.grade !== grade || (batch.qualityNotes ?? null) !== notesValue;
+    if (!changed) { navigation.navigate('PriceInsight', { batchId: batch.id }); return; }
+    void action.run(() => mutations.setBatchQuality(batch.id, { grade, notes: notesValue }, { bearerToken: demoApiToken }),
+      () => navigation.navigate('PriceInsight', { batchId: batch.id }),
+      error => { if (error instanceof ApiError && error.status === 409) setLocalError('This batch is already listed and its quality cannot be changed now. Your workspace has been refreshed.'); });
+  }
+  return <Page title="Farmer Declared Quality" loading={state.loading} error={localError ?? action.error ?? state.error} retry={() => void state.refresh()}>
     {batch ? <Card title={batch.crop + ' · ' + batch.code}><Text>Current grade: {batch.grade ?? 'Not declared'}</Text>
-      <Text>Grades A, B and C are farmer declarations. Grade editing is unavailable in the current backend.</Text>
-      {batch.grade ? <Button title="Continue to Market / Price Insight" onPress={() => navigation.navigate('PriceInsight', { batchId: batch.id })} /> : <Text>This batch needs a persisted grade before publishing. Please choose another graded batch.</Text>}
+      <Text>Choose the farmer-declared quality for this batch.</Text>
+      {(['A', 'B', 'C'] as const).map(value => <Button key={value} title={(grade === value ? '✓ ' : '') + 'Grade ' + value} onPress={() => setGrade(value)} />)}
+      <Field label="Notes (optional)" value={notes} onChange={setNotes} />
+      <Button title={action.pending ? 'Saving…' : 'Continue to Market / Price Insight'} disabled={action.pending || !demoApiToken} onPress={continueToInsight} />
     </Card> : state.data && <Text>Batch unavailable.</Text>}
   </Page>;
 }
@@ -150,7 +168,15 @@ export function OfferScreen({ route, navigation }: Props<'Offer'>) {
         if (!demoApiToken) return;
         void action.run(() => offer.kind === 'auction' ? mutations.acceptBid(offer.id, { quantityKg: q }, { bearerToken: demoApiToken }) : mutations.acceptPurchaseRequest(offer.id, { quantityKg: q }, { bearerToken: demoApiToken }), result => navigation.navigate('Order', { orderId: result.data.orderId }));
       }} />
-      <Text>Rejection is not supported by the current backend. Accepting creates an order atomically.</Text>
+      <Button title={action.pending ? 'Working…' : offer.kind === 'auction' ? 'Reject Offer' : 'Reject Request'} disabled={action.pending || !['active', 'pending', 'partially_accepted'].includes(offer.status)} onPress={() => {
+        Alert.alert(offer.kind === 'auction' ? 'Reject this buyer offer?' : 'Reject this purchase request?', 'This cannot be undone.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Reject', style: 'destructive', onPress: () => {
+            if (!demoApiToken) return;
+            void action.run<unknown>(() => offer.kind === 'auction' ? mutations.rejectBid(offer.id, { bearerToken: demoApiToken }) : mutations.rejectPurchaseRequest(offer.id, { bearerToken: demoApiToken }));
+          } },
+        ]);
+      }} />
     </Card></>}
   </Page>;
 }

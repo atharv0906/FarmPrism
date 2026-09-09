@@ -6,6 +6,9 @@ type Options = { bearerToken: string; headers?: Record<string, string> };
 
 // Methods only: screen integration and session-token lifecycle remain outside this phase.
 export const marketplaceMutations = {
+  setBatchQuality(batchId: string, body: T.SetBatchQualityInput, options: Options) {
+    return apiClient.post<ApiSuccessEnvelope<T.MutationResults['setBatchQuality']>>(`/api/farmer/batches/${encodeURIComponent(batchId)}/quality`, body, options);
+  },
   createAuction(body: T.CreateAuctionInput, options: Options) {
     return apiClient.post<ApiSuccessEnvelope<T.MutationResults['createAuction']>>(`/api/farmer/auctions`, body, options);
   },
@@ -33,8 +36,14 @@ export const marketplaceMutations = {
   acceptBid(bidId: string, body: T.AcceptInput, options: Options) {
     return apiClient.post<ApiSuccessEnvelope<T.MutationResults['acceptBid']>>(`/api/farmer/bids/${encodeURIComponent(bidId)}/accept`, body, options);
   },
+  rejectBid(bidId: string, options: Options) {
+    return apiClient.post<ApiSuccessEnvelope<T.MutationResults['rejectBid']>>(`/api/farmer/bids/${encodeURIComponent(bidId)}/reject`, {}, options);
+  },
   acceptPurchaseRequest(requestId: string, body: T.AcceptInput, options: Options) {
     return apiClient.post<ApiSuccessEnvelope<T.MutationResults['acceptPurchaseRequest']>>(`/api/farmer/purchase-requests/${encodeURIComponent(requestId)}/accept`, body, options);
+  },
+  rejectPurchaseRequest(requestId: string, options: Options) {
+    return apiClient.post<ApiSuccessEnvelope<T.MutationResults['rejectPurchaseRequest']>>(`/api/farmer/purchase-requests/${encodeURIComponent(requestId)}/reject`, {}, options);
   },
   payFarmerAdvance(orderId: string, options: Options) {
     return apiClient.post<ApiSuccessEnvelope<T.MutationResults['payFarmerAdvance']>>(`/api/buyer/orders/${encodeURIComponent(orderId)}/pay-farmer-advance`, {}, options);

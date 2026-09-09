@@ -8,7 +8,8 @@ export function notFoundHandler(_req: Request, res: Response) {
 
 export function errorHandler(error: Error, _req: Request, res: Response, _next: NextFunction) {
   if (error instanceof ApiError) {
-    res.status(error.status).json(makeErrorEnvelope(error.code, error.message));
+    const envelope = makeErrorEnvelope(error.code, error.message);
+    res.status(error.status).json(error.details ? { ...envelope, details: error.details } : envelope);
     return;
   }
   if (error instanceof SyntaxError && 'body' in error) {
