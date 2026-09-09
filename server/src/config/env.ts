@@ -9,3 +9,13 @@ export const env = {
   dataGovInApiKey: process.env.DATA_GOV_IN_API_KEY ?? '',
   aiProviderApiKey: process.env.AI_PROVIDER_API_KEY ?? '',
 };
+
+export function validateServerEnvironment() {
+  if (!env.supabaseUrl) {
+    throw new Error('Missing required server environment: SUPABASE_URL');
+  }
+
+  if (!env.supabaseServiceRoleKey) {
+    throw new Error('Missing required server environment: SUPABASE_SERVICE_ROLE_KEY');
+  }
+}
