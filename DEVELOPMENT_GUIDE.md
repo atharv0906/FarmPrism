@@ -1,6 +1,13 @@
 # FarmPrism Development Guide
 
 ## 1. Project Status
+
+Phase 2.0.4 implements the existing atomic RPC mutation routes and typed mobile
+API methods; the Farmer screens remain unwired and unchanged. The current
+implementation contract and known database limitation are documented in
+[server/PHASE_2_0_4.md](server/PHASE_2_0_4.md). Older scaffold-only phase
+descriptions below are historical. Run root typecheck and server typecheck,
+build, and tests; tests mock Supabase and require no real credentials.
 This repository is an Expo/React Native mobile app with a Supabase-backed auth and data boundary and a minimal Node/Express server scaffold. The current local worktree is the source of truth. Do not reset, revert, or switch branches during this phase.
 
 The app is currently in prototype architecture and documentation groundwork. Existing Farmer Home and My Farm functionality must continue working without redesign or regression.

@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { supabaseAdmin } from './supabaseAdmin.js';
 import type { DemoAccountRecord, DemoRole, DemoSessionRow } from '../types/domain.js';
 import { normalizePhone } from '../utils/validation.js';
+import { getRoleProfile, getTrustProfile } from '../repositories/demo.repository.js';
 
 function asStringOrNull(value: unknown): string | null {
   if (value == null || value === '') {
@@ -47,6 +48,12 @@ function toDemoAccount(record: Record<string, unknown>): DemoAccountRecord {
   };
 }
 
+async function withProfile(record: Record<string, unknown>): Promise<DemoAccountRecord> {
+  const account = toDemoAccount(record);
+  const [profile, trust] = await Promise.all([getRoleProfile(account.id, account.role), getTrustProfile(account.id)]);
+  return toDemoAccount({ ...record, ...profile, ...trust, id: account.id, trust_score: trust?.score ?? null });
+}
+
 export function hashToken(rawToken: string): string {
   return createHash('sha256').update(rawToken).digest('hex');
 }
@@ -69,7 +76,7 @@ export async function getDemoAccountByPhone(phoneValue: string): Promise<DemoAcc
     throw new Error(error.message);
   }
 
-  return data ? toDemoAccount(data as Record<string, unknown>) : null;
+  return data ? withProfile(data as Record<string, unknown>) : null;
 }
 
 export async function getDemoAccountById(accountId: string): Promise<DemoAccountRecord | null> {
@@ -79,7 +86,7 @@ export async function getDemoAccountById(accountId: string): Promise<DemoAccount
     throw new Error(error.message);
   }
 
-  return data ? toDemoAccount(data as Record<string, unknown>) : null;
+  return data ? withProfile(data as Record<string, unknown>) : null;
 }
 
 export async function getDemoAccountByLoginLabel(loginLabel: string): Promise<DemoAccountRecord | null> {
@@ -89,7 +96,7 @@ export async function getDemoAccountByLoginLabel(loginLabel: string): Promise<De
     throw new Error(error.message);
   }
 
-  return data ? toDemoAccount(data as Record<string, unknown>) : null;
+  return data ? withProfile(data as Record<string, unknown>) : null;
 }
 
 export async function createDemoSessionRow(accountId: string, rawToken: string): Promise<DemoSessionRow> {
@@ -149,7 +156,7 @@ export async function findActiveSessionByToken(rawToken: string): Promise<DemoSe
     return null;
   }
 
-  if (new Date(session.expiresAt).getTime() <= Date.now()) {
+  if (!Number.isFinite(Date.parse(session.expiresAt)) || Date.parse(session.expiresAt) <= Date.now()) {
     return null;
   }
 

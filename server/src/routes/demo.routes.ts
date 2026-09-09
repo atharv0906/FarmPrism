@@ -1,4 +1,5 @@
 import type { Request, Response, Router } from 'express';
+import { generateSecureToken } from '../repositories/demo.repository.js';
 
 import {
   createDemoSessionRow,
@@ -71,7 +72,7 @@ export function registerDemoRoutes(router: Router) {
         return;
       }
 
-      const rawToken = `demo-${account.loginLabel}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const rawToken = generateSecureToken();
       const session = await createDemoSessionRow(account.id, rawToken);
 
       res.status(200).json(makeSuccessEnvelope({
@@ -85,7 +86,7 @@ export function registerDemoRoutes(router: Router) {
         },
       }));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to create demo session.';
+      const message = 'Internal server error.';
       res.status(500).json(makeErrorEnvelope('server_error', message));
     }
   });
@@ -106,7 +107,7 @@ export function registerDemoRoutes(router: Router) {
 
       res.status(200).json(makeSuccessEnvelope({ ok: true }));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to log out.';
+      const message = 'Internal server error.';
       res.status(500).json(makeErrorEnvelope('server_error', message));
     }
   });
@@ -138,30 +139,34 @@ export function registerDemoRoutes(router: Router) {
     res.status(200).json(makeSuccessEnvelope(safeProfile));
   });
 
-  router.get('/api/profiles/:loginLabel/public', requireDemoSession, async (req: Request, res: Response) => {
-    const loginLabel = String(req.params.loginLabel ?? '');
-    const account = await getDemoAccountByLoginLabel(loginLabel);
-    if (!account) {
-      res.status(404).json(makeErrorEnvelope('not_found', 'Profile not found.'));
-      return;
+  router.get('/api/profiles/:loginLabel/public', requireDemoSession, async (req: Request, res: Response, next) => {
+    try {
+      const loginLabel = String(req.params.loginLabel ?? '');
+      const account = await getDemoAccountByLoginLabel(loginLabel);
+      if (!account) {
+        res.status(404).json(makeErrorEnvelope('not_found', 'Profile not found.'));
+        return;
+      }
+
+      const publicProfile: PublicProfile = {
+        loginLabel: account.loginLabel,
+        name: account.fullName,
+        role: account.role,
+        verification: account.verification ?? null,
+        trustScore: account.trustScore ?? null,
+        completedTransactions: account.completedTransactions ?? null,
+        qualityConsistency: account.qualityConsistency ?? null,
+        paymentReliability: account.paymentReliability ?? null,
+        deliveryReliability: account.deliveryReliability ?? null,
+        businessType: account.businessType ?? null,
+        businessName: account.businessName ?? null,
+        vehicle: account.vehicle ?? null,
+      };
+
+      res.status(200).json(makeSuccessEnvelope(publicProfile));
+    } catch (error) {
+      next(error);
     }
-
-    const publicProfile: PublicProfile = {
-      loginLabel: account.loginLabel,
-      name: account.fullName,
-      role: account.role,
-      verification: account.verification ?? null,
-      trustScore: account.trustScore ?? null,
-      completedTransactions: account.completedTransactions ?? null,
-      qualityConsistency: account.qualityConsistency ?? null,
-      paymentReliability: account.paymentReliability ?? null,
-      deliveryReliability: account.deliveryReliability ?? null,
-      businessType: account.businessType ?? null,
-      businessName: account.businessName ?? null,
-      vehicle: account.vehicle ?? null,
-    };
-
-    res.status(200).json(makeSuccessEnvelope(publicProfile));
   });
 
   router.get('/api/market/:crop/history', requireDemoSession, async (req: Request, res: Response) => {
@@ -188,7 +193,7 @@ export function registerDemoRoutes(router: Router) {
         points: (points ?? []).map((row: Record<string, unknown>) => toMarketHistoryPoint(row)),
       }));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to load market history.';
+      const message = 'Internal server error.';
       res.status(500).json(makeErrorEnvelope('server_error', message));
     }
   });
@@ -215,30 +220,30 @@ export function registerDemoRoutes(router: Router) {
         crop,
       }));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to load market current pricing.';
+      const message = 'Internal server error.';
       res.status(500).json(makeErrorEnvelope('server_error', message));
     }
   });
 
   router.get('/api/farmer/inventory', requireDemoSession, requireDemoRole('farmer'), async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const accountId = (await getDemoAccountByLoginLabel(req.demoSession?.loginLabel ?? ''))?.id ?? '';
+      const accountId = req.demoSession!.accountId;
       const rows = await getFarmerInventory(accountId);
       res.status(200).json(makeSuccessEnvelope({ batches: (rows ?? []).map((row: Record<string, unknown>) => toInventoryBatch(row)) }));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to load farmer inventory.';
+      const message = 'Internal server error.';
       res.status(500).json(makeErrorEnvelope('server_error', message));
     }
   });
 
   router.get('/api/farmer/marketplace', requireDemoSession, requireDemoRole('farmer'), async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const account = req.demoSession ? await getDemoAccountByLoginLabel(req.demoSession.loginLabel) : null;
+      const account = req.demoAccount;
       const accountId = account?.id ?? '';
       const data = await getFarmerMarketplace(accountId);
       res.status(200).json(makeSuccessEnvelope(data));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to load farmer marketplace.';
+      const message = 'Internal server error.';
       res.status(500).json(makeErrorEnvelope('server_error', message));
     }
   });
@@ -248,50 +253,50 @@ export function registerDemoRoutes(router: Router) {
       const data = await getBuyerMarketplace();
       res.status(200).json(makeSuccessEnvelope(data));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to load buyer marketplace.';
+      const message = 'Internal server error.';
       res.status(500).json(makeErrorEnvelope('server_error', message));
     }
   });
 
   router.get('/api/buyer/activity', requireDemoSession, requireDemoRole('buyer'), async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const account = req.demoSession ? await getDemoAccountByLoginLabel(req.demoSession.loginLabel) : null;
+      const account = req.demoAccount;
       const accountId = account?.id ?? '';
       const data = await getBuyerActivity(accountId);
       res.status(200).json(makeSuccessEnvelope(data));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to load buyer activity.';
+      const message = 'Internal server error.';
       res.status(500).json(makeErrorEnvelope('server_error', message));
     }
   });
 
   router.get('/api/logistics/jobs', requireDemoSession, requireDemoRole('logistics'), async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const account = req.demoSession ? await getDemoAccountByLoginLabel(req.demoSession.loginLabel) : null;
+      const account = req.demoAccount;
       const accountId = account?.id ?? '';
       const jobs = await getAvailableLogisticsJobs(accountId);
       res.status(200).json(makeSuccessEnvelope({ availableJobs: jobs }));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to load logistics jobs.';
+      const message = 'Internal server error.';
       res.status(500).json(makeErrorEnvelope('server_error', message));
     }
   });
 
   router.get('/api/logistics/activity', requireDemoSession, requireDemoRole('logistics'), async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const account = req.demoSession ? await getDemoAccountByLoginLabel(req.demoSession.loginLabel) : null;
+      const account = req.demoAccount;
       const accountId = account?.id ?? '';
       const data = await getLogisticsActivity(accountId);
       res.status(200).json(makeSuccessEnvelope(data));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to load logistics activity.';
+      const message = 'Internal server error.';
       res.status(500).json(makeErrorEnvelope('server_error', message));
     }
   });
 
   router.get('/api/orders', requireDemoSession, async (req: AuthenticatedRequest, res: Response) => {
     const role = req.demoSession?.role as DemoRole | undefined;
-    const account = req.demoSession ? await getDemoAccountByLoginLabel(req.demoSession.loginLabel) : null;
+    const account = req.demoAccount;
     if (!role || !account) {
       res.status(401).json(makeErrorEnvelope('invalid_session', 'No role found.'));
       return;
@@ -301,12 +306,12 @@ export function registerDemoRoutes(router: Router) {
       const orders = await getOrdersForAccount(account.id, role);
       res.status(200).json(makeSuccessEnvelope({ orders, role }));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to load orders.';
+      const message = 'Internal server error.';
       res.status(500).json(makeErrorEnvelope('server_error', message));
     }
   });
 
-  router.get('/api/orders/:orderId', requireDemoSession, async (req: Request, res: Response) => {
+  router.get('/api/orders/:orderId', requireDemoSession, async (req: AuthenticatedRequest, res: Response) => {
     const orderId = String(req.params.orderId ?? '');
     if (!orderId || orderId === 'undefined') {
       res.status(400).json(makeErrorEnvelope('bad_input', 'An order id is required.'));
@@ -320,10 +325,16 @@ export function registerDemoRoutes(router: Router) {
         return;
       }
 
+      const assignedJob = await getLogisticsJobForOrder(orderId);
+      const actorId = req.demoSession!.accountId;
+      if (order.farmer_account_id !== actorId && order.buyer_account_id !== actorId && assignedJob?.logistics_account_id !== actorId) {
+        res.status(403).json(makeErrorEnvelope('FORBIDDEN', 'This action is not allowed.'));
+        return;
+      }
       const [timeline, payments, logisticsJob] = await Promise.all([
         getOrderEvents(orderId),
         getPaymentsForOrder(orderId),
-        getLogisticsJobForOrder(orderId),
+        Promise.resolve(assignedJob),
       ]);
 
       res.status(200).json(makeSuccessEnvelope({
@@ -331,10 +342,10 @@ export function registerDemoRoutes(router: Router) {
           id: String(order.id),
           sourceType: String(order.source_type ?? 'auction'),
           crop: String(order.crop_name ?? order.crop ?? 'Tomato'),
-          quantityKg: Number(order.quantity_kg ?? order.quantityKg ?? 0),
-          unitPrice: Number(order.unit_price ?? order.unitPrice ?? 0),
+          quantityKg: Number(order.allocated_quantity_kg ?? order.quantityKg ?? 0),
+          unitPrice: Number(order.unit_price_per_kg ?? order.unitPrice ?? 0),
           farmerAdvancePercent: Number(order.farmer_advance_percent ?? order.farmerAdvancePercent ?? 0),
-          paymentState: String(order.payment_state ?? 'pending'),
+          paymentState: String(order.status ?? 'pending'),
           logisticsStatus: String(logisticsJob?.status ?? order.logistics_status ?? 'not_assigned'),
           timeline: (timeline ?? []).map((event: Record<string, unknown>) => ({
             label: String(event.event_type ?? event.type ?? 'Update'),
@@ -351,7 +362,7 @@ export function registerDemoRoutes(router: Router) {
         },
       }));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to load order details.';
+      const message = 'Internal server error.';
       res.status(500).json(makeErrorEnvelope('server_error', message));
     }
   });

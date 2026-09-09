@@ -3,6 +3,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { supabaseAdmin } from '../lib/supabaseAdmin.js';
 import type { DemoAccountRecord, DemoRole, DemoSessionAccount, DemoSessionRow } from '../types/domain.js';
 import { normalizePhone } from '../utils/validation.js';
+import { expireMarketplace } from './mutation.repository.js';
 
 type Row = Record<string, unknown>;
 
@@ -323,11 +324,20 @@ export async function getFarmerInventory(accountId: string): Promise<Row[]> {
 }
 
 export async function getFarmerMarketplace(accountId: string): Promise<{ activeAuctions: Row[]; activeFixedPriceListings: Row[]; incomingActiveBids: Row[]; incomingPendingPurchaseRequests: Row[] }> {
+  await expireMarketplace();
+  const batches = await getFarmerInventory(accountId);
+  const batchIds = batches.map(row => String(row.id));
+  if (!batchIds.length) return { activeAuctions: [], activeFixedPriceListings: [], incomingActiveBids: [], incomingPendingPurchaseRequests: [] };
+  // Ownership is on the batch, not on auctions, listings, bids or requests.
+  const allAuctions = await supabaseAdmin.from('demo_auctions').select('id').in('batch_id', batchIds);
+  const allListings = await supabaseAdmin.from('demo_fixed_price_listings').select('id').in('batch_id', batchIds);
+  if (allAuctions.error) throw new Error(allAuctions.error.message);
+  if (allListings.error) throw new Error(allListings.error.message);
   const [auctions, fixed, bids, requests] = await Promise.all([
-    supabaseAdmin.from('demo_auctions').select('*').eq('farmer_account_id', accountId).in('status', ['open', 'active']).order('created_at', { ascending: false }),
-    supabaseAdmin.from('demo_fixed_price_listings').select('*').eq('farmer_account_id', accountId).in('status', ['active', 'open']).order('created_at', { ascending: false }),
-    supabaseAdmin.from('demo_bids').select('*').eq('farmer_account_id', accountId).in('status', ['active', 'pending']).order('created_at', { ascending: false }),
-    supabaseAdmin.from('demo_purchase_requests').select('*').eq('farmer_account_id', accountId).in('status', ['pending', 'active']).order('created_at', { ascending: false }),
+    supabaseAdmin.from('demo_auctions').select('*').in('batch_id', batchIds).in('status', ['open', 'partially_sold']).order('created_at', { ascending: false }),
+    supabaseAdmin.from('demo_fixed_price_listings').select('*').in('batch_id', batchIds).in('status', ['active', 'partially_sold']).order('created_at', { ascending: false }),
+    allAuctions.data.length ? supabaseAdmin.from('demo_bids').select('*').in('auction_id', allAuctions.data.map(row => row.id)).in('status', ['active', 'partially_accepted']).order('created_at', { ascending: false }) : Promise.resolve({ data: [], error: null }),
+    allListings.data.length ? supabaseAdmin.from('demo_purchase_requests').select('*').in('listing_id', allListings.data.map(row => row.id)).in('status', ['pending', 'partially_accepted']).order('created_at', { ascending: false }) : Promise.resolve({ data: [], error: null }),
   ]);
 
   if (auctions.error) throw new Error(auctions.error.message);
@@ -344,9 +354,10 @@ export async function getFarmerMarketplace(accountId: string): Promise<{ activeA
 }
 
 export async function getBuyerMarketplace(): Promise<{ openAuctions: Row[]; activeFixedPriceListings: Row[] }> {
+  await expireMarketplace();
   const [auctions, fixed] = await Promise.all([
     supabaseAdmin.from('demo_auctions').select('*').eq('status', 'open').order('ends_at', { ascending: true }),
-    supabaseAdmin.from('demo_fixed_price_listings').select('*').eq('status', 'active').gt('expires_at', new Date().toISOString()).order('expires_at', { ascending: true }),
+    supabaseAdmin.from('demo_fixed_price_listings').select('*').in('status', ['active', 'partially_sold']).gt('expires_at', new Date().toISOString()).order('expires_at', { ascending: true }),
   ]);
 
   if (auctions.error) throw new Error(auctions.error.message);
@@ -370,7 +381,7 @@ export async function getBuyerActivity(accountId: string): Promise<{ activeCurre
   if (orders.error) throw new Error(orders.error.message);
 
   return {
-    activeCurrentBids: (bids.data ?? []) as Row[],
+    activeCurrentBids: (bids.data ?? []).filter(row => ['active', 'partially_accepted'].includes(String(row.status))) as Row[],
     bidHistory: (bids.data ?? []) as Row[],
     purchaseRequests: (requests.data ?? []) as Row[],
     orders: (orders.data ?? []) as Row[],
@@ -391,7 +402,7 @@ export async function getAvailableLogisticsJobs(accountId: string): Promise<Row[
 
   const { data, error } = await supabaseAdmin
     .from('demo_logistics_jobs')
-    .select('*')
+    .select('*,demo_orders!inner(allocated_quantity_kg)')
     .eq('status', 'available');
 
   if (error) {
@@ -400,7 +411,8 @@ export async function getAvailableLogisticsJobs(accountId: string): Promise<Row[
 
   const rows = (data ?? []) as Row[];
   return rows.filter((row) => {
-    const quantity = asNumber(row.allocated_quantity_kg) ?? asNumber(row.quantity_kg) ?? 0;
+    const quantity = asNumber((row.demo_orders as Row).allocated_quantity_kg);
+    if (quantity === null) return false;
     return quantity <= capacityKg;
   });
 }
@@ -418,7 +430,7 @@ export async function getLogisticsActivity(accountId: string): Promise<{ assigne
 
   const rows = (data ?? []) as Row[];
   return {
-    assignedActiveJobs: rows.filter((row) => ['assigned', 'in_transit', 'picked_up', 'active'].includes(String(row.status ?? ''))),
+    assignedActiveJobs: rows.filter((row) => ['claimed', 'fee_proposed', 'fee_rejected', 'fee_accepted', 'advance_paid', 'pickup_confirmed', 'in_transit'].includes(String(row.status ?? ''))),
     completedHistoryJobs: rows.filter((row) => ['completed', 'delivered', 'cancelled'].includes(String(row.status ?? ''))),
   };
 }
@@ -431,7 +443,10 @@ export async function getOrdersForAccount(accountId: string, role: DemoRole): Pr
   } else if (role === 'buyer') {
     query = query.eq('buyer_account_id', accountId);
   } else {
-    query = query.eq('logistics_account_id', accountId);
+    const jobs = await supabaseAdmin.from('demo_logistics_jobs').select('order_id').eq('logistics_account_id', accountId);
+    if (jobs.error) throw new Error(jobs.error.message);
+    if (!jobs.data.length) return [];
+    query = query.in('id', jobs.data.map(row => row.order_id));
   }
 
   const { data, error } = await query.order('created_at', { ascending: false });

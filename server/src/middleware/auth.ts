@@ -9,11 +9,11 @@ import type { DemoAccountRecord, DemoRole, DemoSessionAccount } from '../types/d
 import { makeErrorEnvelope, parseBearerToken } from '../utils/validation.js';
 
 export type AuthenticatedRequest = Request & {
-  demoSession?: DemoSessionAccount;
+  demoSession?: DemoSessionAccount & { accountId: string };
   demoAccount?: DemoAccountRecord;
 };
 
-export async function loadDemoSessionFromAuthorization(authorizationHeader: string | undefined): Promise<DemoSessionAccount | null> {
+export async function loadDemoSessionFromAuthorization(authorizationHeader: string | undefined): Promise<(DemoSessionAccount & { accountId: string }) | null> {
   const rawToken = parseBearerToken(authorizationHeader);
   if (!rawToken) {
     return null;
@@ -31,7 +31,8 @@ export async function loadDemoSessionFromAuthorization(authorizationHeader: stri
 
   await updateSessionLastSeen(session.tokenHash);
 
-  const safeSession: DemoSessionAccount = {
+  const safeSession: DemoSessionAccount & { accountId: string } = {
+    accountId: account.id,
     loginLabel: account.loginLabel,
     phone: account.phone,
     role: account.role,
@@ -70,7 +71,7 @@ export function requireDemoSession(
 
       req.demoSession = session;
       req.demoAccount = {
-        id: '',
+        id: session.accountId,
         loginLabel: session.loginLabel,
         phone: session.phone,
         role: session.role,
@@ -79,8 +80,7 @@ export function requireDemoSession(
       };
       next();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unexpected session error.';
-      res.status(500).json(makeErrorEnvelope('server_error', message));
+      next(error);
     }
   })();
 }

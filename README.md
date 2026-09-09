@@ -4,6 +4,12 @@ FarmPrism is a mobile agricultural marketplace for farmers, buyers, and logistic
 
 ## Current Phase
 
+Phase 2.0.4 adds the Node mutation API over existing atomic Supabase RPCs and
+typed mobile service methods. Farmer Home/My Farm remain unchanged and are
+not wired to those methods. See [the phase contract](server/PHASE_2_0_4.md)
+for validation boundaries and the existing database OTP-attempt limitation.
+This phase update supersedes the older scaffold-only descriptions below.
+
 This repository is in the current prototype architecture and documentation update phase. The current local worktree is the source of truth, and the app must preserve working Farmer Home and My Farm flows while adding only infrastructure and documentation groundwork.
 
 Current prototype scope includes:

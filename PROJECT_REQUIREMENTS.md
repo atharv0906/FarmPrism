@@ -4,6 +4,12 @@
 FarmPrism is a mobile agricultural marketplace designed to connect farmers, buyers, and logistics partners in a trusted supply chain. The current prototype focuses on the mobile app foundation, real authentication and role flow, approved Farmer Home and My Farm screens, and the architecture needed for later marketplace trading, orders, delivery coordination, and AI market guidance.
 
 ## 2. Source of Truth / Latest Decisions
+
+Phase 2.0.4 authorizes Node routes for the existing marketplace, order, simulated
+payment, logistics, delivery OTP, feedback, and dispute RPCs, plus typed mobile
+API methods only. No approved Farmer UI or mobile screen wiring changes are
+authorized. See [the current phase contract](server/PHASE_2_0_4.md). This
+supersedes the older scaffold-only phase language in sections 26 and 28.
 These requirements are the source of truth for implementation and documentation:
 
 - FarmPrism Detailed Walkthrough Architecture v5
