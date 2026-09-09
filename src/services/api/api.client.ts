@@ -4,14 +4,24 @@ export type ApiClientOptions = {
 };
 
 const DEFAULT_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? '';
+let currentDemoApiToken: string | null = null;
+
+export function setCurrentDemoApiToken(token: string | null) {
+  currentDemoApiToken = token ?? null;
+}
+
+export function getCurrentDemoApiToken() {
+  return currentDemoApiToken;
+}
 
 export async function apiRequest<T>(path: string, options: { method?: 'GET' | 'POST'; body?: unknown; bearerToken?: string; headers?: Record<string, string> } = {}): Promise<T> {
   const baseUrl = options.headers?.['x-api-base-url'] ?? DEFAULT_BASE_URL;
+  const resolvedBearerToken = options.bearerToken ?? currentDemoApiToken;
   const response = await fetch(`${baseUrl}${path}`, {
     method: options.method ?? 'GET',
     headers: {
       Accept: 'application/json',
-      ...(options.bearerToken ? { Authorization: `Bearer ${options.bearerToken}` } : {}),
+      ...(resolvedBearerToken ? { Authorization: `Bearer ${resolvedBearerToken}` } : {}),
       ...(options.headers ?? {}),
       ...(options.body ? { 'Content-Type': 'application/json' } : {}),
     },

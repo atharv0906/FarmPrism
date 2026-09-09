@@ -11,6 +11,8 @@ export interface AuthContextValue {
   session: Session | null;
   authMode: 'supabase' | 'development-mock';
   demoAccount: DemoAccount | null;
+  demoApiToken: string | null;
+  demoApiSessionReady: boolean;
   error: AuthServiceError | null;
   requestOtp: (phone: string) => Promise<{ phone: string }>;
   verifyOtp: (phone: string, token: string) => Promise<{
