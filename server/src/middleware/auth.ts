@@ -19,17 +19,17 @@ export async function loadDemoSessionFromAuthorization(authorizationHeader: stri
     return null;
   }
 
-  const session = findActiveSessionByToken(rawToken);
+  const session = await findActiveSessionByToken(rawToken);
   if (!session) {
     return null;
   }
 
-  const account = getDemoAccountById(session.accountId);
+  const account = await getDemoAccountById(session.accountId);
   if (!account || !account.isEnabled) {
     return null;
   }
 
-  updateSessionLastSeen(session.tokenHash);
+  await updateSessionLastSeen(session.tokenHash);
 
   const safeSession: DemoSessionAccount = {
     loginLabel: account.loginLabel,

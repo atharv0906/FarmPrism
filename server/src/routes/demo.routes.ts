@@ -1,13 +1,60 @@
 import type { Request, Response, Router } from 'express';
-import { createHash } from 'node:crypto';
 
-import { createDemoSessionRow, getDemoAccountByPhone, getDemoAccountByLoginLabel, getDemoAccounts, revokeDemoSessionByToken } from '../lib/demoStore.js';
+import {
+  createDemoSessionRow,
+  findActiveSessionByToken,
+  getDemoAccountById,
+  getDemoAccountByLoginLabel,
+  getDemoAccountByPhone,
+  getDemoAccounts,
+  getBuyerActivity,
+  getBuyerMarketplace,
+  getFarmerInventory,
+  getFarmerMarketplace,
+  getLogisticsActivity,
+  getAvailableLogisticsJobs,
+  getMarketCurrent,
+  getMarketHistory,
+  getOrderById,
+  getOrderEvents,
+  getOrdersForAccount,
+  getPaymentsForOrder,
+  getLogisticsJobForOrder,
+  revokeDemoSessionByToken,
+} from '../lib/demoStore.js';
 import { requireDemoRole, requireDemoSession, type AuthenticatedRequest } from '../middleware/auth.js';
 import type { DemoRole, DemoSessionAccount, PublicProfile } from '../types/domain.js';
-import { makeErrorEnvelope, makeSuccessEnvelope, normalizePhone, isSixDigitOtp, parseBearerToken } from '../utils/validation.js';
+import { makeErrorEnvelope, makeSuccessEnvelope, normalizePhone, isSixDigitOtp, parseBearerToken, isAllowedDays, isCrop } from '../utils/validation.js';
+
+function toMarketHistoryPoint(row: Record<string, unknown>) {
+  return {
+    observedAt: String(row.observed_at ?? row.observedAt ?? new Date().toISOString()),
+    pricePerKg: Number(row.price_per_kg ?? row.pricePerKg ?? 0),
+    minPricePerKg: Number(row.min_price_per_kg ?? row.minPricePerKg ?? 0),
+    maxPricePerKg: Number(row.max_price_per_kg ?? row.maxPricePerKg ?? 0),
+    modalPricePerKg: Number(row.modal_price_per_kg ?? row.modalPricePerKg ?? 0),
+    source: String(row.source ?? 'supabase'),
+    isDemo: Boolean(row.is_demo ?? row.isDemo ?? false),
+    mandi: String(row.mandi ?? row.market_name ?? 'N/A'),
+    district: String(row.district ?? 'N/A'),
+    state: String(row.state ?? 'N/A'),
+  };
+}
+
+function toInventoryBatch(row: Record<string, unknown>) {
+  return {
+    batchCode: String(row.batch_code ?? row.batchCode ?? ''),
+    cropName: String(row.crop_name ?? row.cropName ?? ''),
+    originalQuantityKg: Number(row.original_quantity_kg ?? row.originalQuantityKg ?? 0),
+    remainingQuantityKg: Number(row.remaining_quantity_kg ?? row.remainingQuantityKg ?? 0),
+    qualityGrade: String(row.quality_grade ?? row.qualityGrade ?? 'C'),
+    qualitySource: String(row.quality_source ?? row.qualitySource ?? 'farmer_declared'),
+    status: String(row.status ?? 'available'),
+  };
+}
 
 export function registerDemoRoutes(router: Router) {
-  router.post('/api/demo/session', (req: Request, res: Response) => {
+  router.post('/api/demo/session', async (req: Request, res: Response) => {
     try {
       const body = (req.body ?? {}) as { phone?: string; otp?: string };
       const phone = normalizePhone(body.phone ?? '');
@@ -18,14 +65,14 @@ export function registerDemoRoutes(router: Router) {
         return;
       }
 
-      const account = getDemoAccountByPhone(phone);
+      const account = await getDemoAccountByPhone(phone);
       if (!account || !account.isEnabled) {
         res.status(401).json(makeErrorEnvelope('invalid_session', 'Demo account not found or disabled.'));
         return;
       }
 
       const rawToken = `demo-${account.loginLabel}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      const session = createDemoSessionRow(account.id, rawToken);
+      const session = await createDemoSessionRow(account.id, rawToken);
 
       res.status(200).json(makeSuccessEnvelope({
         token: rawToken,
@@ -43,7 +90,7 @@ export function registerDemoRoutes(router: Router) {
     }
   });
 
-  router.post('/api/demo/logout', requireDemoSession, (req: AuthenticatedRequest, res: Response) => {
+  router.post('/api/demo/logout', requireDemoSession, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const rawToken = parseBearerToken(req.headers.authorization);
       if (!rawToken) {
@@ -51,7 +98,7 @@ export function registerDemoRoutes(router: Router) {
         return;
       }
 
-      const revoked = revokeDemoSessionByToken(rawToken);
+      const revoked = await revokeDemoSessionByToken(rawToken);
       if (!revoked) {
         res.status(401).json(makeErrorEnvelope('invalid_session', 'Session not found.'));
         return;
@@ -91,9 +138,9 @@ export function registerDemoRoutes(router: Router) {
     res.status(200).json(makeSuccessEnvelope(safeProfile));
   });
 
-  router.get('/api/profiles/:loginLabel/public', requireDemoSession, (req: Request, res: Response) => {
+  router.get('/api/profiles/:loginLabel/public', requireDemoSession, async (req: Request, res: Response) => {
     const loginLabel = String(req.params.loginLabel ?? '');
-    const account = getDemoAccountByLoginLabel(loginLabel);
+    const account = await getDemoAccountByLoginLabel(loginLabel);
     if (!account) {
       res.status(404).json(makeErrorEnvelope('not_found', 'Profile not found.'));
       return;
@@ -117,142 +164,195 @@ export function registerDemoRoutes(router: Router) {
     res.status(200).json(makeSuccessEnvelope(publicProfile));
   });
 
-  router.get('/api/market/:crop/history', requireDemoSession, (req: Request, res: Response) => {
+  router.get('/api/market/:crop/history', requireDemoSession, async (req: Request, res: Response) => {
     const crop = String(req.params.crop ?? '');
     const daysParam = Number(req.query.days ?? 30);
 
-    if (!['Tomato', 'Onion', 'Potato'].includes(crop)) {
+    if (!isCrop(crop)) {
       res.status(400).json(makeErrorEnvelope('bad_input', 'Crop must be Tomato, Onion, or Potato.'));
       return;
     }
 
-    if (![30, 60, 90].includes(daysParam)) {
+    if (!isAllowedDays(daysParam)) {
       res.status(400).json(makeErrorEnvelope('bad_input', 'Days must be one of 30, 60, or 90.'));
       return;
     }
 
-    const points = [
-      { observedAt: '2026-08-30T00:00:00.000Z', pricePerKg: 32, minPricePerKg: 28, maxPricePerKg: 36, modalPricePerKg: 32, source: 'prototype_fallback', isDemo: true, mandi: 'Pune', district: 'Pune', state: 'Maharashtra' },
-      { observedAt: '2026-09-02T00:00:00.000Z', pricePerKg: 34, minPricePerKg: 30, maxPricePerKg: 38, modalPricePerKg: 34, source: 'prototype_fallback', isDemo: true, mandi: 'Pune', district: 'Pune', state: 'Maharashtra' },
-      { observedAt: '2026-09-05T00:00:00.000Z', pricePerKg: 33, minPricePerKg: 29, maxPricePerKg: 37, modalPricePerKg: 33, source: 'prototype_fallback', isDemo: true, mandi: 'Pune', district: 'Pune', state: 'Maharashtra' },
-    ];
-
-    res.status(200).json(makeSuccessEnvelope({
-      source: 'prototype_fallback',
-      isDemo: true,
-      crop,
-      days: daysParam,
-      points,
-    }));
+    try {
+      const points = await getMarketHistory(crop, daysParam);
+      res.status(200).json(makeSuccessEnvelope({
+        source: 'supabase',
+        isDemo: false,
+        crop,
+        days: daysParam,
+        points: (points ?? []).map((row: Record<string, unknown>) => toMarketHistoryPoint(row)),
+      }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to load market history.';
+      res.status(500).json(makeErrorEnvelope('server_error', message));
+    }
   });
 
-  router.get('/api/market/:crop/current', requireDemoSession, (req: Request, res: Response) => {
+  router.get('/api/market/:crop/current', requireDemoSession, async (req: Request, res: Response) => {
     const crop = String(req.params.crop ?? '');
-    if (!['Tomato', 'Onion', 'Potato'].includes(crop)) {
+    if (!isCrop(crop)) {
       res.status(400).json(makeErrorEnvelope('bad_input', 'Crop must be Tomato, Onion, or Potato.'));
       return;
     }
 
-    res.status(200).json(makeSuccessEnvelope({
-      mandi: 'Pune',
-      district: 'Pune',
-      state: 'Maharashtra',
-      minPricePerKg: 29,
-      maxPricePerKg: 36,
-      modalPricePerKg: 33,
-      observedAt: new Date().toISOString(),
-      source: 'prototype_fallback',
-      isDemo: true,
-      crop,
-    }));
+    try {
+      const point = await getMarketCurrent(crop);
+      res.status(200).json(makeSuccessEnvelope({
+        mandi: String(point?.mandi ?? 'N/A'),
+        district: String(point?.district ?? 'N/A'),
+        state: String(point?.state ?? 'N/A'),
+        minPricePerKg: Number(point?.min_price_per_kg ?? point?.minPricePerKg ?? 0),
+        maxPricePerKg: Number(point?.max_price_per_kg ?? point?.maxPricePerKg ?? 0),
+        modalPricePerKg: Number(point?.modal_price_per_kg ?? point?.modalPricePerKg ?? 0),
+        observedAt: String(point?.observed_at ?? point?.observedAt ?? new Date().toISOString()),
+        source: String(point?.source ?? 'supabase'),
+        isDemo: Boolean(point?.is_demo ?? point?.isDemo ?? false),
+        crop,
+      }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to load market current pricing.';
+      res.status(500).json(makeErrorEnvelope('server_error', message));
+    }
   });
 
-  router.get('/api/farmer/inventory', requireDemoSession, requireDemoRole('farmer'), (_req: AuthenticatedRequest, res: Response) => {
-    res.status(200).json(makeSuccessEnvelope({
-      batches: [
-        {
-          batchCode: 'B-1001',
-          cropName: 'Tomato',
-          originalQuantityKg: 1200,
-          remainingQuantityKg: 850,
-          qualityGrade: 'A',
-          qualitySource: 'farmer_declared',
-          status: 'available',
-        },
-      ],
-    }));
+  router.get('/api/farmer/inventory', requireDemoSession, requireDemoRole('farmer'), async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const accountId = (await getDemoAccountByLoginLabel(req.demoSession?.loginLabel ?? ''))?.id ?? '';
+      const rows = await getFarmerInventory(accountId);
+      res.status(200).json(makeSuccessEnvelope({ batches: (rows ?? []).map((row: Record<string, unknown>) => toInventoryBatch(row)) }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to load farmer inventory.';
+      res.status(500).json(makeErrorEnvelope('server_error', message));
+    }
   });
 
-  router.get('/api/farmer/marketplace', requireDemoSession, requireDemoRole('farmer'), (_req: AuthenticatedRequest, res: Response) => {
-    res.status(200).json(makeSuccessEnvelope({
-      activeAuctions: [],
-      activeFixedPriceListings: [],
-      incomingActiveBids: [],
-      incomingPendingPurchaseRequests: [],
-    }));
+  router.get('/api/farmer/marketplace', requireDemoSession, requireDemoRole('farmer'), async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const account = req.demoSession ? await getDemoAccountByLoginLabel(req.demoSession.loginLabel) : null;
+      const accountId = account?.id ?? '';
+      const data = await getFarmerMarketplace(accountId);
+      res.status(200).json(makeSuccessEnvelope(data));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to load farmer marketplace.';
+      res.status(500).json(makeErrorEnvelope('server_error', message));
+    }
   });
 
-  router.get('/api/buyer/marketplace', requireDemoSession, requireDemoRole('buyer'), (_req: AuthenticatedRequest, res: Response) => {
-    res.status(200).json(makeSuccessEnvelope({
-      openAuctions: [],
-      activeFixedPriceListings: [],
-    }));
+  router.get('/api/buyer/marketplace', requireDemoSession, requireDemoRole('buyer'), async (_req: AuthenticatedRequest, res: Response) => {
+    try {
+      const data = await getBuyerMarketplace();
+      res.status(200).json(makeSuccessEnvelope(data));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to load buyer marketplace.';
+      res.status(500).json(makeErrorEnvelope('server_error', message));
+    }
   });
 
-  router.get('/api/buyer/activity', requireDemoSession, requireDemoRole('buyer'), (_req: AuthenticatedRequest, res: Response) => {
-    res.status(200).json(makeSuccessEnvelope({
-      activeCurrentBids: [],
-      bidHistory: [],
-      purchaseRequests: [],
-      orders: [],
-    }));
+  router.get('/api/buyer/activity', requireDemoSession, requireDemoRole('buyer'), async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const account = req.demoSession ? await getDemoAccountByLoginLabel(req.demoSession.loginLabel) : null;
+      const accountId = account?.id ?? '';
+      const data = await getBuyerActivity(accountId);
+      res.status(200).json(makeSuccessEnvelope(data));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to load buyer activity.';
+      res.status(500).json(makeErrorEnvelope('server_error', message));
+    }
   });
 
-  router.get('/api/logistics/jobs', requireDemoSession, requireDemoRole('logistics'), (_req: AuthenticatedRequest, res: Response) => {
-    res.status(200).json(makeSuccessEnvelope({
-      availableJobs: [],
-    }));
+  router.get('/api/logistics/jobs', requireDemoSession, requireDemoRole('logistics'), async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const account = req.demoSession ? await getDemoAccountByLoginLabel(req.demoSession.loginLabel) : null;
+      const accountId = account?.id ?? '';
+      const jobs = await getAvailableLogisticsJobs(accountId);
+      res.status(200).json(makeSuccessEnvelope({ availableJobs: jobs }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to load logistics jobs.';
+      res.status(500).json(makeErrorEnvelope('server_error', message));
+    }
   });
 
-  router.get('/api/logistics/activity', requireDemoSession, requireDemoRole('logistics'), (_req: AuthenticatedRequest, res: Response) => {
-    res.status(200).json(makeSuccessEnvelope({
-      assignedActiveJobs: [],
-      completedHistoryJobs: [],
-    }));
+  router.get('/api/logistics/activity', requireDemoSession, requireDemoRole('logistics'), async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const account = req.demoSession ? await getDemoAccountByLoginLabel(req.demoSession.loginLabel) : null;
+      const accountId = account?.id ?? '';
+      const data = await getLogisticsActivity(accountId);
+      res.status(200).json(makeSuccessEnvelope(data));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to load logistics activity.';
+      res.status(500).json(makeErrorEnvelope('server_error', message));
+    }
   });
 
-  router.get('/api/orders', requireDemoSession, (req: AuthenticatedRequest, res: Response) => {
-    const role = req.demoSession?.role;
-    if (!role) {
+  router.get('/api/orders', requireDemoSession, async (req: AuthenticatedRequest, res: Response) => {
+    const role = req.demoSession?.role as DemoRole | undefined;
+    const account = req.demoSession ? await getDemoAccountByLoginLabel(req.demoSession.loginLabel) : null;
+    if (!role || !account) {
       res.status(401).json(makeErrorEnvelope('invalid_session', 'No role found.'));
       return;
     }
 
-    res.status(200).json(makeSuccessEnvelope({
-      orders: [],
-      role,
-    }));
+    try {
+      const orders = await getOrdersForAccount(account.id, role);
+      res.status(200).json(makeSuccessEnvelope({ orders, role }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to load orders.';
+      res.status(500).json(makeErrorEnvelope('server_error', message));
+    }
   });
 
-  router.get('/api/orders/:orderId', requireDemoSession, (req: Request, res: Response) => {
+  router.get('/api/orders/:orderId', requireDemoSession, async (req: Request, res: Response) => {
     const orderId = String(req.params.orderId ?? '');
     if (!orderId || orderId === 'undefined') {
       res.status(400).json(makeErrorEnvelope('bad_input', 'An order id is required.'));
       return;
     }
 
-    res.status(200).json(makeSuccessEnvelope({
-      order: {
-        id: orderId,
-        sourceType: 'auction',
-        crop: 'Tomato',
-        quantityKg: 500,
-        unitPrice: 32,
-        farmerAdvancePercent: 20,
-        paymentState: 'pending',
-        logisticsStatus: 'not_assigned',
-        timeline: [],
-      },
-    }));
+    try {
+      const order = await getOrderById(orderId);
+      if (!order) {
+        res.status(404).json(makeErrorEnvelope('not_found', 'Order not found.'));
+        return;
+      }
+
+      const [timeline, payments, logisticsJob] = await Promise.all([
+        getOrderEvents(orderId),
+        getPaymentsForOrder(orderId),
+        getLogisticsJobForOrder(orderId),
+      ]);
+
+      res.status(200).json(makeSuccessEnvelope({
+        order: {
+          id: String(order.id),
+          sourceType: String(order.source_type ?? 'auction'),
+          crop: String(order.crop_name ?? order.crop ?? 'Tomato'),
+          quantityKg: Number(order.quantity_kg ?? order.quantityKg ?? 0),
+          unitPrice: Number(order.unit_price ?? order.unitPrice ?? 0),
+          farmerAdvancePercent: Number(order.farmer_advance_percent ?? order.farmerAdvancePercent ?? 0),
+          paymentState: String(order.payment_state ?? 'pending'),
+          logisticsStatus: String(logisticsJob?.status ?? order.logistics_status ?? 'not_assigned'),
+          timeline: (timeline ?? []).map((event: Record<string, unknown>) => ({
+            label: String(event.event_type ?? event.type ?? 'Update'),
+            status: String(event.status ?? 'updated'),
+            at: String(event.created_at ?? event.at ?? new Date().toISOString()),
+          })),
+          payments: (payments ?? []).map((payment: Record<string, unknown>) => ({
+            id: String(payment.id),
+            amount: Number(payment.amount ?? 0),
+            currency: String(payment.currency ?? 'INR'),
+            status: String(payment.status ?? 'pending'),
+            createdAt: String(payment.created_at ?? new Date().toISOString()),
+          })),
+        },
+      }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to load order details.';
+      res.status(500).json(makeErrorEnvelope('server_error', message));
+    }
   });
 }
