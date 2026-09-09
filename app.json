@@ -33,7 +33,8 @@
     },
 
     "plugins": [
-      "expo-video"
+      "expo-video",
+      ["expo-location", { "locationWhenInUsePermission": "Allow FarmPrism to share your delivery location while you use the app." }]
     ]
   }
 }

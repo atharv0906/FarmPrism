@@ -2,6 +2,11 @@
 
 ## 1. Project Status
 
+The latest phase is [2.0.6](PHASE_2_0_6.md): cross-role mobile integration and
+Node market intelligence. Configure the private server environment and public
+mobile API URL before the manual demo. The phase document supersedes the
+historical scaffold-only setup below and lists all validation commands.
+
 Phase 2.0.4 implements the existing atomic RPC mutation routes and typed mobile
 API methods; the Farmer screens remain unwired and unchanged. The current
 implementation contract and known database limitation are documented in

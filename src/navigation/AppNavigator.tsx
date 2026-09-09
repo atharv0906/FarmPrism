@@ -1,5 +1,3 @@
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../hooks/useLanguage';
 import { useRole } from '../hooks/useRole';
@@ -12,11 +10,6 @@ import { OnboardingNavigator } from './OnboardingNavigator';
 import { ProtectedRoute } from './ProtectedRoute';
 import { FarmerDraftProvider } from '../screens/FarmerScreens';
 
-type RoleFlowParamList = {
-  Dashboard: undefined;
-};
-
-const RoleStack = createNativeStackNavigator<RoleFlowParamList>();
 
 function RoleFlowNavigator({ role }: { role: ApplicationRole }) {
   if (role === 'farmer') {
@@ -29,45 +22,7 @@ function RoleFlowNavigator({ role }: { role: ApplicationRole }) {
     );
   }
 
-  if (role === 'buyer') {
-    return (
-      <RoleStack.Navigator>
-        <RoleStack.Screen name="Dashboard" options={{ title: 'Buyer Marketplace' }}>
-          {() => (
-            <ProtectedRoute requiredRole={role}>
-              <BuyerDashboardShell />
-            </ProtectedRoute>
-          )}
-        </RoleStack.Screen>
-      </RoleStack.Navigator>
-    );
-  }
-
-  if (role === 'logistics') {
-    return (
-      <RoleStack.Navigator>
-        <RoleStack.Screen name="Dashboard" options={{ title: 'Logistics Console' }}>
-          {() => (
-            <ProtectedRoute requiredRole={role}>
-              <LogisticsDashboardShell />
-            </ProtectedRoute>
-          )}
-        </RoleStack.Screen>
-      </RoleStack.Navigator>
-    );
-  }
-
-  return (
-    <RoleStack.Navigator>
-      <RoleStack.Screen name="Dashboard" options={{ title: role }}>
-        {() => (
-          <ProtectedRoute requiredRole={role}>
-            <BuyerDashboardShell />
-          </ProtectedRoute>
-        )}
-      </RoleStack.Screen>
-    </RoleStack.Navigator>
-  );
+  return <ProtectedRoute requiredRole={role}>{role === 'buyer' ? <BuyerDashboardShell /> : <LogisticsDashboardShell />}</ProtectedRoute>;
 }
 
 export function AppNavigator() {

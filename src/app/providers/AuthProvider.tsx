@@ -10,7 +10,7 @@ import { SplashScreen } from '../../screens/SplashScreen';
 import { isDevelopmentMockOtpEnabled } from '../../services/auth/otp.strategy';
 import { demoService } from '../../services/demo/demo.service';
 import type { DemoAccount } from '../../services/demo/demo.types';
-import { getCurrentDemoApiToken, setCurrentDemoApiToken } from '../../services/api/api.client';
+import { getCurrentDemoApiToken, setCurrentDemoApiToken, onApiUnauthorized } from '../../services/api/api.client';
 
 // This is a development identity preference, never an Auth token or real session.
 const DEMO_PHONE_KEY = 'farmprism.demo.phone.v1';
@@ -36,7 +36,7 @@ function createMockUser(phone: string): User {
 
 function hasExpiredDemoToken(expiresAt: string | null): boolean {
   if (!expiresAt) return true;
-  return Number(new Date(expiresAt).getTime()) <= Date.now();
+  return !Number.isFinite(Date.parse(expiresAt)) || Date.parse(expiresAt) <= Date.now();
 }
 
 async function clearDemoApiSession() {
@@ -49,6 +49,7 @@ async function clearDemoApiSession() {
 
 async function createDemoApiSession(phone: string, otp: string): Promise<DemoSessionResponse> {
   const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? '';
+  if (!baseUrl) throw new Error('Set EXPO_PUBLIC_API_URL to your running FarmPrism server and restart the app.');
   const response = await fetch(`${baseUrl}/api/demo/session`, {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
@@ -57,7 +58,7 @@ async function createDemoApiSession(phone: string, otp: string): Promise<DemoSes
 
   const payload = await response.json().catch(() => null) as { data?: DemoSessionResponse; error?: { message?: string } } | null;
 
-  if (!response.ok || !payload?.data?.token) {
+  if (!response.ok || !payload?.data?.token || hasExpiredDemoToken(payload.data.expiresAt ?? null)) {
     throw new Error(payload?.error?.message ?? 'The demo session could not be created.');
   }
 
@@ -74,6 +75,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [demoApiToken, setDemoApiToken] = useState<string | null>(null);
   const [demoApiSessionReady, setDemoApiSessionReady] = useState(false);
   const restoredRef = useRef(false);
+
+  useEffect(() => {
+    onApiUnauthorized(() => {
+      setCurrentDemoApiToken(null);
+      setDemoApiToken(null); setMockAuthenticated(false); setDemoAccount(null); setUser(null);
+      void Promise.all([clearDemoApiSession(), AsyncStorage.removeItem(DEMO_PHONE_KEY)]).catch(() => {});
+    });
+    return () => onApiUnauthorized(null);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -96,7 +106,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           await clearDemoApiSession();
         }
 
-        if (phone) {
+        if (phone && storedToken && !hasExpiredDemoToken(storedExpiresAt)) {
           // Revalidate the fixed role with the RPC; cached role data is never trusted.
           const account = await demoService.account(normalizeIndianPhone(phone));
           if (mounted && account) {
@@ -125,10 +135,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
       let serverDemoToken: string | null = null;
       if (r.isMockAuth) {
         const sessionData = await createDemoApiSession(normalized, token);
+        if (!account || sessionData.account?.role !== account.role || sessionData.account?.phone !== account.phone) {
+          throw new Error('The server account does not match this login. Please retry.');
+        }
         serverDemoToken = sessionData.token ?? null;
         if (serverDemoToken) {
           await SecureStore.setItemAsync(DEMO_API_TOKEN_KEY, serverDemoToken);
-          await SecureStore.setItemAsync(DEMO_API_EXPIRES_AT_KEY, sessionData.expiresAt ?? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());
+          await SecureStore.setItemAsync(DEMO_API_EXPIRES_AT_KEY, sessionData.expiresAt!);
           setCurrentDemoApiToken(serverDemoToken);
           setDemoApiToken(serverDemoToken);
           setDemoApiSessionReady(true);

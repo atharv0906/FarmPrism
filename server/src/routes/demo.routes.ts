@@ -27,28 +27,14 @@ import { requireDemoRole, requireDemoSession, type AuthenticatedRequest } from '
 import type { DemoRole, DemoSessionAccount, PublicProfile } from '../types/domain.js';
 import { makeErrorEnvelope, makeSuccessEnvelope, normalizePhone, isSixDigitOtp, parseBearerToken, isAllowedDays, isCrop } from '../utils/validation.js';
 
-function toMarketHistoryPoint(row: Record<string, unknown>) {
-  return {
-    observedAt: String(row.observed_at ?? row.observedAt ?? new Date().toISOString()),
-    pricePerKg: Number(row.price_per_kg ?? row.pricePerKg ?? 0),
-    minPricePerKg: Number(row.min_price_per_kg ?? row.minPricePerKg ?? 0),
-    maxPricePerKg: Number(row.max_price_per_kg ?? row.maxPricePerKg ?? 0),
-    modalPricePerKg: Number(row.modal_price_per_kg ?? row.modalPricePerKg ?? 0),
-    source: String(row.source ?? 'supabase'),
-    isDemo: Boolean(row.is_demo ?? row.isDemo ?? false),
-    mandi: String(row.mandi ?? row.market_name ?? 'N/A'),
-    district: String(row.district ?? 'N/A'),
-    state: String(row.state ?? 'N/A'),
-  };
-}
-
 function toInventoryBatch(row: Record<string, unknown>) {
   return {
+    id: String(row.id),
     batchCode: String(row.batch_code ?? row.batchCode ?? ''),
     cropName: String(row.crop_name ?? row.cropName ?? ''),
     originalQuantityKg: Number(row.original_quantity_kg ?? row.originalQuantityKg ?? 0),
     remainingQuantityKg: Number(row.remaining_quantity_kg ?? row.remainingQuantityKg ?? 0),
-    qualityGrade: String(row.quality_grade ?? row.qualityGrade ?? 'C'),
+    qualityGrade: row.quality_grade ?? null,
     qualitySource: String(row.quality_source ?? row.qualitySource ?? 'farmer_declared'),
     status: String(row.status ?? 'available'),
   };
@@ -166,62 +152,6 @@ export function registerDemoRoutes(router: Router) {
       res.status(200).json(makeSuccessEnvelope(publicProfile));
     } catch (error) {
       next(error);
-    }
-  });
-
-  router.get('/api/market/:crop/history', requireDemoSession, async (req: Request, res: Response) => {
-    const crop = String(req.params.crop ?? '');
-    const daysParam = Number(req.query.days ?? 30);
-
-    if (!isCrop(crop)) {
-      res.status(400).json(makeErrorEnvelope('bad_input', 'Crop must be Tomato, Onion, or Potato.'));
-      return;
-    }
-
-    if (!isAllowedDays(daysParam)) {
-      res.status(400).json(makeErrorEnvelope('bad_input', 'Days must be one of 30, 60, or 90.'));
-      return;
-    }
-
-    try {
-      const points = await getMarketHistory(crop, daysParam);
-      res.status(200).json(makeSuccessEnvelope({
-        source: 'supabase',
-        isDemo: false,
-        crop,
-        days: daysParam,
-        points: (points ?? []).map((row: Record<string, unknown>) => toMarketHistoryPoint(row)),
-      }));
-    } catch (error) {
-      const message = 'Internal server error.';
-      res.status(500).json(makeErrorEnvelope('server_error', message));
-    }
-  });
-
-  router.get('/api/market/:crop/current', requireDemoSession, async (req: Request, res: Response) => {
-    const crop = String(req.params.crop ?? '');
-    if (!isCrop(crop)) {
-      res.status(400).json(makeErrorEnvelope('bad_input', 'Crop must be Tomato, Onion, or Potato.'));
-      return;
-    }
-
-    try {
-      const point = await getMarketCurrent(crop);
-      res.status(200).json(makeSuccessEnvelope({
-        mandi: String(point?.mandi ?? 'N/A'),
-        district: String(point?.district ?? 'N/A'),
-        state: String(point?.state ?? 'N/A'),
-        minPricePerKg: Number(point?.min_price_per_kg ?? point?.minPricePerKg ?? 0),
-        maxPricePerKg: Number(point?.max_price_per_kg ?? point?.maxPricePerKg ?? 0),
-        modalPricePerKg: Number(point?.modal_price_per_kg ?? point?.modalPricePerKg ?? 0),
-        observedAt: String(point?.observed_at ?? point?.observedAt ?? new Date().toISOString()),
-        source: String(point?.source ?? 'supabase'),
-        isDemo: Boolean(point?.is_demo ?? point?.isDemo ?? false),
-        crop,
-      }));
-    } catch (error) {
-      const message = 'Internal server error.';
-      res.status(500).json(makeErrorEnvelope('server_error', message));
     }
   });
 

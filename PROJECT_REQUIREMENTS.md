@@ -5,6 +5,12 @@ FarmPrism is a mobile agricultural marketplace designed to connect farmers, buye
 
 ## 2. Source of Truth / Latest Decisions
 
+Phase 2.0.6 authorizes session-aware cross-role mobile integration, temporary
+Farmer Sell/Insights/Profile flows, shared Orders/Notifications, and Node market
+intelligence using existing tables/RPCs only. See [Phase 2.0.6](PHASE_2_0_6.md).
+This supersedes prior prohibitions on mobile API wiring for earlier phases.
+The approved Farmer Home/My Farm visuals remain unchanged.
+
 Phase 2.0.4 authorizes Node routes for the existing marketplace, order, simulated
 payment, logistics, delivery OTP, feedback, and dispute RPCs, plus typed mobile
 API methods only. No approved Farmer UI or mobile screen wiring changes are

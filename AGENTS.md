@@ -19,7 +19,7 @@
 - Do not use fake data when implementing real features.
 - Do not implement final UI designs before approved designs are supplied.
 - Keep the approved Farmer Home and My Farm implementations intact.
-- Do not wire the mobile app to the Node/Express server in this phase.
+- Phase 2.0.6 authorizes session-aware Node API integration using existing tables/RPCs; preserve the approved Farmer Home/My Farm visuals.
 
 ## Prototype boundaries
 - Current prototype auth uses `EXPO_PUBLIC_MOCK_OTP=true` and accepts any six-digit numeric OTP.

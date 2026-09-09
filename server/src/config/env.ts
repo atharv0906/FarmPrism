@@ -8,6 +8,8 @@ export const env = {
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
   dataGovInApiKey: process.env.DATA_GOV_IN_API_KEY ?? '',
   aiProviderApiKey: process.env.AI_PROVIDER_API_KEY ?? '',
+  aiProviderModel: process.env.AI_PROVIDER_MODEL ?? '',
+  aiProviderEndpoint: process.env.AI_PROVIDER_ENDPOINT ?? '',
 };
 
 export function validateServerEnvironment() {

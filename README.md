@@ -4,6 +4,12 @@ FarmPrism is a mobile agricultural marketplace for farmers, buyers, and logistic
 
 ## Current Phase
 
+Phase 2.0.6 connects the temporary Farmer Sell/Insights and cross-role trading
+flows to the existing Node API, and adds government mandi data and statistical
+price intelligence. [Setup, manual paths and limitations](PHASE_2_0_6.md).
+This is the latest phase; older scaffold-only and unwired descriptions below
+are historical. Farmer Home/My Farm visuals remain approved and unchanged.
+
 Phase 2.0.4 adds the Node mutation API over existing atomic Supabase RPCs and
 typed mobile service methods. Farmer Home/My Farm remain unchanged and are
 not wired to those methods. See [the phase contract](server/PHASE_2_0_4.md)

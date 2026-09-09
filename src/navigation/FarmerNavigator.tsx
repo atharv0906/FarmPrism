@@ -3,6 +3,9 @@ import { Alert, Pressable, Text } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { FarmerMyFarmScreen } from '../screens/FarmerMyFarmScreen';
+import type { NavigatorScreenParams } from '@react-navigation/native';
+import type { TradingRoutes } from './TradingRoutes';
+import { FarmerSellNavigator, FarmerInsightsNavigator } from './TradingNavigator';
 
 import {
   FarmerDashboardScreen,
@@ -20,6 +23,8 @@ export type FarmerStackParamList = {
   Dashboard: undefined;
   MyFarm: undefined;
   Notifications: undefined;
+  Sell: NavigatorScreenParams<TradingRoutes> | undefined;
+  Insights: NavigatorScreenParams<TradingRoutes> | undefined;
 };
 
 const Stack = createNativeStackNavigator<FarmerStackParamList>();
@@ -40,6 +45,8 @@ export function FarmerNavigator() {
       <Stack.Screen name="Submitted" component={ProfileSubmittedScreen} />
       <Stack.Screen name="Dashboard" component={FarmerDashboardScreen} />
       <Stack.Screen name="MyFarm" component={FarmerMyFarmScreen} />
+      <Stack.Screen name="Sell" component={FarmerSellNavigator} />
+      <Stack.Screen name="Insights" component={FarmerInsightsNavigator} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: true, title: 'Notifications', headerTintColor: '#12642D', headerStyle: { backgroundColor: '#FAFAF2' } }} />
     </Stack.Navigator>
   );
