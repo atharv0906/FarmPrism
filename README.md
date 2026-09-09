@@ -1,99 +1,185 @@
-MADE BY ME(AK)
 # FarmPrism
 
-FarmPrism is a mobile agricultural marketplace connecting farmers, buyers, and logistics partners. Supabase is the backend and source of truth.
+FarmPrism is a mobile agricultural marketplace for farmers, buyers, and logistics partners. The app is currently structured around a React Native / Expo mobile client, Supabase for auth and persisted application data, and a separate Node/Express TypeScript API scaffold for future business and integration logic.
 
 ## Current Phase
 
-Phase 1C common UI is in progress:
+This repository is in the current prototype architecture and documentation update phase. The current local worktree is the source of truth, and the app must preserve working Farmer Home and My Farm flows while adding only infrastructure and documentation groundwork.
 
-- Splash and common first-time/returning flow
-- Supabase phone OTP Auth integration
-- Local and Supabase language persistence
-- Assigned-role loading and `last_role_id` persistence
-- Farmer onboarding flow and protected Buyer/Logistics placeholder destinations
-- Reusable common UI components
+Current prototype scope includes:
 
-Business dashboards and workflows are not implemented yet.
+- Expo/React Native application foundation
+- Supabase-backed auth and role flow
+- Demo prototype auth with fixed phone accounts and mock OTP
+- Existing approved Farmer Home and My Farm screens
+- Architecture and server scaffold for later business services
+
+Current prototype does not include:
+
+- full buyer/logistics screen buildout
+- production SMS OTP
+- blockchain features
+- production payment gateway integration
+- final buyer/logistics product UIs
+- real external AI/service integration in the app
 
 ## Technology
 
-- Expo `~57.0.20`
-- React `19.2.3`
-- React Native `0.86.3`
-- TypeScript `6.0.3`
-- Supabase JS `2.115.0`
-- React Navigation `7.3.18` and native stack `7.18.10`
-- AsyncStorage `3.1.1`
+- Expo
+- React Native
+- TypeScript
+- React Navigation
+- Supabase JS
+- Node.js / Express / TypeScript server scaffold
 
-## Roles
+## Role Model
 
-Exactly three application roles are supported:
+FarmPrism supports exactly three persisted application roles:
 
-- Farmer (`farmer`)
-- Buyer (`buyer`)
-- Logistics (`logistics`)
+- farmer
+- buyer
+- logistics
 
-## Prerequisites
+Important constraints:
 
-Install Node.js/npm and Git. Android development additionally requires Android Studio and an emulator or device. iOS development requires macOS and Xcode.
+- One login = one permanent application role.
+- A user does not have multiple active application roles.
+- There is no authenticated role switcher.
+- Changing role/account requires sign out and another login.
+- FPO is visible as a Role Selection tile only and is marked as Coming Soon.
+- FPO is not a persisted fourth role and is not added to the database enum.
 
-## Installation
+## Authentication and Demo Prototype
 
-```powershell
-git clone <repository-url>
-cd FarmPrism
-git checkout Development
-npm install
-```
+For the current prototype, the app uses `EXPO_PUBLIC_MOCK_OTP=true` in development.
 
-Copy `.env.example` to `.env` and configure the public Supabase URL and publishable key.
+Any numeric 6-digit OTP is accepted in mock mode. The fixed demo accounts are:
 
-For temporary local UI testing before SMS is configured, set `EXPO_PUBLIC_MOCK_OTP=true`. This development-only mode accepts any six-digit OTP without calling Supabase OTP APIs, creates no database records, and must be disabled for real SMS testing.
+- farmer1 / +919000000001 / Atharva Kharat
+- farmer2 / +919000000002 / Farmer Two
+- farmer3 / +919000000003 / Farmer Three
+- buyer1 / +919000000011 / Demo Restaurant Buyer
+- buyer2 / +919000000012 / Demo Wholesaler Buyer
+- buyer3 / +919000000013 / Demo Buyer Three
+- logistics1 / +919000000021 / Logistics One
+- logistics2 / +919000000022 / Logistics Two
+- logistics3 / +919000000023 / Logistics Three
 
-## Run
+This is a prototype demo/auth layer only. A server-issued internal demo session token will be introduced later for mutation authorization. Real Supabase SMS OTP remains future production scope.
 
-```powershell
-npm start
-npm run android
-npm run ios
-npm run web
-```
+## Crops and Units
 
-## Checks
+The prototype marketplace supports exactly these crops:
+
+- Tomato
+- Onion
+- Potato
+
+No additional crop is part of the current prototype. All quantities are stored internally in kilograms. Display uses the convention: 100 KG = 1 Quintal.
+
+## Farmer Home and My Farm
+
+The approved Farmer Home screen is already implemented and must remain frozen. It owns the existing dashboard behavior and quick actions, but it does not include a Trust Score.
+
+My Farm is the dedicated authenticated root for "What I have". The current implementation is the approved, working version and should be preserved. It focuses on:
+
+- Total Land
+- Crops
+- Available to Sell
+- Active Batches
+
+The following concepts are intentionally not present in the current My Farm version and must not be restored:
+
+- Soil Health
+- Irrigation
+- Crop-wise cultivated area
+- Expected Yield
+- Harvest Date
+- Farm Photos
+- bottom branding banner
+
+## Selling Methods
+
+The app supports exactly two selling methods:
+
+- Auction
+- Fixed Price
+
+Auction flow includes reserve/minimum selection, partial quantity acceptance, buyer bid revision and withdrawal, and farmer-side accepting/rejecting/closing behavior. Fixed-price flow includes a farmer-set fixed price, buyer request quantity, and advance terms with partial quantity support.
+
+## Quality and Market Intelligence
+
+Current prototype quality is farmer-declared. The supported prototype grades are:
+
+- Grade A
+- Grade B
+- Grade C
+
+The app must not present this as AI Verified or Certified unless a genuine verification pipeline is implemented.
+
+Market and AI price intelligence are coordinated through the Node/Express business API, with AGMARKNET / data.gov.in as the primary official source. Historical view windows include 30/60/90 day windows with a next-7-day recommendation horizon. The app must not hardcode fake selling-price recommendations directly in JSX.
+
+## Buyer, Logistics, and Orders
+
+The app is designed for buyer and logistics flows, but those screens are not implemented in this phase. The prototype architecture still supports:
+
+- orders created from accepted auction bids or fixed-price requests
+- logistics assignment and fee flows
+- delivery OTP and GPS tracking architecture
+- trust-score computation and feedback as backend-calculated values
+
+## Security and Server Boundary
+
+The mobile app uses only the Supabase public/publishable key. The Node/Express server may use privileged credentials when necessary, but those credentials must never be sent to React Native or stored in `EXPO_PUBLIC_*` values.
+
+Secrets must never be logged, including OTPs, session tokens, service-role keys, and external API keys.
+
+## Node/Express Scaffold
+
+This repository includes a minimal server workspace under `server/`.
+
+The server scaffold is intentionally small and suitable for future integration:
+
+- Express + TypeScript
+- health route at `GET /health`
+- public environment example file with placeholders only
+- application and middleware structure for later business API work
+
+The mobile app is not yet wired to this server; the server is a future integration boundary and documentation contract only.
+
+## Important Documentation Rule
+
+The current authoritative source is:
+
+- FarmPrism Detailed Walkthrough Architecture v5
+- latest explicit project decisions recorded in this repository
+
+Older product screenshots and stale README notes are visual references only and cannot override the current explicit architecture decisions.
+
+## Validation
+
+Run the following before finishing work:
 
 ```powershell
 npm run typecheck
-npx expo export --platform android
+cd server
+npm install
+npm run typecheck
+cd ..
+git diff --check
 ```
 
-Linting and automated tests are not configured yet.
+Do not commit or push from this phase.
 
-## Structure
+## Project Documents
 
-```text
-src/
-  app/          providers and composition root
-  components/   reusable UI
-  config/       environment and role configuration
-  hooks/        React hooks
-  lib/          Supabase client and helpers
-  navigation/  application flow and protected routes
-  screens/      common flow and placeholders
-  services/     Auth, preferences, and role services
-  types/        shared types
-  utils/        utilities
-  styles/       theme exports
-```
+- [PROJECT_REQUIREMENTS.md](PROJECT_REQUIREMENTS.md)
+- [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md)
+- [AGENTS.md](AGENTS.md)
 
-## Documentation
+## Repository Notes
 
-- [PROJECT_REQUIREMENTS.md](PROJECT_REQUIREMENTS.md) - product and implementation requirements
-- [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md) - setup, commands, architecture, and workflow
-- [AGENTS.md](AGENTS.md) - rules for AI coding agents
-
-## Supabase
-
-The Supabase project and database already exist. Do not create or modify tables, migrations, SQL, or RLS policies from this repository. The mobile app uses only public/publishable client credentials; never use a service-role key.
-
-Development work is based on the `Development` branch.
+- Keep the current Expo/React Native app structure intact.
+- Do not modify Supabase tables, RLS, or migrations.
+- Do not change the working Farmer Home or My Farm functionality.
+- Keep demos and prototype behavior clearly separated from future production scope.

@@ -1,74 +1,46 @@
 # FarmPrism Development Guide
 
-## Prerequisites
+## 1. Project Status
+This repository is an Expo/React Native mobile app with a Supabase-backed auth and data boundary and a minimal Node/Express server scaffold. The current local worktree is the source of truth. Do not reset, revert, or switch branches during this phase.
 
-- Node.js with npm. Use a current LTS Node.js release compatible with Expo SDK 57.
-- Git.
-- Android Studio and an Android emulator or device for Android development.
-- macOS with Xcode for iOS development.
-- Expo Go or an Expo development build where appropriate.
+The app is currently in prototype architecture and documentation groundwork. Existing Farmer Home and My Farm functionality must continue working without redesign or regression.
 
-The project is not a Python project and does not use a Python environment or `requirements.txt`.
+## 2. Prerequisites
+- Node.js and npm
+- Git
+- Android Studio and a device or emulator for Android validation
+- macOS and Xcode for iOS builds
+- Expo tooling
 
-## Technology Versions
+## 3. Setup
 
-The versions below come from `package.json` and the installed lockfile:
+### Mobile app
+```powershell
+git checkout Development
+npm install
+```
 
-- Expo: `~57.0.20`
-- React: `19.2.3`
-- React Native: `0.86.3`
-- TypeScript: `~6.0.3` (`6.0.3` installed)
-- Supabase JS: `^2.115.0` (`2.115.0` installed)
-- React Navigation: `@react-navigation/native` `7.3.18`; `@react-navigation/native-stack` `7.18.10`
-- AsyncStorage: `3.1.1`
-- Safe area context: `5.9.1`
-- React Native Screens: `4.27.0`
-- Expo Status Bar: `57.0.1`
-- React type definitions: `@types/react` `~19.2.2` (`19.2.18` installed)
-
-## Setup
-
-1. Install Node.js and npm.
-2. Clone the repository.
-3. Check out the Development branch:
-
-   ```powershell
-   git checkout Development
-   ```
-
-4. Install dependencies:
-
-   ```powershell
-   npm install
-   ```
-
-5. Copy `.env.example` to a local `.env` file and fill in the public Supabase values.
-6. Start Expo:
-
-   ```powershell
-   npm start
-   ```
-
-The repository's dependency source of truth is `package.json` and `package-lock.json`.
-
-## Environment Variables
-
-Required public variables:
+Create a local environment file for the app with the required public Supabase values. Example keys:
 
 ```env
 EXPO_PUBLIC_SUPABASE_URL=
 EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-EXPO_PUBLIC_MOCK_OTP=false
+EXPO_PUBLIC_MOCK_OTP=true
 ```
 
-`EXPO_PUBLIC_SUPABASE_ANON_KEY` remains supported as a compatibility fallback by the environment adapter, but new local configuration should use the publishable key name.
+Keep the app environment public-only. Never use a service-role key in the Expo app or in `EXPO_PUBLIC_*` values.
 
-Never commit `.env`, real credentials, service-role keys, private API keys, or generated secrets. The mobile application must never use a service-role key.
+### Server scaffold
+```powershell
+cd server
+npm install
+```
 
-`EXPO_PUBLIC_MOCK_OTP=true` is development-only and is additionally gated by Expo's `__DEV__` flag. It skips SMS delivery and accepts any six-digit numeric code through an in-memory development auth state. It must be `false` or unset when real Supabase SMS is enabled. Mock authentication does not create database users or roles; role selection remains backed by the existing Supabase `user_roles` data.
+The server has its own environment file based on `.env.example` and uses only placeholder values in the repository. No real credentials are checked in.
 
-## Run Commands
+## 4. Start Commands
 
+### Mobile
 ```powershell
 npm start
 npm run android
@@ -76,78 +48,131 @@ npm run ios
 npm run web
 ```
 
-Android requires an emulator/device. iOS requires macOS and Xcode. Web is supported by the current Expo project configuration.
-
-## Validation
-
-### Farmer Home demo integration (1.8.4D)
-
-Development mock OTP accepts any six digits. The app normalizes Indian phone numbers and looks up the fixed demo identity with `get_demo_account_by_phone`. Fixed accounts bypass role selection and farmer profile setup. Their role is revalidated through the RPC on restoration; no role switcher is offered. Sign out to use another account. Unknown phones retain the existing role-selection/profile flow, with phone-scoped remembered roles.
-
-Configure the existing public Supabase URL and publishable key in an ignored `.env.local`. Demo mode creates no Supabase Auth session and stores no OTP/password/token. Language remains local for mock identities. Real Auth behavior stays behind the existing non-mock path.
-
-The typed demo service calls the existing Home summary, notification list, and mark-read RPCs. Home refreshes on focus and pull-to-refresh; failed loads show Retry, and empty accounts show explicit empty states. Only non-demo previews use the centralized empty fallback. Missing business screens use Coming Soon with their canonical destination and crop context. My Farm opens its dedicated authenticated root; Profile retains its existing screen, and Notifications is a native stack screen.
-
-Behavior checks: `node --test tests/farmer-home.test.cjs`. Also test farmer1, farmer2, buyer1 and logistics1 on the emulator. Marking a demo notification read persists through the existing RPC, so subsequent farmer1 runs may correctly start with no unread dot.
-
-TypeScript:
-
+### Server
 ```powershell
-npm run typecheck
+cd server
+npm run dev
 ```
 
-Expo bundle validation:
+## 5. Current Implemented Truth
+The current app is aligned to the following decisions:
 
-```powershell
-npx expo export --platform android
-```
+- exactly three application roles: farmer, buyer, logistics
+- one login = one permanent role
+- FPO is Coming Soon only; not persisted as a fourth role
+- mock OTP is the current prototype auth path
+- nine fixed demo accounts exist for prototype flows
+- only Tomato, Onion, and Potato are in the current marketplace prototype
+- 100 KG = 1 Quintal for display formatting
+- Farmer Home is frozen and preserved
+- My Farm is the current approved root for “What I have”
+- Auction and Fixed Price are both part of the supported selling model
+- quality is currently farmer-declared A/B/C
+- AGMARKNET / data.gov.in is the primary market-data direction
+- Node/Express owns business logic; App does not yet call this server
+- blockchain is deferred
+- real SMS, payment gateway, and camera/video AI pipelines are future scope
 
-Linting is not currently configured. Testing is not currently configured. Do not report either as passing until scripts are added.
-
-## Architecture
+## 6. Architecture Summary
 
 ```text
 src/
-  app/          composition root and providers
-  components/   reusable UI components
-  config/       environment and role configuration
-  hooks/        React state access hooks
-  lib/          Supabase client and helpers
-  navigation/  root, auth, onboarding, and protected navigation
-  screens/      common flow and placeholder screens
-  services/     Auth, preferences, and role data access
-  types/        shared TypeScript types
-  utils/        utility exports
-  styles/       shared theme exports
+  app/
+  components/
+  config/
+  hooks/
+  lib/
+  navigation/
+  screens/
+  services/
+  types/
+  utils/
+  styles/
 ```
 
-The app uses explicit React Navigation. The Expo package may mention an optional router integration in its dependency metadata, but Expo Router is not an application dependency or routing implementation here.
+The app uses:
+- Expo + React Native + TypeScript
+- React Navigation
+- Supabase client for auth and data access
+- local demo/prototype services for working mock flows
 
-## Supabase Configuration
+The server scaffold is separate:
 
-Supabase is already provisioned separately. Do not create tables, migrations, SQL, or RLS changes from this repository. Use the existing service layer and the authenticated Supabase client. The frontend relies on Supabase Auth, `user_preferences`, `roles`, and `user_roles` for the current foundation. Phone OTP also requires an SMS provider configured by the project owner in the Supabase Dashboard.
+```text
+server/
+  src/
+    app.ts
+    server.ts
+    config/
+    routes/
+    middleware/
+    types/
+    services/
+```
 
-## Branch Workflow
+## 7. Supabase and Security Boundaries
+Supabase remains the source of truth for:
+- Auth
+- roles
+- preferences
+- application data
+- RLS boundary for real authenticated users
 
-- Development work belongs on the `Development` branch.
-- Review the current worktree before editing.
-- Keep commits focused and do not commit generated secrets.
-- Do not perform destructive refactors or history operations without explicit approval.
+Do not modify Supabase schema, tables, migrations, or RLS from this codebase. The mobile app must not include a service-role key.
 
-## Debugging
+The server may use service-role and integration credentials in its own environment only.
 
-Use the Expo terminal output and device logs for runtime issues. Start with:
+## 8. Validation Commands
+Run these after meaningful changes:
 
 ```powershell
 npm run typecheck
-npx expo config --type public
-npx expo export --platform android
 ```
 
-For authentication and role issues, verify the local public environment values, Supabase Auth configuration, assigned `user_roles`, and the existing RLS policies without modifying them.
+Server validation:
 
-### My Farm root (Phase 1.9.0)
+```powershell
+cd server
+npm install
+npm run typecheck
+npm run build
+```
 
-Authenticated `MyFarm` is separate from onboarding `FarmDetails`. All Home My Farm intents resolve to this dedicated screen. Bottom Home pops to Dashboard; Android Back returns to the previous screen. Missing crop, batch, produce, edit, activity and map destinations use typed Coming Soon intents.
+Repository validation:
 
-`src/components/farmer-my-farm/myFarmData.ts` owns the UI-only prototype and no-crops/no-produce fixtures. `FarmerMyFarmView` accepts this model as a prop for later service wiring. Quantities are stored in kg and converted to quintals for display. No Supabase calls or changes were added. The map area is a labeled placeholder; artwork reuses existing FarmPrism assets.
+```powershell
+git diff --check
+```
+
+Do not commit or push during this phase.
+
+## 9. Debugging Guidance
+When debugging auth or role issues, verify:
+- the public Supabase values in the Expo app
+- whether mock OTP is enabled
+- the assigned demo account / phone mapping
+- role persistence and auth restore flow
+- the current worktree state before editing
+
+When debugging server issues, validate the Express health route and ensure no real credentials are placed in the repository.
+
+## 10. Future Scope Boundaries
+The following remain clearly out of scope for current work:
+- real SMS OTP
+- camera/video AI quality verification
+- production payment gateway
+- blockchain
+- FPO role implementation
+- final buyer/logistics UI overhaul
+- production deployment hardening
+
+These are future phases and should be documented as such rather than implemented in the prototype.
+
+## 11. Rule Summary for Code Changes
+- keep the mobile architecture intact
+- do not redesign the approved Farmer Home or My Farm
+- do not create or modify Supabase schema, migrations, or RLS
+- do not introduce server dependencies into the mobile app
+- do not add fake production features disguised as real functionality
+- keep the server scaffold minimal and isolated
+- preserve working functionality while making only architecture and docs groundwork changes
