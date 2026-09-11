@@ -6,7 +6,7 @@ import type { AddressInfo } from 'node:net';
 
 // Set before dynamic imports: no real environment or database is used.
 process.env.SUPABASE_URL = 'https://test.supabase.co';
-process.env.SUPABASE_SERVICE_ROLE_KEY = 'unit-test-placeholder';
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'unit-test-service-role-key';
 const { supabaseAdmin } = await import('../lib/supabaseAdmin.js');
 const { registerMutationRoutes } = await import('./mutation.routes.js');
 const { errorHandler } = await import('../middleware/error.middleware.js');

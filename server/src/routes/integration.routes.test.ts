@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import express from 'express';
 import type { AddressInfo } from 'node:net';
 process.env.SUPABASE_URL = 'https://test.supabase.co';
-process.env.SUPABASE_SERVICE_ROLE_KEY = 'unit-test-placeholder';
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'unit-test-service-role-key';
 const { registerIntegrationRoutes } = await import('./integration.routes.js');
 const { errorHandler } = await import('../middleware/error.middleware.js');
 import type { AuthenticatedRequest } from '../middleware/auth.js';

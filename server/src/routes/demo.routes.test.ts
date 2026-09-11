@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { isSixDigitOtp, parseBearerToken } from '../utils/validation.js';
 process.env.SUPABASE_URL = 'https://test.supabase.co';
-process.env.SUPABASE_SERVICE_ROLE_KEY = 'unit-test-placeholder';
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'unit-test-service-role-key';
 const { hashToken } = await import('../lib/demoStore.js');
 
 test('OTP validation rejects non-six-digit values', () => {

@@ -27,6 +27,11 @@ import { requireDemoRole, requireDemoSession, type AuthenticatedRequest } from '
 import type { DemoRole, DemoSessionAccount, PublicProfile } from '../types/domain.js';
 import { makeErrorEnvelope, makeSuccessEnvelope, normalizePhone, isSixDigitOtp, parseBearerToken, isAllowedDays, isCrop } from '../utils/validation.js';
 
+function logDemoSessionError(step: string, error: unknown) {
+  const message = error instanceof Error ? error.message : 'Unknown error';
+  console.error(`[demo/session] ${step}`, { message: message.slice(0, 300) });
+}
+
 function toInventoryBatch(row: Record<string, unknown>) {
   return {
     id: String(row.id),
@@ -52,14 +57,26 @@ export function registerDemoRoutes(router: Router) {
         return;
       }
 
-      const account = await getDemoAccountByPhone(phone);
+      let account;
+      try {
+        account = await getDemoAccountByPhone(phone);
+      } catch (error) {
+        logDemoSessionError('account lookup failed', error);
+        throw error;
+      }
       if (!account || !account.isEnabled) {
         res.status(401).json(makeErrorEnvelope('invalid_session', 'Demo account not found or disabled.'));
         return;
       }
 
       const rawToken = generateSecureToken();
-      const session = await createDemoSessionRow(account.id, rawToken);
+      let session;
+      try {
+        session = await createDemoSessionRow(account.id, rawToken);
+      } catch (error) {
+        logDemoSessionError('session insert failed', error);
+        throw error;
+      }
 
       res.status(200).json(makeSuccessEnvelope({
         token: rawToken,
@@ -71,7 +88,7 @@ export function registerDemoRoutes(router: Router) {
           fullName: account.fullName,
         },
       }));
-    } catch (error) {
+    } catch {
       const message = 'Internal server error.';
       res.status(500).json(makeErrorEnvelope('server_error', message));
     }
@@ -183,7 +200,7 @@ export function registerDemoRoutes(router: Router) {
       const data = await getBuyerMarketplace();
       res.status(200).json(makeSuccessEnvelope(data));
     } catch (error) {
-      const message = 'Internal server error.';
+            const message = 'Internal server error.';
       res.status(500).json(makeErrorEnvelope('server_error', message));
     }
   });

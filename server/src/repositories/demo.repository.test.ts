@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 process.env.SUPABASE_URL = 'https://test.supabase.co';
-process.env.SUPABASE_SERVICE_ROLE_KEY = 'unit-test-placeholder';
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'unit-test-service-role-key';
 const { supabaseAdmin } = await import('../lib/supabaseAdmin.js');
 const repository = await import('./demo.repository.js');
 const { getDemoAccountById } = await import('../lib/demoStore.js');
