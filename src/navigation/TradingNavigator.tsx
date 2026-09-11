@@ -11,16 +11,17 @@ import { SellHomeScreen, SelectBatchScreen, QualityScreen, PriceInsightScreen, C
 import { MarketScreen, MarketDetailsScreen } from '../screens/trading/MarketScreens';
 import { ProfileScreen, OrdersScreen, OrderScreen, TradingNotificationsScreen } from '../screens/trading/SharedScreens';
 import { BuyerHomeScreen, MyBidsScreen, BidFormScreen, JobsScreen, JobScreen } from '../screens/trading/BuyerLogisticsScreens';
+import { FarmerBottomNav } from '../components/farmer-sell/FarmerSellUI';
 
 const Stack = createNativeStackNavigator<TradingRoutes>();
 function Tabs({ role }: { role: Role }) {
+  if (role === 'farmer') return <FarmerBottomNav />;
   const navigation = useNavigation<NativeStackNavigationProp<TradingRoutes>>();
   const parent = navigation.getParent<NativeStackNavigationProp<FarmerStackParamList>>();
   const insets = useSafeAreaInsets();
   const route = useNavigationState(state => state.routes[state.index]?.name);
-  const tabs: Array<[string, keyof TradingRoutes | 'Dashboard' | 'MyFarm']> = role === 'farmer'
-    ? [['Home', 'Dashboard'], ['My Farm', 'MyFarm'], ['Sell', 'SellHome'], ['Insights', 'Market'], ['Profile', 'Profile']]
-    : role === 'buyer' ? [['Home', 'BuyerHome'], ['Market', 'BuyerMarket'], ['My Bids', 'MyBids'], ['Orders', 'Orders'], ['Profile', 'Profile']]
+  const tabs: Array<[string, keyof TradingRoutes | 'Dashboard' | 'MyFarm']> = role === 'buyer'
+    ? [['Home', 'BuyerHome'], ['Market', 'BuyerMarket'], ['My Bids', 'MyBids'], ['Orders', 'Orders'], ['Profile', 'Profile']]
     : [['Home', 'LogisticsHome'], ['Jobs', 'Jobs'], ['Active', 'Active'], ['History', 'History'], ['Profile', 'Profile']];
   return <View style={[s.tabs, { paddingBottom: Math.max(10, insets.bottom) }]}>{tabs.map(([label, target]) =>
     <Pressable accessibilityRole="tab" accessibilityState={{ selected: route === target }} key={label} style={s.tab} onPress={() => {
@@ -40,7 +41,7 @@ function Tabs({ role }: { role: Role }) {
 }
 export function TradingNavigator({ role, initial = 'SellHome' }: { role: Role; initial?: keyof TradingRoutes }) {
   return <Stack.Navigator initialRouteName={initial} screenLayout={({ children }) => <View style={{ flex: 1 }}>{children}<Tabs role={role} /></View>}
-    screenOptions={({ navigation }) => ({ headerStyle: { backgroundColor: '#FAFAF2' }, headerTintColor: '#12642D',
+    screenOptions={({ navigation }) => ({ headerShown: role !== 'farmer', headerStyle: { backgroundColor: '#FAFAF2' }, headerTintColor: '#12642D',
       headerRight: () => <Pressable accessibilityRole="button" accessibilityLabel="Notifications" style={{ padding: 10 }} onPress={() => navigation.navigate('Notifications')}><Text style={{ color: '#12642D' }}>Notifications</Text></Pressable> })}>
     {role === 'farmer' && <>
       <Stack.Screen name="SellHome" component={SellHomeScreen} options={{ title: 'Sell' }} />

@@ -1,14 +1,21 @@
-import { useState } from 'react';
+import { useState, type PropsWithChildren } from 'react';
 import { Text } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { TradingRoutes } from '../../navigation/TradingRoutes';
 import type { Profile } from '../../services/api/trading.types';
-import { useAuth } from '../../hooks/useAuth';
 import { useTrading } from '../../hooks/useTrading';
 import { useTradingAction } from '../../hooks/useTradingAction';
 import { marketplaceMutations as mutations } from '../../services/api/mutation.client';
 import { tradingClient } from '../../services/api/trading.client';
 import { Page, Card, Button, Field, money, date } from '../../components/trading/TradingUI';
+import { FarmerPage } from '../../components/farmer-sell/FarmerSellUI';
+import { useAuth } from '../../hooks/useAuth';
+
+function TradingPage({ title, children, loading, error, retry }: PropsWithChildren<{ title: string; loading?: boolean; error?: string | null; retry?: () => void }>) {
+  const { demoAccount } = useAuth();
+  if (demoAccount?.role === 'farmer') return <FarmerPage title={title} back={title !== 'Profile'} selectedTab={title === 'Profile' ? 'Profile' : 'Sell'} loading={loading} error={error} retry={retry}>{children}</FarmerPage>;
+  return <Page title={title} loading={loading} error={error} retry={retry}>{children}</Page>;
+}
 type Props<K extends keyof TradingRoutes> = NativeStackScreenProps<TradingRoutes, K>;
 export function ProfileCard({ profile }: { profile?: Profile }) {
   if (!profile) return <Card><Text>Profile unavailable.</Text></Card>;
@@ -25,16 +32,16 @@ export function ProfileCard({ profile }: { profile?: Profile }) {
 export function ProfileScreen({ route }: Props<'Profile'>) {
   const state = useTrading(), { logout } = useAuth(), [error, setError] = useState<string | null>(null);
   const profile = route.params?.accountId ? state.data?.profiles.find(p => p.id === route.params?.accountId) : state.data?.me;
-  return <Page title="Profile" loading={state.loading} error={error ?? state.error} retry={() => void state.refresh()}>
+  return <TradingPage title="Profile" loading={state.loading} error={error ?? state.error} retry={() => void state.refresh()}>
     {state.data && <ProfileCard profile={profile} />}
     {!route.params?.accountId && <><Text>Profile editing is not available through the current API.</Text><Button title="Sign out" onPress={() => void logout().catch(e => setError(e instanceof Error ? e.message : 'Unable to sign out.'))} /></>}
-  </Page>;
+  </TradingPage>;
 }
 export function OrdersScreen({ navigation, route }: Props<'Orders'> | Props<'History'>) {
   const state = useTrading(), [filter, setFilter] = useState<'all' | 'auction' | 'fixed' | 'completed'>('all');
   const history = route.name === 'History';
   const orders = state.data?.orders.filter(o => filter === 'all' || o.kind === filter || (filter === 'completed' && o.status === 'completed')) ?? [];
-  return <Page title={history ? 'Selling History' : 'Orders'} {...state} retry={() => void state.refresh()}>
+  return <TradingPage title={history ? 'Selling History' : 'Orders'} loading={state.loading} error={state.error} retry={() => void state.refresh()}>
     {(['all', 'auction', 'fixed', 'completed'] as const).map(f => <Button key={f} title={(filter === f ? '✓ ' : '') + f} onPress={() => setFilter(f)} />)}
     {state.data && !orders.length && <Text>No orders in this view yet.</Text>}
     {orders.map(o => <Card key={o.id} title={o.code + ' · ' + o.batch.crop}>
@@ -45,7 +52,7 @@ export function OrdersScreen({ navigation, route }: Props<'Orders'> | Props<'His
     {history && state.data?.items.filter(i => !['open', 'active', 'partially_sold'].includes(i.status)).map(i => <Card key={i.id} title={i.batch.crop + ' · ' + i.status}>
       <Text>{i.kind} · {i.offeredKg} KG offered · {i.remainingKg} KG remaining</Text><Button title="View Listing" onPress={() => navigation.navigate('Item', { itemId: i.id })} />
     </Card>)}
-  </Page>;
+  </TradingPage>;
 }
 export function OrderScreen({ route, navigation }: Props<'Order'>) {
   const state = useTrading(), action = useTradingAction(state.refresh), { demoApiToken } = useAuth();
@@ -53,7 +60,7 @@ export function OrderScreen({ route, navigation }: Props<'Order'>) {
   const data = state.data, order = data?.orders.find(o => o.id === route.params.orderId), job = data?.jobs.find(j => j.orderId === order?.id);
   const options = { bearerToken: demoApiToken ?? '' }, buyer = data?.me.role === 'buyer', logistics = data?.me.role === 'logistics';
   const participants = data?.profiles.filter(p => p.id !== data.me.id && [order?.farmerId, order?.buyerId, job?.logisticsId].includes(p.id)) ?? [];
-  return <Page title={order?.code ?? 'Order Details'} loading={state.loading} error={action.error ?? state.error} retry={() => void state.refresh()}>
+  return <TradingPage title={order?.code ?? 'Order Details'} loading={state.loading} error={action.error ?? state.error} retry={() => void state.refresh()}>
     {order ? <>
       <Card title={order.batch.crop + ' · ' + order.batch.code}><Text>{order.quantityKg} KG · {money(order.pricePerKg)}/KG · Total {money(order.total)}</Text>
         <Text>Farmer advance: {order.advancePercent}% · {order.status}</Text><Text>Logistics: {job?.status ?? 'Not assigned'}</Text>
@@ -79,11 +86,11 @@ export function OrderScreen({ route, navigation }: Props<'Order'>) {
         <Button title="Submit feedback" disabled={action.pending || !to || !Number.isInteger(Number(rating)) || Number(rating) < 1 || Number(rating) > 5} onPress={() => void action.run(() => mutations.submitFeedback(order.id, { toAccountId: to, rating: Number(rating), comment }, options))} />
         <Text>Trust is recalculated by the backend.</Text></Card>}
     </> : data && <Text>Order is unavailable for this account.</Text>}
-  </Page>;
+  </TradingPage>;
 }
 export function TradingNotificationsScreen({ navigation }: Props<'Notifications'>) {
   const state = useTrading(), action = useTradingAction(state.refresh);
-  return <Page title="Notifications" loading={state.loading} error={action.error ?? state.error} retry={() => void state.refresh()}>
+  return <TradingPage title="Notifications" loading={state.loading} error={action.error ?? state.error} retry={() => void state.refresh()}>
     {state.data && !state.data.notifications.length && <Text>No notifications yet.</Text>}
     {state.data?.notifications.map(item => <Card key={item.id} title={item.title}><Text>{item.body}</Text><Text>{date(item.createdAt)} · {item.readAt ? 'Read' : 'Unread'}</Text>
       <Button title="Open" disabled={action.pending} onPress={() => void action.run(() => tradingClient.markRead(item.id), () => {
@@ -97,5 +104,5 @@ export function TradingNotificationsScreen({ navigation }: Props<'Notifications'
         else navigation.navigate(data.me.role === 'farmer' ? 'SellHome' : data.me.role === 'buyer' ? 'BuyerHome' : 'LogisticsHome');
       })} />
     </Card>)}
-  </Page>;
+  </TradingPage>;
 }
