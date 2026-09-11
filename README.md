@@ -159,6 +159,28 @@ The server scaffold is intentionally small and suitable for future integration:
 
 The mobile app is not yet wired to this server; the server is a future integration boundary and documentation contract only.
 
+## Local Development Startup
+
+Terminal 1:
+
+```powershell
+npm run dev
+```
+
+Terminal 2:
+
+```powershell
+npm run dev:mobile
+```
+
+Health test:
+
+```powershell
+Invoke-RestMethod http://localhost:3000/health
+```
+
+For an Android emulator, use `EXPO_PUBLIC_API_URL=http://10.0.2.2:3000`. `localhost` inside the Android emulator points to the emulator itself, so Android uses `10.0.2.2` to reach the host computer.
+
 ## Important Documentation Rule
 
 The current authoritative source is:

@@ -52,7 +52,29 @@ The server has its own environment file based on `.env.example` and uses only pl
 
 ## 4. Start Commands
 
-### Mobile
+### Local development
+
+Terminal 1:
+
+```powershell
+npm run dev
+```
+
+Terminal 2:
+
+```powershell
+npm run dev:mobile
+```
+
+Health test:
+
+```powershell
+Invoke-RestMethod http://localhost:3000/health
+```
+
+For an Android emulator, set `EXPO_PUBLIC_API_URL=http://10.0.2.2:3000`. `localhost` inside the Android emulator points to the emulator itself, so Android uses `10.0.2.2` to reach the host computer.
+
+### Mobile commands
 ```powershell
 npm start
 npm run android
