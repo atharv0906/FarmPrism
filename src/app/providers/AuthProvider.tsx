@@ -11,6 +11,7 @@ import { isDevelopmentMockOtpEnabled } from '../../services/auth/otp.strategy';
 import { demoService } from '../../services/demo/demo.service';
 import type { DemoAccount } from '../../services/demo/demo.types';
 import { getCurrentDemoApiToken, setCurrentDemoApiToken, onApiUnauthorized } from '../../services/api/api.client';
+import { getApiBaseUrl } from '../../services/api/api.config';
 
 // This is a development identity preference, never an Auth token or real session.
 const DEMO_PHONE_KEY = 'farmprism.demo.phone.v1';
@@ -48,8 +49,7 @@ async function clearDemoApiSession() {
 }
 
 async function createDemoApiSession(phone: string, otp: string): Promise<DemoSessionResponse> {
-  const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? '';
-  if (!baseUrl) throw new Error('Set EXPO_PUBLIC_API_URL to your running FarmPrism server and restart the app.');
+  const baseUrl = getApiBaseUrl();
   const response = await fetch(`${baseUrl}/api/demo/session`, {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
@@ -157,7 +157,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       const tokenToRevoke = demoApiToken ?? getCurrentDemoApiToken();
       if (tokenToRevoke) {
         try {
-          const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? '';
+          const baseUrl = getApiBaseUrl();
           await fetch(`${baseUrl}/api/demo/logout`, {
             method: 'POST',
             headers: { Accept: 'application/json', Authorization: `Bearer ${tokenToRevoke}` },

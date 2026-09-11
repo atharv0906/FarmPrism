@@ -1,9 +1,10 @@
+import { getApiBaseUrl } from './api.config';
+
 export type ApiClientOptions = {
   baseUrl?: string;
   bearerToken?: string;
 };
 
-const DEFAULT_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? '';
 let currentDemoApiToken: string | null = null;
 let unauthorized: (() => void) | null = null;
 export function onApiUnauthorized(handler: (() => void) | null) { unauthorized = handler; }
@@ -20,9 +21,13 @@ export function getCurrentDemoApiToken() {
 }
 
 export async function apiRequest<T>(path: string, options: { method?: 'GET' | 'POST'; body?: unknown; bearerToken?: string; headers?: Record<string, string> } = {}): Promise<T> {
-  const baseUrl = options.headers?.['x-api-base-url'] ?? DEFAULT_BASE_URL;
+  let baseUrl: string;
+  try {
+    baseUrl = options.headers?.['x-api-base-url'] ?? getApiBaseUrl();
+  } catch (error) {
+    throw new ApiError(503, 'API_NOT_CONFIGURED', error instanceof Error ? error.message : 'The API address is not configured.');
+  }
   const resolvedBearerToken = options.bearerToken ?? currentDemoApiToken;
-  if (!baseUrl) throw new ApiError(503, 'API_NOT_CONFIGURED', 'The API address is not configured. Set EXPO_PUBLIC_API_URL and restart the app.');
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20000);
   const response = await fetch(`${baseUrl}${path}`, {
