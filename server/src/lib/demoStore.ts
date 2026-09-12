@@ -165,7 +165,7 @@ export async function findActiveSessionByToken(rawToken: string): Promise<DemoSe
 
 export async function revokeDemoSessionByToken(rawToken: string): Promise<boolean> {
   const tokenHash = hashToken(rawToken);
-  const { error } = await supabaseAdmin.from('demo_sessions').update({ revoked_at: new Date().toISOString() }).eq('token_hash', tokenHash).eq('revoked_at', null);
+  const { error } = await supabaseAdmin.from('demo_sessions').update({ revoked_at: new Date().toISOString() }).eq('token_hash', tokenHash).is('revoked_at', null);
 
   if (error) {
     throw new Error(error.message);

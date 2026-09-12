@@ -206,7 +206,7 @@ export async function revokeSessionByToken(rawToken: string): Promise<boolean> {
     .from('demo_sessions')
     .update({ revoked_at: new Date().toISOString() })
     .eq('token_hash', tokenHash)
-    .eq('revoked_at', null);
+    .is('revoked_at', null);
 
   if (error) {
     throw new Error(error.message);

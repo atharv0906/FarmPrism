@@ -1,62 +1,38 @@
 # FarmPrism Development Guide
 
-Current local phase: [2.0.10 — cross-role stabilization](PHASE_2_0_10.md). This supersedes historical phase-status and temporary-UI restrictions below; approved Farmer Home/My Farm remain unchanged.
+## Current architecture
 
-## 1. Project Status
+Phase 2.0.11 finalizes the working prototype. React Native / Expo / TypeScript → Node/Express business API → Supabase. Mobile API integration, Buyer/Logistics screens, demo sessions, marketplace and delivery flows are implemented. Supabase remains the persisted source of truth, real-auth RLS boundary and host of existing transactional/demo RPCs. Node owns authorization and business/integration orchestration.
 
-The latest phase is [2.0.6](PHASE_2_0_6.md): cross-role mobile integration and
-Node market intelligence. Configure the private server environment and public
-mobile API URL before the manual demo. The phase document supersedes the
-historical scaffold-only setup below and lists all validation commands.
+The current local Development tree is authoritative. Do not reset, revert, checkout, stash, create a branch, commit or push during this phase. Preserve existing user edits and assets. Approved Farmer Home/My Farm are visually frozen; do not broadly redesign Buyer/Logistics. Current screen brief: assets/FarmPrism_Designer_Screen_MDs/INDEX.md and MASTER_FLOW.md.
 
-Phase 2.0.4 implements the existing atomic RPC mutation routes and typed mobile
-API methods; the Farmer screens remain unwired and unchanged. The current
-implementation contract and known database limitation are documented in
-[server/PHASE_2_0_4.md](server/PHASE_2_0_4.md). Older scaffold-only phase
-descriptions below are historical. Run root typecheck and server typecheck,
-build, and tests; tests mock Supabase and require no real credentials.
-This repository is an Expo/React Native mobile app with a Supabase-backed auth and data boundary and a minimal Node/Express server scaffold. The current local worktree is the source of truth. Do not reset, revert, or switch branches during this phase.
+## Setup
 
-The app is currently in prototype architecture and documentation groundwork. Existing Farmer Home and My Farm functionality must continue working without redesign or regression.
+Use Node.js 22 or later and npm. Android device/emulator validation needs Android tooling; native iOS needs macOS/Xcode. Keep mobile and server packages separate.
 
-## 2. Prerequisites
-- Node.js and npm
-- Git
-- Android Studio and a device or emulator for Android validation
-- macOS and Xcode for iOS builds
-- Expo tooling
-
-## 3. Setup
-
-### Mobile app
 ```powershell
-git checkout Development
 npm install
+npm --prefix server install
 ```
 
-Create a local environment file for the app with the required public Supabase values. Example keys:
+Create root .env from .env.example with public Supabase URL/key and EXPO_PUBLIC_API_URL. Publishable key is preferred; retain legacy anon-key fallback. Development mock OTP is EXPO_PUBLIC_MOCK_OTP=true. Do not put server credentials in root .env or EXPO_PUBLIC_* variables. Never overwrite existing ignored environments with examples.
 
-```env
-EXPO_PUBLIC_SUPABASE_URL=
-EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-EXPO_PUBLIC_MOCK_OTP=true
-```
+Create server/.env from server/.env.example. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are server credentials/configuration. MARKET_PROVIDER=data_gov is the supported market adapter. Unknown provider or invalid explicit config fails safely at startup.
 
-Keep the app environment public-only. Never use a service-role key in the Expo app or in `EXPO_PUBLIC_*` values.
+| Server market setting | Behavior |
+| --- | --- |
+| MARKET_API_BASE_URL | HTTPS resource base; default https://api.data.gov.in/resource; no credentials/query/fragment |
+| MARKET_API_KEY | Canonical secret key; never print or expose to mobile |
+| MARKET_RESOURCE_ID | Configured resource identifier; no hardcoded default |
+| MARKET_API_LIMIT | Integer 1–1000, default 100 |
+| MARKET_API_TIMEOUT_MS | Integer 1–60000, default 10000 |
+| DATA_GOV_IN_API_KEY | Deprecated compatibility only when MARKET_API_KEY is blank/missing |
 
-### Server scaffold
-```powershell
-cd server
-npm install
-```
+Missing key/resource skips official requests and retains DB fallback; server startup does not require market credentials. Changing ignored server/.env requires restarting Node. Do not duplicate a configured legacy key unnecessarily. AI_PROVIDER_API_KEY/MODEL/ENDPOINT remain optional for the existing explanation gateway protocol; never assume a vendor-specific contract.
 
-The server has its own environment file based on `.env.example` and uses only placeholder values in the repository. No real credentials are checked in.
+## Run
 
-## 4. Start Commands
-
-### Local development
-
-Terminal 1:
+Terminal 1, repository root:
 
 ```powershell
 npm run dev
@@ -68,147 +44,58 @@ Terminal 2:
 npm run dev:mobile
 ```
 
-Health test:
+Health check:
 
 ```powershell
 Invoke-RestMethod http://localhost:3000/health
 ```
 
-For an Android emulator, set `EXPO_PUBLIC_API_URL=http://10.0.2.2:3000`. `localhost` inside the Android emulator points to the emulator itself, so Android uses `10.0.2.2` to reach the host computer.
+The Android emulator reaches the host at EXPO_PUBLIC_API_URL=http://10.0.2.2:3000. On a physical device use the reachable host address. Mobile commands remain npm start, npm run android, npm run ios and npm run web. Server commands can run with npm --prefix server.
 
-### Mobile commands
+## Auth and data boundaries
+
+The nine fixed accounts and three permanent roles are listed in PROJECT_REQUIREMENTS.md. Any six-digit numeric OTP works only in development mock mode. Server-issued tokens are implemented and persist through the existing SecureStore/provider lifecycle. Requests validate the stored hash, expiry, revocation and enabled account. Logout writes revoked_at using IS NULL and a reused token is rejected. Role/account changes require sign-out, not a switcher. FPO remains Coming Soon only.
+
+Never print raw bearer tokens, token hashes, OTPs, market/AI keys or service-role credentials. Use process-memory tokens for targeted live tests. Do not change schema, migrations, RLS or deployed functions. Business transactions use existing authorized RPCs. Unit tests must use injected/mocked dependencies, never live reset or live government data.
+
+## Market behavior and diagnostics
+
+The adapter preserves Maharashtra and optional district filters, validates dates and positive ordered prices, converts INR/Quintal to INR/KG, and caches normalized official observations in existing storage. Valid official results survive DB read/cache-write outages. Official outages retain honest DB observations. Never log request URLs containing api-key.
+
+Current provenance follows the current observation, independently of historical demo inputs. Farmer sees one subtle source label and Current / Min / Max / Suggested / Next 7 Days in ₹/Quintal; no raw history, confidence, volatility or fallback diagnostics. Keep analysis internal.
+
+Price recommendations apply the locked grade (+1.5/0/-1.5%), demand (+1.5/+0.5/0%) and quantity (0/-0.5/-1%) policy after market momentum, capped at ±3%, followed by the existing volatility width. This is deterministic contextual/statistical behavior, not trained AI or a guarantee. Optional AI may explain, never override numeric prices.
+
+If local MARKET_API_KEY and MARKET_RESOURCE_ID exist, the targeted live market check uses a Farmer1 session through Node for Tomato, Onion and Potato, preferably Pune. Report official attempt/normalized rows, effective source, observed date and numerical validity without key/URL/token disclosure. A legitimate missing local observation with healthy fallback is not a regression.
+
+## Development reset CLI
+
+The existing service-role-only demo_reset_prototype_data() RPC is already deployed. The server CLI accepts exactly one confirmation argument and rejects NODE_ENV=production:
+
 ```powershell
-npm start
-npm run android
-npm run ios
-npm run web
+npm --prefix server run reset:demo -- RESET_FARMPRISM_DEMO
 ```
 
-### Server
-```powershell
-cd server
-npm run dev
-```
+It calls only that RPC and outputs whitelisted summary fields; no arbitrary SQL, table or function names and no HTTP/mobile reset surface. It clears demo sessions/transactions and restores the RPC's defined inventory/marketplace/trust scenario; static accounts/profiles/mandi data stay intact. This discards successful live E2E evidence. Do not run automatically or in unit tests. The developer must deliberately choose when to reset.
 
-## 5. Current Implemented Truth
-The current app is aligned to the following decisions:
-
-- exactly three application roles: farmer, buyer, logistics
-- one login = one permanent role
-- FPO is Coming Soon only; not persisted as a fourth role
-- mock OTP is the current prototype auth path
-- nine fixed demo accounts exist for prototype flows
-- only Tomato, Onion, and Potato are in the current marketplace prototype
-- 100 KG = 1 Quintal for display formatting
-- Farmer Home is frozen and preserved
-- My Farm is the current approved root for “What I have”
-- Auction and Fixed Price are both part of the supported selling model
-- quality is currently farmer-declared A/B/C
-- AGMARKNET / data.gov.in is the primary market-data direction
-- Node/Express owns business logic; App does not yet call this server
-- blockchain is deferred
-- real SMS, payment gateway, and camera/video AI pipelines are future scope
-
-## 6. Architecture Summary
-
-```text
-src/
-  app/
-  components/
-  config/
-  hooks/
-  lib/
-  navigation/
-  screens/
-  services/
-  types/
-  utils/
-  styles/
-```
-
-The app uses:
-- Expo + React Native + TypeScript
-- React Navigation
-- Supabase client for auth and data access
-- local demo/prototype services for working mock flows
-
-The server scaffold is separate:
-
-```text
-server/
-  src/
-    app.ts
-    server.ts
-    config/
-    routes/
-    middleware/
-    types/
-    services/
-```
-
-## 7. Supabase and Security Boundaries
-Supabase remains the source of truth for:
-- Auth
-- roles
-- preferences
-- application data
-- RLS boundary for real authenticated users
-
-Do not modify Supabase schema, tables, migrations, or RLS from this codebase. The mobile app must not include a service-role key.
-
-The server may use service-role and integration credentials in its own environment only.
-
-## 8. Validation Commands
-Run these after meaningful changes:
+## Validation
 
 ```powershell
 npm run typecheck
-```
-
-Server validation:
-
-```powershell
-cd server
-npm install
-npm run typecheck
-npm run build
-```
-
-Repository validation:
-
-```powershell
+npm run test:mobile
+npm --prefix server run typecheck
+npm --prefix server run build
+npm --prefix server test
+npx expo export --platform android --output-dir .expo/phase-2-0-11-export
 git diff --check
 ```
 
-Do not commit or push during this phase.
+Server typecheck includes the reset CLI via tsconfig.scripts.json; normal build output stays under server/dist. Tests use mocked repositories/Supabase. Export output belongs in ignored .expo.
 
-## 9. Debugging Guidance
-When debugging auth or role issues, verify:
-- the public Supabase values in the Expo app
-- whether mock OTP is enabled
-- the assigned demo account / phone mapping
-- role persistence and auth restore flow
-- the current worktree state before editing
+Targeted live logout: create Farmer1 session in memory → authenticated /api/workspace 200 → POST /api/demo/logout 200 → same token /api/workspace 401. Do not repeat full Auction/Fixed flows unless a proven regression requires it. Existing completed orders FP-11332B8B3E and FP-25A03D7831 remain evidence.
 
-When debugging server issues, validate the Express health route and ensure no real credentials are placed in the repository.
+## Product constraints
 
-## 10. Future Scope Boundaries
-The following remain clearly out of scope for current work:
-- real SMS OTP
-- camera/video AI quality verification
-- production payment gateway
-- blockchain
-- FPO role implementation
-- final buyer/logistics UI overhaul
-- production deployment hardening
+Keep Tomato/Onion/Potato, Farmer Declared A/B/C, Auction and Fixed Price, accepted 10–90% Farmer advance, atomic first logistics claim, 40%/60% logistics split and OTP-as-delivery-confirmation intact. Payments and development GPS simulation must remain honestly labelled. Feedback/trust is backend-controlled. Quality declaration consistency does not mean percentage of high-grade produce; Grade C alone is not untrustworthy. Trust stays off Farmer Home.
 
-These are future phases and should be documented as such rather than implemented in the prototype.
-
-## 11. Rule Summary for Code Changes
-- keep the mobile architecture intact
-- do not redesign the approved Farmer Home or My Farm
-- do not create or modify Supabase schema, migrations, or RLS
-- do not introduce server dependencies into the mobile app
-- do not add fake production features disguised as real functionality
-- keep the server scaffold minimal and isolated
-- preserve working functionality while making only architecture and docs groundwork changes
+Disputes are backend-only. Production SMS, payment gateway, genuine camera/video AI quality, blockchain, FPO and production hardening remain future scope. Preserve strict TypeScript and service/provider/hook/navigation boundaries. See PHASE_2_0_11.md for measured validation results and any remaining limitations.

@@ -1,39 +1,51 @@
 # FarmPrism Agent Rules
 
-## Mandatory reading order
-1. Read `PROJECT_REQUIREMENTS.md` first.
-2. Read `DEVELOPMENT_GUIDE.md` before changing architecture.
-3. Inspect existing code before creating files or implementing new functionality.
+## Read before editing
 
-## Required project constraints
-- Preserve the current Expo/React Native/TypeScript architecture.
-- Do not recreate existing functionality or invent requirements.
-- FarmPrism has exactly three persisted roles: `farmer`, `buyer`, and `logistics`.
-- One login = one permanent application role.
-- There is no authenticated role switcher.
-- FPO is visible only as a Coming Soon tile and is not a persisted role.
-- Supabase is the source of truth for authentication, roles, preferences, and application data.
-- Do not modify Supabase, create SQL migrations, change tables, or change RLS without explicit human approval.
-- Never expose service-role keys, private keys, or secret credentials in frontend code or `EXPO_PUBLIC_*` values.
-- Never store passwords or authentication tokens manually in app code.
-- Do not use fake data when implementing real features.
-- Do not implement final UI designs before approved designs are supplied.
-- Keep the approved Farmer Home and My Farm implementations intact.
-- Phase 2.0.6 authorizes session-aware Node API integration using existing tables/RPCs; preserve the approved Farmer Home/My Farm visuals.
+1. Read PROJECT_REQUIREMENTS.md.
+2. Read DEVELOPMENT_GUIDE.md.
+3. Inspect existing code and current working-tree changes before adding files or functionality.
+4. Use assets/FarmPrism_Designer_Screen_MDs/INDEX.md and MASTER_FLOW.md as the current screen-behavior/design brief. Preserve the pack and distinguish implemented screens from design briefs.
 
-## Prototype boundaries
-- Current prototype auth uses `EXPO_PUBLIC_MOCK_OTP=true` and accepts any six-digit numeric OTP.
-- The current prototype has nine fixed demo accounts.
-- Prototype crop support is limited to Tomato, Onion, and Potato.
-- Quality is currently farmer-declared A/B/C; do not describe it as certified or AI-verified.
-- Auction and Fixed Price are both supported selling methods.
-- Business logic for market intelligence, payment, logistics, and delivery is expected to live in the server-side API, not in the mobile app.
-- Blockchain, real SMS OTP, production payment gateway, and production AI quality are future scope and must not be implemented as if they are current features.
+## Current implementation
+
+- Phase 2.0.11 finalizes the implemented prototype. React Native / Expo / TypeScript → Node/Express business API → Supabase.
+- Mobile API integration, server-issued demo sessions and SecureStore session lifecycle are implemented.
+- Farmer Home/My Farm/Sell/Insights/Profile, Buyer screens, Logistics screens and shared transaction/notification/profile flows are implemented.
+- Supabase remains the persisted source of truth and real-auth RLS boundary. Existing transactional/demo RPCs enforce atomic business operations.
+- Node owns demo authorization, marketplace orchestration, market adapter, price intelligence, simulated payments, logistics/GPS/OTP, feedback/trust reads and development reset CLI integration.
+
+## Product constraints
+
+- Exactly three persisted roles: farmer, buyer, logistics. One login = one permanent role; no authenticated role switcher.
+- FPO is Coming Soon UI only, not a persisted role or Buyer subtype.
+- Nine fixed demo accounts; development EXPO_PUBLIC_MOCK_OTP=true accepts any six-digit numeric OTP. Real SMS remains future scope.
+- Only Tomato, Onion and Potato. Internal KG and INR/KG; Farmer market display primarily INR/Quintal.
+- Quality is Farmer Declared A/B/C, never certified or AI Verified.
+- Auction and Fixed Price are implemented. Preserve bid revision/history, partial acceptance, inventory reconciliation, Buyer advance 10–90%, atomic first logistics claim, fee acceptance, 40%/60% logistics payments and OTP verification as delivery confirmation.
+- Full Auction and Fixed Price live E2E already passed. Do not rebuild or alter these flows unless a regression proves a defect.
+- Trust is backend-controlled. Quality declaration consistency is independent of grade; Grade C alone is not untrustworthy. Keep Trust Score off Farmer Home.
+- Preserve approved Farmer Home and My Farm visuals. No broad Buyer/Logistics redesign in this phase.
+- Farmer Price Insight remains Current / Min / Max / Suggested / Next 7 Days. No raw history, confidence, volatility, buyer-signal counts or developer fallback diagnostics.
+- Price contextual adjustment follows the documented policy, capped at ±3%, with market statistics dominant. Optional AI explains only; do not invent a vendor contract or trained-model claims.
+- Disputes remain backend-only. Blockchain, production SMS/payment gateway, FPO and genuine camera/video AI quality remain future scope; no fake hashes or certification.
+
+## Security and change boundaries
+
+- Do not change Supabase schema, migrations, RLS or deployed RPC definitions in this phase. The trust correction and demo_reset_prototype_data RPC already exist externally.
+- Never expose service-role keys, market/AI secrets, raw bearer tokens or OTPs in frontend code, EXPO_PUBLIC_* values or logs.
+- Preserve the existing SecureStore/provider token lifecycle; never add ad hoc password/token storage.
+- Keep root/server ignored .env private and unchanged unless an explicitly needed migration is authorized. Tracked .env.example files are blank templates with safe defaults only.
+- Government credentials belong only in server/.env. MARKET_API_KEY is canonical; DATA_GOV_IN_API_KEY is deprecated blank/missing-key fallback. Missing market configuration must preserve DB fallback.
+- The reset CLI is development-only, requires exactly RESET_FARMPRISM_DEMO and calls only the existing reset RPC. Do not run live reset automatically or from tests; retain E2E data until the developer deliberately chooses reset.
+- Do not manufacture runtime business data or recreate existing functionality.
+- Work in the current local Development tree. Preserve pre-existing edits. Do not reset, revert, checkout, stash, create a branch, commit, push or rewrite Git history during this phase.
 
 ## Quality bars
-- Maintain strict TypeScript and existing service/provider/navigation boundaries.
-- Keep server code separate from mobile app code unless explicitly requested.
-- Do not perform destructive refactors or history operations without approval.
-- Run `npm run typecheck` after meaningful changes.
-- If working with the server scaffold, run `cd server` and validate with the server typecheck/build commands.
-- Do not commit or push in this phase.
+
+- Maintain strict TypeScript and service/provider/hook/navigation boundaries; keep server and mobile dependencies separate.
+- Use mocked/injected dependencies for unit tests, never live Supabase reset or live data.gov.in.
+- Run npm run typecheck and npm run test:mobile.
+- Run npm --prefix server run typecheck, npm --prefix server run build and npm --prefix server test.
+- Run npx expo export --platform android --output-dir .expo/phase-2-0-11-export and git diff --check.
+- Report measured validation and exact live failures honestly. Never claim UI/device verification from API-only checks.

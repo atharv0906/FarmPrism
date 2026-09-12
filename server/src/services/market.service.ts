@@ -1,6 +1,7 @@
 import type { Crop, MarketHistory, MarketPoint, PriceInsight } from '../types/market.js';
 import { ApiError } from '../utils/apiError.js';
 import { isCrop } from '../utils/validation.js';
+import { parseMarketConfig, type MarketConfig } from '../config/marketConfig.js';
 
 export interface MarketRepository {
   history(crop: Crop, days: 30 | 60 | 90): Promise<MarketPoint[]>;
@@ -28,27 +29,29 @@ export function normalizeGovernmentRow(row: Record<string, unknown>, crop: Crop)
     observedAt: observed.toISOString(), source: 'data.gov.in / AGMARKNET', isDemo: false };
 }
 
-export function createMarketService(repository: MarketRepository, apiKey = '', fetcher: typeof fetch = fetch) {
+export function createMarketService(repository: MarketRepository, config: MarketConfig = parseMarketConfig({}), fetcher: typeof fetch = fetch) {
   const cache = new Map<string, { at: number; points: MarketPoint[] }>();
   async function official(crop: Crop, district?: string): Promise<MarketPoint[]> {
-    if (!apiKey) return [];
+    if (config.provider !== 'data_gov' || !config.apiKey || !config.resourceId) return [];
     const key = crop + ':' + (district ?? '');
     const cached = cache.get(key);
     if (cached && Date.now() - cached.at < 15 * 60000) return cached.points;
-    const url = new URL('https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070');
-    url.searchParams.set('api-key', apiKey);
+    const url = new URL(config.apiBaseUrl + '/' + encodeURIComponent(config.resourceId));
+    url.searchParams.set('api-key', config.apiKey);
     url.searchParams.set('format', 'json');
-    url.searchParams.set('limit', '1000');
+    url.searchParams.set('limit', String(config.limit));
     url.searchParams.set('filters[commodity]', crop);
     url.searchParams.set('filters[state.keyword]', 'Maharashtra');
     if (district) url.searchParams.set('filters[district]', district);
     try {
-      const response = await fetcher(url, { signal: AbortSignal.timeout(7000) });
+      const response = await fetcher(url, { signal: AbortSignal.timeout(config.timeoutMs), redirect: 'error' });
       if (!response.ok) return [];
       const payload: unknown = await response.json();
       const records = payload && typeof payload === 'object' && 'records' in payload ? payload.records : null;
       const points = Array.isArray(records) ? records.flatMap(row => {
         if (!row || typeof row !== 'object') return [];
+        // Do not propagate a provider accidentally echoing the credential in a row.
+        if (JSON.stringify(row).includes(config.apiKey)) return [];
         const point = normalizeGovernmentRow(row, crop);
         return point && point.state === 'Maharashtra' && (!district || point.district?.toLowerCase() === district.toLowerCase()) ? [point] : [];
       }) : [];
@@ -80,6 +83,13 @@ export function createMarketService(repository: MarketRepository, apiKey = '', f
   };
 }
 
+export function contextualModifier(quantityKg: number, grade: 'A' | 'B' | 'C' | null, demand: 'low' | 'moderate' | 'high'): number {
+  const quality = grade === 'A' ? 0.015 : grade === 'C' ? -0.015 : 0;
+  const buyers = demand === 'high' ? 0.015 : demand === 'moderate' ? 0.005 : 0;
+  const liquidity = quantityKg >= 1000 ? -0.01 : quantityKg >= 500 ? -0.005 : 0;
+  return Math.max(-0.03, Math.min(0.03, quality + buyers + liquidity));
+}
+
 export async function recommendPrice(
   history: MarketHistory, quantityKg: number, grade: 'A' | 'B' | 'C' | null,
   activeBuyerSignals: number, ai?: PriceInsightAiProvider,
@@ -101,7 +111,9 @@ export async function recommendPrice(
   const volatility = Math.sqrt(mean(prices.map(value => (value - avg) ** 2))) / avg;
   const change = (prices.at(-1)! / prices[0] - 1) * 100;
   const momentum = Math.max(-0.1, Math.min(0.1, (ma7 / avg - 1)));
-  const center = latest.modalPricePerKg * (1 + momentum);
+  const demandLevel = activeBuyerSignals > 10 ? 'high' : activeBuyerSignals > 2 ? 'moderate' : 'low';
+  const modifier = contextualModifier(quantityKg, grade, demandLevel);
+  const center = latest.modalPricePerKg * (1 + momentum) * (1 + modifier);
   const width = Math.min(0.3, Math.max(0.05, volatility));
   const min = Math.max(0.01, round(center * (1 - width))), max = Math.max(min, round(center * (1 + width)));
   const sameDay = recent.filter(p => p.observedAt.slice(0, 10) === latest.observedAt.slice(0, 10)).map(p => p.modalPricePerKg);
@@ -109,16 +121,16 @@ export async function recommendPrice(
   const stale = Date.now() - Date.parse(latest.observedAt) > 7 * 86400000;
   const result: PriceInsight = {
     crop: history.crop, horizonDays: 7, quantityKg,
-    market: { ...latest, isDemo, latestModalPricePerKg: latest.modalPricePerKg, latestModalPricePerQuintal: latest.modalPricePerKg * 100 },
+    market: { ...latest, latestModalPricePerKg: latest.modalPricePerKg, latestModalPricePerQuintal: latest.modalPricePerKg * 100 },
     trend: { direction: change > 2 ? 'up' : change < -2 ? 'down' : 'flat', change30dPercent: round(change), volatility: round(volatility * 100),
       movingAverage7d: round(ma7), movingAverage30d: round(avg), marketSpread: sameDay.length > 1 ? round(Math.max(...sameDay) - Math.min(...sameDay)) : null, observationDays: prices.length },
     quality: { grade, source: 'farmer_declared' },
-    demand: { level: activeBuyerSignals > 10 ? 'high' : activeBuyerSignals > 2 ? 'moderate' : 'low', activeBuyerSignals },
+    demand: { level: demandLevel, activeBuyerSignals },
     recommendation: { suggestedMinPricePerKg: min, suggestedMaxPricePerKg: max, suggestedReservePricePerKg: min,
       confidence: isDemo || stale || prices.length < 7 ? 'low' : 'moderate', mode: 'statistical_fallback',
       reasoning: 'Based on ' + prices.length + ' observed market days, recent moving averages and price volatility. ' +
         (isDemo ? 'Prototype observations are included. ' : '') + (stale ? 'The latest observation is older than seven days. ' : '') +
-        'Grade ' + (grade ?? 'not declared') + ' and quantity ' + quantityKg + ' KG are context, with no unvalidated quality premium. ' +
+        'A bounded statistical/contextual adjustment of ' + round(modifier * 100) + '% uses farmer-declared grade, quantity and demand; market data remains dominant. ' +
         activeBuyerSignals + ' active buyer signals; demand does not guarantee a sale. This seven-day range is a recommendation, not a guaranteed price.' },
   };
   if (ai) {

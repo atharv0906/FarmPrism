@@ -10,7 +10,7 @@ import { isAllowedDays } from '../utils/validation.js';
 import { executeRpc } from '../repositories/mutation.repository.js';
 import { configuredPriceAiProvider } from '../services/priceAi.provider.js';
 
-const marketService = createMarketService(marketRepository, env.dataGovInApiKey);
+const marketService = createMarketService(marketRepository, env.market);
 export function registerIntegrationRoutes(router: Router, authenticate: RequestHandler = requireDemoSession, market = marketService,
   ai: PriceInsightAiProvider | undefined = configuredPriceAiProvider({ endpoint: env.aiProviderEndpoint, apiKey: env.aiProviderApiKey, model: env.aiProviderModel })) {
   const get: (path: string, handler: (req: AuthenticatedRequest) => Promise<unknown>) => void = (path, handler) =>

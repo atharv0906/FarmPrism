@@ -1,221 +1,68 @@
 # FarmPrism
 
-Current local phase: [2.0.10 — cross-role stabilization](PHASE_2_0_10.md). This supersedes historical phase-status and temporary-UI restrictions below; approved Farmer Home/My Farm remain unchanged.
+FarmPrism is an agricultural marketplace prototype with implemented Farmer, Buyer and Logistics workflows. React Native / Expo communicates with the Node/Express TypeScript business API and Supabase, the persisted source of truth and transactional RPC boundary.
 
-FarmPrism is a mobile agricultural marketplace for farmers, buyers, and logistics partners. The app is currently structured around a React Native / Expo mobile client, Supabase for auth and persisted application data, and a separate Node/Express TypeScript API scaffold for future business and integration logic.
+Current phase: [2.0.11 — prototype finalization](PHASE_2_0_11.md). The preceding live demo completed both Auction and Fixed Price through delivery OTP, final simulated payments, feedback, trust and inventory reconciliation: FP-11332B8B3E and FP-25A03D7831. Phase 2.0.11 fixes logout, makes government market configuration explicit, adds bounded contextual price adjustments and provides a guarded reset CLI.
 
-## Current Phase
+## Implemented prototype
 
-Phase 2.0.6 connects the temporary Farmer Sell/Insights and cross-role trading
-flows to the existing Node API, and adds government mandi data and statistical
-price intelligence. [Setup, manual paths and limitations](PHASE_2_0_6.md).
-This is the latest phase; older scaffold-only and unwired descriptions below
-are historical. Farmer Home/My Farm visuals remain approved and unchanged.
+- Exactly three permanent roles: farmer, buyer, logistics. One login has one role; sign out to change accounts. FPO is Coming Soon only, not a persisted role or Buyer subtype.
+- Nine fixed demo accounts, any six-digit numeric development OTP, server-issued demo sessions, SecureStore persistence and revoked-token rejection.
+- Farmer Home, My Farm, Sell, Insights, Profile, Notifications and secondary selling/transaction screens. Approved Home/My Farm visuals remain frozen; Farmer Home has no Trust Score.
+- Buyer Home, Market, My Bids/Requests, Orders, Profile and transaction screens; Logistics Home, Jobs, Active, History and Profile.
+- Tomato, Onion and Potato only. KG internally; 100 KG = 1 Quintal.
+- Auction (6/12/24 hours, default 24), partial quantities, bid revision/withdrawal and Farmer choice of eligible offer; no auto-highest winner. Fixed Price has a locked Farmer price, 24-hour expiry and quantity/advance requests.
+- Farmer Declared A/B/C quality. Grade C is not untrustworthy; quality declaration consistency is separate from grade.
+- Accepted Buyer/Farmer advance of 10–90%, simulated payments, atomic first-eligible logistics claim, fee agreement, 40%/60% logistics payments, ₹0 platform logistics fee.
+- Pickup, real device GPS and labelled development simulation, delivery OTP verification as delivery confirmation, final balances, feedback, backend-controlled trust and notifications.
 
-Phase 2.0.4 adds the Node mutation API over existing atomic Supabase RPCs and
-typed mobile service methods. Farmer Home/My Farm remain unchanged and are
-not wired to those methods. See [the phase contract](server/PHASE_2_0_4.md)
-for validation boundaries and the existing database OTP-attempt limitation.
-This phase update supersedes the older scaffold-only descriptions below.
+## Market and price insight
 
-This repository is in the current prototype architecture and documentation update phase. The current local worktree is the source of truth, and the app must preserve working Farmer Home and My Farm flows while adding only infrastructure and documentation groundwork.
+The Node data.gov.in / AGMARKNET adapter normalizes INR/Quintal observations to INR/KG. Official provenance requires normalized official observations; DB/demo fallback remains labelled honestly. Missing market credentials do not block the server.
 
-Current prototype scope includes:
+Market/statistical inputs dominate a deterministic recommendation. Farmer-declared grade, demand and lot size contribute at most ±3% combined; this is not a trained AI or a guaranteed selling price. Optional AI supplies explanation only and cannot override numeric prices.
 
-- Expo/React Native application foundation
-- Supabase-backed auth and role flow
-- Demo prototype auth with fixed phone accounts and mock OTP
-- Existing approved Farmer Home and My Farm screens
-- Architecture and server scaffold for later business services
+Farmer sees Current / Min / Max / Suggested / Next 7 Days, primarily in ₹/Quintal, plus a subtle market source label. Raw history, confidence and statistical diagnostics remain internal.
 
-Current prototype does not include:
+## Local setup
 
-- full buyer/logistics screen buildout
-- production SMS OTP
-- blockchain features
-- production payment gateway integration
-- final buyer/logistics product UIs
-- real external AI/service integration in the app
-
-## Technology
-
-- Expo
-- React Native
-- TypeScript
-- React Navigation
-- Supabase JS
-- Node.js / Express / TypeScript server scaffold
-
-## Role Model
-
-FarmPrism supports exactly three persisted application roles:
-
-- farmer
-- buyer
-- logistics
-
-Important constraints:
-
-- One login = one permanent application role.
-- A user does not have multiple active application roles.
-- There is no authenticated role switcher.
-- Changing role/account requires sign out and another login.
-- FPO is visible as a Role Selection tile only and is marked as Coming Soon.
-- FPO is not a persisted fourth role and is not added to the database enum.
-
-## Authentication and Demo Prototype
-
-For the current prototype, the app uses `EXPO_PUBLIC_MOCK_OTP=true` in development.
-
-Any numeric 6-digit OTP is accepted in mock mode. The fixed demo accounts are:
-
-- farmer1 / +919000000001 / Atharva Kharat
-- farmer2 / +919000000002 / Farmer Two
-- farmer3 / +919000000003 / Farmer Three
-- buyer1 / +919000000011 / Demo Restaurant Buyer
-- buyer2 / +919000000012 / Demo Wholesaler Buyer
-- buyer3 / +919000000013 / Demo Buyer Three
-- logistics1 / +919000000021 / Logistics One
-- logistics2 / +919000000022 / Logistics Two
-- logistics3 / +919000000023 / Logistics Three
-
-This is a prototype demo/auth layer only. A server-issued internal demo session token will be introduced later for mutation authorization. Real Supabase SMS OTP remains future production scope.
-
-## Crops and Units
-
-The prototype marketplace supports exactly these crops:
-
-- Tomato
-- Onion
-- Potato
-
-No additional crop is part of the current prototype. All quantities are stored internally in kilograms. Display uses the convention: 100 KG = 1 Quintal.
-
-## Farmer Home and My Farm
-
-The approved Farmer Home screen is already implemented and must remain frozen. It owns the existing dashboard behavior and quick actions, but it does not include a Trust Score.
-
-My Farm is the dedicated authenticated root for "What I have". The current implementation is the approved, working version and should be preserved. It focuses on:
-
-- Total Land
-- Crops
-- Available to Sell
-- Active Batches
-
-The following concepts are intentionally not present in the current My Farm version and must not be restored:
-
-- Soil Health
-- Irrigation
-- Crop-wise cultivated area
-- Expected Yield
-- Harvest Date
-- Farm Photos
-- bottom branding banner
-
-## Selling Methods
-
-The app supports exactly two selling methods:
-
-- Auction
-- Fixed Price
-
-Auction flow includes reserve/minimum selection, partial quantity acceptance, buyer bid revision and withdrawal, and farmer-side accepting/rejecting/closing behavior. Fixed-price flow includes a farmer-set fixed price, buyer request quantity, and advance terms with partial quantity support.
-
-## Quality and Market Intelligence
-
-Current prototype quality is farmer-declared. The supported prototype grades are:
-
-- Grade A
-- Grade B
-- Grade C
-
-The app must not present this as AI Verified or Certified unless a genuine verification pipeline is implemented.
-
-Market and AI price intelligence are coordinated through the Node/Express business API, with AGMARKNET / data.gov.in as the primary official source. Historical view windows include 30/60/90 day windows with a next-7-day recommendation horizon. The app must not hardcode fake selling-price recommendations directly in JSX.
-
-## Buyer, Logistics, and Orders
-
-The app is designed for buyer and logistics flows, but those screens are not implemented in this phase. The prototype architecture still supports:
-
-- orders created from accepted auction bids or fixed-price requests
-- logistics assignment and fee flows
-- delivery OTP and GPS tracking architecture
-- trust-score computation and feedback as backend-calculated values
-
-## Security and Server Boundary
-
-The mobile app uses only the Supabase public/publishable key. The Node/Express server may use privileged credentials when necessary, but those credentials must never be sent to React Native or stored in `EXPO_PUBLIC_*` values.
-
-Secrets must never be logged, including OTPs, session tokens, service-role keys, and external API keys.
-
-## Node/Express Scaffold
-
-This repository includes a minimal server workspace under `server/`.
-
-The server scaffold is intentionally small and suitable for future integration:
-
-- Express + TypeScript
-- health route at `GET /health`
-- public environment example file with placeholders only
-- application and middleware structure for later business API work
-
-The mobile app is not yet wired to this server; the server is a future integration boundary and documentation contract only.
-
-## Local Development Startup
-
-Terminal 1:
+Install root and server dependencies separately, then create private .env files from the tracked examples. Preserve existing local private values.
 
 ```powershell
+npm install
+npm --prefix server install
 npm run dev
 ```
 
-Terminal 2:
+In another terminal:
 
 ```powershell
 npm run dev:mobile
 ```
 
-Health test:
+Health: GET http://localhost:3000/health. Android emulator API URL: http://10.0.2.2:3000. See [the development guide](DEVELOPMENT_GUIDE.md) for configuration and validation.
+
+Mobile .env contains public Supabase values and EXPO_PUBLIC_API_URL only. The publishable key takes priority with legacy anon-key fallback. Service-role, MARKET_* and AI_PROVIDER_* credentials belong only in server/.env. Never log keys, raw tokens or OTPs.
+
+## Deliberate demo reset
+
+The development CLI calls only the existing service-role-only demo_reset_prototype_data RPC. It rejects production and requires exact confirmation:
 
 ```powershell
-Invoke-RestMethod http://localhost:3000/health
+npm --prefix server run reset:demo -- RESET_FARMPRISM_DEMO
 ```
 
-For an Android emulator, use `EXPO_PUBLIC_API_URL=http://10.0.2.2:3000`. `localhost` inside the Android emulator points to the emulator itself, so Android uses `10.0.2.2` to reach the host computer.
+This clears demo sessions and transaction evidence and restores the RPC's defined scenario. Run only when intentionally discarding the current demo runtime state. It was not executed during Phase 2.0.11. No reset HTTP/mobile UI exists.
 
-## Important Documentation Rule
+## Scope and documentation
 
-The current authoritative source is:
+Disputes have backend foundation only, without UI. Real SMS, production payments, FPO implementation, genuine camera/video AI quality, blockchain and production deployment/security hardening remain future work. Do not represent these as implemented or add fake chain hashes/quality certification.
 
-- FarmPrism Detailed Walkthrough Architecture v5
-- latest explicit project decisions recorded in this repository
+- [Product requirements and demo account roster](PROJECT_REQUIREMENTS.md)
+- [Development guide](DEVELOPMENT_GUIDE.md)
+- [Agent rules](AGENTS.md)
+- [Current designer screen brief](assets/FarmPrism_Designer_Screen_MDs/INDEX.md)
+- [Designer master flow](assets/FarmPrism_Designer_Screen_MDs/MASTER_FLOW.md)
+- [Phase 2.0.11 validation report](PHASE_2_0_11.md)
 
-Older product screenshots and stale README notes are visual references only and cannot override the current explicit architecture decisions.
-
-## Validation
-
-Run the following before finishing work:
-
-```powershell
-npm run typecheck
-cd server
-npm install
-npm run typecheck
-cd ..
-git diff --check
-```
-
-Do not commit or push from this phase.
-
-## Project Documents
-
-- [PROJECT_REQUIREMENTS.md](PROJECT_REQUIREMENTS.md)
-- [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md)
-- [AGENTS.md](AGENTS.md)
-
-## Repository Notes
-
-- Keep the current Expo/React Native app structure intact.
-- Do not modify Supabase tables, RLS, or migrations.
-- Do not change the working Farmer Home or My Farm functionality.
-- Keep demos and prototype behavior clearly separated from future production scope.
+Preserve the current Development tree and approved visuals. Do not change schema, migrations, RLS or existing database functions in this phase. Do not commit or push.

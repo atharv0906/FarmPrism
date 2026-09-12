@@ -17,7 +17,7 @@ type Props<K extends keyof TradingRoutes> = NativeStackScreenProps<TradingRoutes
 export function ProfileCard({ profile }: { profile?: Profile }) {
   if (!profile) return <Card><Text style={ui.muted}>Profile not available.</Text></Card>;
   const reliability = profile.role === 'farmer' ? profile.qualityConsistency : profile.role === 'buyer' ? profile.paymentReliability : profile.deliveryReliability;
-  const label = profile.role === 'farmer' ? 'Quality consistency' : profile.role === 'buyer' ? 'Payment reliability' : 'Delivery reliability';
+  const label = profile.role === 'farmer' ? 'Quality declaration consistency' : profile.role === 'buyer' ? 'Payment reliability' : 'Delivery reliability';
   return <Card title={profile.name}><View style={ui.listingMeta}><Badge>{profile.role.toUpperCase()}</Badge><Badge>{profile.verification?.replaceAll('_', ' ') ?? 'Verification not available'}</Badge></View>
     <View style={ui.metricRow}><Metric value={profile.trustScore == null ? 'Not available' : profile.trustScore + '/100'} label="Trust Score" icon={d.opportunity} /><Metric value={profile.completedTransactions ?? 'Not available'} label="Completed transactions" icon={d.orders} /></View>
     <Text style={ui.muted}>{label}: {reliability ?? 'Not available'}</Text>
