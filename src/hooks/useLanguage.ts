@@ -8,6 +8,7 @@ import type {
 export interface LanguageContextValue {
   language: LanguageCode;
   loading: boolean;
+  hasSavedLanguage: boolean;
   error: PreferencesServiceError | null;
   supportedLanguages: readonly LanguageCode[];
   setLanguage: (language: LanguageCode) => Promise<void>;

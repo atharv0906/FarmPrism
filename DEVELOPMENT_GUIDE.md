@@ -82,11 +82,11 @@ It calls only that RPC and outputs whitelisted summary fields; no arbitrary SQL,
 
 ```powershell
 npm run typecheck
-npm run test:mobile
+npm run test
 npm --prefix server run typecheck
 npm --prefix server run build
 npm --prefix server test
-npx expo export --platform android --output-dir .expo/phase-2-0-11-export
+npx expo export --platform android --output-dir .expo/phase-2-0-12-export
 git diff --check
 ```
 
@@ -99,3 +99,13 @@ Targeted live logout: create Farmer1 session in memory → authenticated /api/wo
 Keep Tomato/Onion/Potato, Farmer Declared A/B/C, Auction and Fixed Price, accepted 10–90% Farmer advance, atomic first logistics claim, 40%/60% logistics split and OTP-as-delivery-confirmation intact. Payments and development GPS simulation must remain honestly labelled. Feedback/trust is backend-controlled. Quality declaration consistency does not mean percentage of high-grade produce; Grade C alone is not untrustworthy. Trust stays off Farmer Home.
 
 Disputes are backend-only. Production SMS, payment gateway, genuine camera/video AI quality, blockchain, FPO and production hardening remain future scope. Preserve strict TypeScript and service/provider/hook/navigation boundaries. See PHASE_2_0_11.md for measured validation results and any remaining limitations.
+
+## Phase 2.0.12 read and session boundaries
+
+The Farmer summary repository scopes accounts/profiles/batches/orders/notifications by req.demoSession.accountId and auctions/bids by owned parent IDs. Both routes require requireDemoSession and requireDemoRole('farmer'). They call no legacy snapshot or expiry RPC. At 1000 rows the read fails explicitly rather than silently returning truncated totals. Summary market service injection omits optional cache writes, retaining official reads and DB fallback without writing non-demo market rows.
+
+Mobile farmerSummary.client/contract feed the existing focus-refresh hooks and unchanged mappers. Cached data is retained on refresh error and keyed by the current token. Missing or malformed nested fields fail parsing; 401 uses existing unauthorized cleanup.
+
+DemoSession client/service retain existing SecureStore keys. Login identity comes from POST /api/demo/session, restore identity from GET /api/demo/me. Only session credentials and cached phone are cleared on logout/revocation. mockFlow.service keeps explicit role confirmation and Farmer completion preferences separately per phone. The completion marker is written only by Review Submit; no server profile write occurs. Auth navigation uses the existing language preference for returning login.
+
+Targeted live validation: Farmer1 session → /api/demo/me → /api/workspace → both Farmer summaries; compare eligible KG and crop groups against current workspace/DB, never seed totals. Compare market cards with the existing service; logout 200 then reuse 401. Preserve previous completed E2E orders. PHASE_2_0_12.md contains the external grant handoff; do not apply grant changes locally.

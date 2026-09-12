@@ -115,3 +115,13 @@ Disputes are backend foundation only, with no dispute UI. Blockchain is complete
 Keep strict TypeScript, service/provider/hook/navigation boundaries, separate server/mobile dependencies and the approved visual freeze. Inspect existing code before adding features. Do not manufacture runtime business data or rebuild proven transaction logic. Use mocked dependencies in tests; no live reset or government-data dependency in automated tests.
 
 Required validation: root typecheck and mobile tests; server typecheck, build and tests; Android Expo export; git diff --check. See DEVELOPMENT_GUIDE.md for commands. No commit or push.
+
+## Phase 2.0.12 authoritative reads and first-time flow
+
+Farmer Home and My Farm read GET /api/farmer/home-summary and GET /api/farmer/my-farm-summary through the authenticated Node client. Identity comes exclusively from the validated session. Mobile legacy account/snapshot/notification RPC dependencies are removed. Preserve their existing visual screens and mappers.
+
+Physical inventory represents the supported crop count. Eligible inventory has status available and positive remaining KG; totals and per-crop batch counts derive from those rows. My Farm name is null because no persisted farm-name field exists. Activities count represented crops and distinct batches created/updated in the current Asia/Kolkata calendar month. Sold This Month uses completed orders' completed_at in that month. New Offer counts unread new_bid/bid_revised notifications. Top Opportunity is the highest current eligible auction bid, never a fixed request. Market cards use the existing market service, same-market dated trends, and neutral change when comparable history is absent. No inventory produces honest zero/empty data. Unsupported My Farm writes remain unimplemented.
+
+Mock login trusts the session response; restore validates GET /api/demo/me. Invalid/revoked sessions clear credentials. Fresh accounts explicitly confirm only their persisted role; remembered per-account roles skip selection. FPO remains Coming Soon. Fresh Farmers continue Personal → Farm Details → Review → Submitted → Dashboard. Only Submit saves farmprism.mock.farmerOnboarding.v1:<phone> = complete, a local UX preference without secrets or profile writes. Incomplete Farmers resume Personal; completed returning Farmers enter Dashboard. Logout preserves role/completion preferences. Buyer/Logistics retain preseeded profiles and enter their dashboard after role confirmation.
+
+Database permissions were not changed. The five retired mobile RPCs listed in PHASE_2_0_12.md await external anon/authenticated EXECUTE revocation, retaining service_role.

@@ -8,61 +8,18 @@ import type { AuthServiceError } from '../../services/auth/auth.types';
 import { AuthContext, type AuthContextValue } from '../../hooks/useAuth';
 import { SplashScreen } from '../../screens/SplashScreen';
 import { isDevelopmentMockOtpEnabled } from '../../services/auth/otp.strategy';
-import { demoService } from '../../services/demo/demo.service';
+import { demoSessionClient } from '../../services/api/demoSession.client';
+import { createDemoSessionService } from '../../services/auth/demoSession.service';
 import type { DemoAccount } from '../../services/demo/demo.types';
 import { getCurrentDemoApiToken, setCurrentDemoApiToken, onApiUnauthorized } from '../../services/api/api.client';
-import { getApiBaseUrl } from '../../services/api/api.config';
 
-// This is a development identity preference, never an Auth token or real session.
-const DEMO_PHONE_KEY = 'farmprism.demo.phone.v1';
-const DEMO_API_TOKEN_KEY = 'farmprism.demoApiToken.v1';
-const DEMO_API_EXPIRES_AT_KEY = 'farmprism.demoApiExpiresAt.v1';
 
-type DemoSessionResponse = {
-  token?: string;
-  expiresAt?: string;
-  account?: {
-    phone?: string;
-    fullName?: string;
-    role?: string;
-    loginLabel?: string;
-  };
-};
+const demoSessions = createDemoSessionService(SecureStore, AsyncStorage, demoSessionClient);
 
 function createMockUser(phone: string): User {
   return { id: `development-mock:${phone}`, app_metadata: {}, user_metadata: {},
     aud: 'authenticated', created_at: new Date(0).toISOString(), phone,
     role: 'authenticated', identities: [], is_anonymous: false };
-}
-
-function hasExpiredDemoToken(expiresAt: string | null): boolean {
-  if (!expiresAt) return true;
-  return !Number.isFinite(Date.parse(expiresAt)) || Date.parse(expiresAt) <= Date.now();
-}
-
-async function clearDemoApiSession() {
-  await Promise.all([
-    SecureStore.deleteItemAsync(DEMO_API_TOKEN_KEY),
-    SecureStore.deleteItemAsync(DEMO_API_EXPIRES_AT_KEY),
-  ]);
-  setCurrentDemoApiToken(null);
-}
-
-async function createDemoApiSession(phone: string, otp: string): Promise<DemoSessionResponse> {
-  const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/api/demo/session`, {
-    method: 'POST',
-    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone, otp }),
-  });
-
-  const payload = await response.json().catch(() => null) as { data?: DemoSessionResponse; error?: { message?: string } } | null;
-
-  if (!response.ok || !payload?.data?.token || hasExpiredDemoToken(payload.data.expiresAt ?? null)) {
-    throw new Error(payload?.error?.message ?? 'The demo session could not be created.');
-  }
-
-  return payload.data;
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
@@ -80,7 +37,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     onApiUnauthorized(() => {
       setCurrentDemoApiToken(null);
       setDemoApiToken(null); setMockAuthenticated(false); setDemoAccount(null); setUser(null);
-      void Promise.all([clearDemoApiSession(), AsyncStorage.removeItem(DEMO_PHONE_KEY)]).catch(() => {});
+      setDemoApiSessionReady(false);
+      void demoSessions.clear().catch(() => {});
     });
     return () => onApiUnauthorized(null);
   }, []);
@@ -95,24 +53,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
     });
     void (async () => {
       if (mock) {
-        const phone = await AsyncStorage.getItem(DEMO_PHONE_KEY);
-        const storedToken = await SecureStore.getItemAsync(DEMO_API_TOKEN_KEY);
-        const storedExpiresAt = await SecureStore.getItemAsync(DEMO_API_EXPIRES_AT_KEY);
-
-        if (storedToken && !hasExpiredDemoToken(storedExpiresAt)) {
-          setDemoApiToken(storedToken);
-          setCurrentDemoApiToken(storedToken);
-        } else if (storedToken) {
-          await clearDemoApiSession();
-        }
-
-        if (phone && storedToken && !hasExpiredDemoToken(storedExpiresAt)) {
-          // Revalidate the fixed role with the RPC; cached role data is never trusted.
-          const account = await demoService.account(normalizeIndianPhone(phone));
-          if (mounted && account) {
-            setDemoAccount(account); setUser(createMockUser(account.phone)); setMockAuthenticated(true);
-          }
-        }
+        const restored = await demoSessions.restore();
+        if (mounted && restored) {
+          setCurrentDemoApiToken(restored.token); setDemoApiToken(restored.token);
+          setDemoAccount(restored.account); setUser(createMockUser(restored.account.phone)); setMockAuthenticated(true);
+        } else if (mounted) { setCurrentDemoApiToken(null); setDemoApiToken(null); }
         if (mounted) setDemoApiSessionReady(true);
       } else {
         const restored = await authService.restoreSession();
@@ -131,44 +76,22 @@ export function AuthProvider({ children }: PropsWithChildren) {
     verifyOtp: async (phone, token) => {
       const normalized = normalizeIndianPhone(phone);
       const r = await authService.verifyOtp(normalized, token);
-      const account = r.isMockAuth ? await demoService.account(normalized) : null;
-      let serverDemoToken: string | null = null;
+      let account: DemoAccount | null = null;
       if (r.isMockAuth) {
-        const sessionData = await createDemoApiSession(normalized, token);
-        if (!account || sessionData.account?.role !== account.role || sessionData.account?.phone !== account.phone) {
-          throw new Error('The server account does not match this login. Please retry.');
-        }
-        serverDemoToken = sessionData.token ?? null;
-        if (serverDemoToken) {
-          await SecureStore.setItemAsync(DEMO_API_TOKEN_KEY, serverDemoToken);
-          await SecureStore.setItemAsync(DEMO_API_EXPIRES_AT_KEY, sessionData.expiresAt!);
-          setCurrentDemoApiToken(serverDemoToken);
-          setDemoApiToken(serverDemoToken);
-          setDemoApiSessionReady(true);
-        }
+        const sessionData = await demoSessions.login(normalized, token);
+        account = sessionData.account;
+        setCurrentDemoApiToken(sessionData.token); setDemoApiToken(sessionData.token); setDemoApiSessionReady(true);
       }
-      if (r.isMockAuth) await AsyncStorage.setItem(DEMO_PHONE_KEY, normalized);
       setDemoAccount(account); setSession(r.session);
-      setUser(r.isMockAuth ? createMockUser(normalized) : r.user);
+      setUser(r.isMockAuth && account ? createMockUser(account.phone) : r.user);
       setMockAuthenticated(r.isMockAuth); setError(null);
       return r;
     },
     logout: async () => {
       const tokenToRevoke = demoApiToken ?? getCurrentDemoApiToken();
-      if (tokenToRevoke) {
-        try {
-          const baseUrl = getApiBaseUrl();
-          await fetch(`${baseUrl}/api/demo/logout`, {
-            method: 'POST',
-            headers: { Accept: 'application/json', Authorization: `Bearer ${tokenToRevoke}` },
-          });
-        } catch {
-          // Keep logout resilient if the session service is unavailable.
-        }
-      }
+      await demoSessions.logout(tokenToRevoke);
+      setCurrentDemoApiToken(null);
       await authService.logout();
-      await AsyncStorage.removeItem(DEMO_PHONE_KEY);
-      await clearDemoApiSession();
       setSession(null); setUser(null); setDemoAccount(null); setMockAuthenticated(false); setError(null); setDemoApiToken(null); setDemoApiSessionReady(false);
     },
   }), [demoAccount, demoApiSessionReady, demoApiToken, error, loading, mockAuthenticated, session, user]);

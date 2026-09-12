@@ -1,6 +1,10 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Alert, Pressable, Text } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
+import { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createMockFlowService } from '../services/roles/mockFlow.service';
+import { SplashScreen } from '../screens/SplashScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { FarmerMyFarmScreen } from '../screens/FarmerMyFarmScreen';
 import type { NavigatorScreenParams } from '@react-navigation/native';
@@ -31,9 +35,17 @@ const Stack = createNativeStackNavigator<FarmerStackParamList>();
 
 export function FarmerNavigator() {
   const { demoAccount, logout } = useAuth();
+  const [initialRoute, setInitialRoute] = useState<'Personal' | 'Dashboard' | null>(null);
+  useEffect(() => {
+    let active = true;
+    const start = demoAccount?.role === 'farmer' ? createMockFlowService(AsyncStorage).farmerStart(demoAccount.phone) : Promise.resolve('Personal' as const);
+    void start.then(route => { if (active) setInitialRoute(route); }).catch(() => { if (active) setInitialRoute('Personal'); });
+    return () => { active = false; };
+  }, [demoAccount?.phone]);
+  if (!initialRoute) return <SplashScreen />;
   return (
     <Stack.Navigator
-      initialRouteName={demoAccount?.role === 'farmer' ? 'Dashboard' : 'Personal'}
+      initialRouteName={initialRoute}
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',

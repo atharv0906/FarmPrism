@@ -28,6 +28,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { useAuth } from '../hooks/useAuth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createMockFlowService } from '../services/roles/mockFlow.service';
 import { useRole } from '../hooks/useRole';
 import type { FarmerStackParamList } from '../navigation/FarmerNavigator';
 
@@ -1140,12 +1142,19 @@ export function FarmerReviewScreen({
   navigation,
 }: NativeStackScreenProps<FarmerStackParamList, 'Review'>) {
   const { draft } = useDraft();
+  const { demoAccount } = useAuth();
   const [submitting, setSubmitting] = useState(false);
 
-  const submit = () => {
+  const submit = async () => {
     if (submitting) return;
     setSubmitting(true);
-    requestAnimationFrame(() => navigation.replace('Submitted'));
+    try {
+      if (demoAccount) await createMockFlowService(AsyncStorage).completeFarmer(demoAccount);
+      navigation.replace('Submitted');
+    } catch {
+      setSubmitting(false);
+      Alert.alert('Unable to submit', 'Your onboarding completion could not be saved. Please retry.');
+    }
   };
 
   return (

@@ -1,4 +1,5 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useLanguage } from '../hooks/useLanguage';
 
 import { SignUpScreen } from '../screens/AuthScreens';
 import { PhoneLoginScreen } from '../screens/PhoneLoginScreen';
@@ -17,9 +18,10 @@ const Stack =
   createNativeStackNavigator<AuthStackParamList>();
 
 export function AuthNavigator() {
+  const { hasSavedLanguage } = useLanguage();
   return (
     <Stack.Navigator
-      initialRouteName="LanguageSelection"
+      initialRouteName={hasSavedLanguage ? 'PhoneLogin' : 'LanguageSelection'}
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',

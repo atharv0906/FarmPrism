@@ -64,10 +64,3 @@ export type FarmerMyFarmSummary = {
     updatesThisMonth: number;
   };
 };
-
-export type DemoNotification = {
-  id: string; title: string; body: string; type: string;
-  readAt: string | null; createdAt: string;
-  entityKey: string | null; entityType: string | null;
-  data: { crop?: string };
-};

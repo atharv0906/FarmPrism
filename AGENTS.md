@@ -45,7 +45,14 @@
 
 - Maintain strict TypeScript and service/provider/hook/navigation boundaries; keep server and mobile dependencies separate.
 - Use mocked/injected dependencies for unit tests, never live Supabase reset or live data.gov.in.
-- Run npm run typecheck and npm run test:mobile.
+- Run npm run typecheck and npm run test.
 - Run npm --prefix server run typecheck, npm --prefix server run build and npm --prefix server test.
-- Run npx expo export --platform android --output-dir .expo/phase-2-0-11-export and git diff --check.
+- Run npx expo export --platform android --output-dir .expo/phase-2-0-12-export and git diff --check.
 - Report measured validation and exact live failures honestly. Never claim UI/device verification from API-only checks.
+
+## Phase 2.0.12 boundaries
+
+- Farmer Home/My Farm summaries are Node-authoritative; preserve strict clients, focus refresh and frozen visuals/mappers. Do not restore direct mobile snapshot RPCs or fake unsupported My Farm writes.
+- Mock account identity comes from session creation and /api/demo/me restoration. Keep existing SecureStore lifecycle and reject revoked sessions.
+- Fresh accounts require explicit assigned-role confirmation. Farmer completion is local per-account UX state written only on Submit, preserved with remembered roles on logout; it is not a profile write.
+- Five retired mobile RPC anon/authenticated grants await external owner revocation. Retain service_role and do not change grants/schema/RLS/RPC definitions.

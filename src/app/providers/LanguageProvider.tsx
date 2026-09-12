@@ -15,6 +15,7 @@ export function LanguageProvider({ children }: PropsWithChildren) {
   const preferenceUserId = authMode === 'development-mock' ? null : user?.id;
   const [language, setLanguageState] = useState<LanguageCode>(DEFAULT_LANGUAGE_CODE);
   const [loading, setLoading] = useState(true);
+  const [hasSavedLanguage, setHasSavedLanguage] = useState(false);
   const [error, setError] = useState<PreferencesServiceError | null>(null);
 
   useEffect(() => {
@@ -22,6 +23,7 @@ export function LanguageProvider({ children }: PropsWithChildren) {
 
     void (async () => {
       const localLanguage = await preferencesService.getLocalLanguage();
+      if (mounted) setHasSavedLanguage(localLanguage !== null);
       const fallbackLanguage = localLanguage ?? DEFAULT_LANGUAGE_CODE;
 
       if (!preferenceUserId) {
@@ -52,6 +54,7 @@ export function LanguageProvider({ children }: PropsWithChildren) {
     () => ({
       language,
       loading,
+      hasSavedLanguage,
       error,
       supportedLanguages: SUPPORTED_LANGUAGE_CODES,
       setLanguage: async (nextLanguage) => {
@@ -60,7 +63,7 @@ export function LanguageProvider({ children }: PropsWithChildren) {
         setError(persistenceError);
       },
     }),
-    [error, language, loading, preferenceUserId],
+    [error, language, loading, hasSavedLanguage, preferenceUserId],
   );
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;

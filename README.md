@@ -2,7 +2,7 @@
 
 FarmPrism is an agricultural marketplace prototype with implemented Farmer, Buyer and Logistics workflows. React Native / Expo communicates with the Node/Express TypeScript business API and Supabase, the persisted source of truth and transactional RPC boundary.
 
-Current phase: [2.0.11 — prototype finalization](PHASE_2_0_11.md). The preceding live demo completed both Auction and Fixed Price through delivery OTP, final simulated payments, feedback, trust and inventory reconciliation: FP-11332B8B3E and FP-25A03D7831. Phase 2.0.11 fixes logout, makes government market configuration explicit, adds bounded contextual price adjustments and provides a guarded reset CLI.
+Current phase: [2.0.12 — authoritative Farmer data and onboarding consistency](PHASE_2_0_12.md). The preceding live demo completed both Auction and Fixed Price through delivery OTP, final simulated payments, feedback, trust and inventory reconciliation: FP-11332B8B3E and FP-25A03D7831. Phase 2.0.11 fixes logout, makes government market configuration explicit, adds bounded contextual price adjustments and provides a guarded reset CLI.
 
 ## Implemented prototype
 
@@ -15,6 +15,14 @@ Current phase: [2.0.11 — prototype finalization](PHASE_2_0_11.md). The precedi
 - Farmer Declared A/B/C quality. Grade C is not untrustworthy; quality declaration consistency is separate from grade.
 - Accepted Buyer/Farmer advance of 10–90%, simulated payments, atomic first-eligible logistics claim, fee agreement, 40%/60% logistics payments, ₹0 platform logistics fee.
 - Pickup, real device GPS and labelled development simulation, delivery OTP verification as delivery confirmation, final balances, feedback, backend-controlled trust and notifications.
+
+## Authoritative Farmer reads and onboarding
+
+Home and My Farm now use authenticated Farmer-only Node summaries backed by current physical inventory, profiles, orders and notifications. The mobile snapshot RPC service is removed; approved visuals and mappers are unchanged. Unsupported My Farm write modules remain unavailable.
+
+Mock login uses the account returned by POST /api/demo/session; saved sessions restore through GET /api/demo/me. First login requires explicit confirmation of the assigned role. Remembered roles skip selection. Farmer Submit saves a per-account local onboarding completion marker; returning completed Farmers enter Dashboard. Logout preserves role/onboarding preferences. These local UX markers do not write server profiles or store secrets.
+
+Five legacy mobile RPC grants await external database-owner revocation for anon/authenticated, retaining service_role. See [Phase 2.0.12](PHASE_2_0_12.md) for signatures and validation.
 
 ## Market and price insight
 

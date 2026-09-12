@@ -1,27 +1,28 @@
 import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from './useAuth';
-import { demoService } from '../services/demo/demo.service';
+import { farmerSummaryClient } from '../services/api/farmerSummary.client';
 import { mapFarmerMyFarm, type FarmerMyFarmData } from '../components/farmer-my-farm/myFarmData';
 
 export function useFarmerMyFarm() {
-  const { demoAccount } = useAuth();
+  const { demoAccount, demoApiToken } = useAuth();
   const phone = demoAccount?.role === 'farmer' ? demoAccount.phone : null;
-  const [data, setData] = useState<FarmerMyFarmData | null>(null);
+  const [result, setResult] = useState<{ token: string; data: FarmerMyFarmData } | null>(null);
+  const data = result?.token === demoApiToken ? result?.data ?? null : null;
   const [loading, setLoading] = useState(Boolean(phone));
   const [error, setError] = useState<string | null>(null);
   const request = useRef(0);
   const refresh = useCallback(async () => {
-    if (!phone) return;
+    if (!phone || !demoApiToken) return;
     const id = ++request.current;
     setLoading(true); setError(null);
     try {
-      const result = mapFarmerMyFarm(await demoService.farmerMyFarm(phone));
-      if (id === request.current) setData(result);
+      const data = mapFarmerMyFarm(await farmerSummaryClient.myFarm());
+      if (id === request.current) setResult({ token: demoApiToken, data });
     } catch (e) {
       if (id === request.current) setError("We couldn't load your farm details.");
     } finally { if (id === request.current) setLoading(false); }
-  }, [phone]);
+  }, [phone, demoApiToken]);
   useFocusEffect(useCallback(() => {
     void refresh();
     return () => { request.current++; };
