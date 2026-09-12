@@ -28,3 +28,10 @@ export async function readCreatedOrder(id: string): Promise<OrderContract> {
 export async function expireMarketplace(): Promise<void> {
   await executeRpc('demo_expire_marketplace', {});
 }
+
+export async function readBatchQuality(id: string, farmerId: string) {
+  const { data, error } = await supabaseAdmin.from('demo_inventory_batches')
+    .select('id,quality_grade,quality_notes,status').eq('id', id).eq('farmer_account_id', farmerId).single();
+  if (error || !data) throw new ApiError(503, 'QUALITY_READ_UNAVAILABLE', 'Quality was saved, but could not be refreshed. Retry to view the saved batch.');
+  return { batchId: data.id, grade: data.quality_grade, notes: data.quality_notes, status: data.status };
+}

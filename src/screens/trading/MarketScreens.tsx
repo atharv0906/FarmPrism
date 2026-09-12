@@ -1,33 +1,29 @@
 import { useCallback } from 'react';
-import { Text } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { TradingRoutes } from '../../navigation/TradingRoutes';
 import type { Crop } from '../../services/api/market.types';
 import { tradingClient } from '../../services/api/trading.client';
 import { useRemote } from '../../hooks/useRemote';
-import { Page, Card, Button, money } from '../../components/trading/TradingUI';
+import { Page, Card, Button, money, LoadState, cropArtwork, ui } from '../../components/farmprism-shell/RoleUI';
 
 export function MarketScreen({ navigation }: NativeStackScreenProps<TradingRoutes, 'Market'>) {
-  return <Page title="Market Prices / Insights">
-    {(['Tomato', 'Onion', 'Potato'] as const).map(crop => <CropCard key={crop} crop={crop} open={() => navigation.navigate('MarketDetails', { crop })} />)}
+  const state = useRemote(useCallback(() => Promise.all((['Tomato', 'Onion', 'Potato'] as const).map(crop => tradingClient.current(crop))), []));
+  return <Page title="Market Prices / Insights" {...state} hasData={!!state.data} retry={() => void state.refresh()}>
+    {state.data?.map(point => <Card key={point.crop}><View style={ui.listingTop}><Image source={cropArtwork(point.crop)} resizeMode="contain" style={ui.cropImage} /><View style={ui.listingCopy}><Text style={ui.cropTitle}>{point.crop}</Text><Text style={ui.small}>CURRENT MARKET PRICE</Text></View></View>
+      <Text style={ui.priceHero}>{money(point.modalPricePerKg * 100)}/Quintal</Text><Text style={ui.muted}>{point.mandi}</Text>
+      <Button title="View Details" onPress={() => navigation.navigate('MarketDetails', { crop: point.crop })} />
+    </Card>)}
+    {state.data && <Text style={ui.source}>{state.data.some(point => point.isDemo) ? 'Demo market data' : 'Market data: AGMARKNET'}</Text>}
   </Page>;
 }
-function CropCard({ crop, open }: { crop: Crop; open: () => void }) {
-  const state = useRemote(useCallback(() => tradingClient.history(crop, 30), [crop]));
-  const points = state.data?.points ?? [], latest = points.at(-1);
-  const change = latest && points[0] ? (latest.modalPricePerKg / points[0].modalPricePerKg - 1) * 100 : null;
-  return <Card title={crop}>{state.loading && <Text>Loading market…</Text>}{state.error && <><Text>{state.error}</Text><Button title="Retry" onPress={() => void state.refresh()} /></>}
-    {latest ? <><Text>{money(latest.modalPricePerKg * 100)}/Quintal</Text><Text>{change === null ? 'Trend unavailable' : (change > 2 ? 'Up' : change < -2 ? 'Down' : 'Flat') + ' · ' + change.toFixed(1) + '%'}</Text>
-      <Text>{latest.isDemo ? 'Demo market data' : 'Market data: AGMARKNET'}</Text></> : state.data && <Text>No market observations available.</Text>}
-    <Button title="View Details" onPress={open} />
-  </Card>;
-}
 export function MarketDetailsBody({ crop }: { crop: Crop }) {
-  const state = useRemote(useCallback(() => tradingClient.history(crop, 30), [crop]));
-  const points = state.data?.points ?? [], latest = points.at(-1);
-  return <Card title={crop + ' market summary'}>
-    {state.loading && <Text>Loading observations…</Text>}{state.error && <><Text>{state.error}</Text><Button title="Retry" onPress={() => void state.refresh()} /></>}
-    {latest ? <><Text>Current: {money(latest.modalPricePerKg * 100)}/Quintal</Text><Text>Min: {money(latest.minPricePerKg == null ? null : latest.minPricePerKg * 100)} · Max: {money(latest.maxPricePerKg == null ? null : latest.maxPricePerKg * 100)}/Quintal</Text><Text>{latest.isDemo ? 'Demo market data' : 'Market data: AGMARKNET'}</Text></> : state.data && <Text>No market observations available.</Text>}
+  const state = useRemote(useCallback(() => tradingClient.current(crop), [crop]));
+  const point = state.data;
+  return <Card title={crop + ' market summary'}><LoadState {...state} hasData={!!point} retry={() => void state.refresh()} />
+    {point && <><Image source={cropArtwork(crop)} resizeMode="contain" style={ui.cropImage} /><Text style={ui.small}>CURRENT MARKET PRICE</Text><Text style={ui.priceHero}>{money(point.modalPricePerKg * 100)}/Quintal</Text>
+      <View style={ui.priceRow}><View style={ui.priceMetric}><Text style={ui.small}>MINIMUM</Text><Text style={ui.priceMetricValue}>{money(point.minPricePerKg == null ? null : point.minPricePerKg * 100)}</Text></View><View style={ui.priceMetric}><Text style={ui.small}>MAXIMUM</Text><Text style={ui.priceMetricValue}>{money(point.maxPricePerKg == null ? null : point.maxPricePerKg * 100)}</Text></View></View>
+      <Text style={ui.muted}>Market range in ₹/Quintal · {point.mandi}</Text><Text style={ui.disclaimer}>Prices may vary with market demand and mandi conditions.</Text><Text style={ui.source}>{point.isDemo ? 'Demo market data' : 'Market data: AGMARKNET'}</Text></>}
   </Card>;
 }
 export function MarketDetailsScreen({ route }: NativeStackScreenProps<TradingRoutes, 'MarketDetails'>) {

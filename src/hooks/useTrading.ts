@@ -6,7 +6,8 @@ import type { TradingWorkspace } from '../services/api/trading.types';
 
 export function useTrading() {
   const { demoApiToken } = useAuth();
-  const [data, setData] = useState<TradingWorkspace | null>(null);
+  const [result, setResult] = useState<{ token: string; data: TradingWorkspace } | null>(null);
+  const data = result?.token === demoApiToken ? result?.data ?? null : null;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const version = useRef(0);
@@ -16,7 +17,7 @@ export function useTrading() {
     try {
       if (!demoApiToken) throw new Error('Sign in again to start a server session.');
       const result = await tradingClient.workspace();
-      if (current === version.current) setData(result);
+      if (current === version.current) setResult({ token: demoApiToken, data: result });
     } catch (e) { if (current === version.current) setError(e instanceof Error ? e.message : 'Unable to load data.'); }
     finally { if (current === version.current) setLoading(false); }
   }, [demoApiToken]);
@@ -25,5 +26,5 @@ export function useTrading() {
     const timer = setInterval(() => void refresh(), 20000);
     return () => { clearInterval(timer); version.current++; };
   }, [refresh]));
-  return { data, loading, error, refresh };
+  return { data, hasData: !!data, loading, error, refresh };
 }

@@ -1,6 +1,6 @@
 import type { DemoRole } from '../types/domain.js';
 import type { MutationResults, OrderContract } from '../types/mutations.js';
-import { executeRpc, readCreatedOrder, type RpcExecutor, type RpcArguments } from '../repositories/mutation.repository.js';
+import { executeRpc, readCreatedOrder, readBatchQuality, type RpcExecutor, type RpcArguments } from '../repositories/mutation.repository.js';
 import { ApiError } from '../utils/apiError.js';
 import * as v from '../utils/mutationValidation.js';
 
@@ -290,6 +290,7 @@ export const commands: Record<keyof MutationResults, Command> = {
 export function createMutationService(
   rpc: RpcExecutor = executeRpc,
   readOrder: (id: string) => Promise<OrderContract> = readCreatedOrder,
+  readQuality: typeof readBatchQuality = readBatchQuality,
 ) {
   return {
     async execute<K extends keyof MutationResults>(command: K, actor: Actor, id: unknown, body: unknown): Promise<MutationResults[K]> {
@@ -298,13 +299,13 @@ export function createMutationService(
       if (definition.role && definition.role !== actor.role) throw new ApiError(403, 'FORBIDDEN', 'This action is not allowed.');
       const args = definition.params(actor, id, body);
       const raw = await rpc(definition.rpc, args);
-      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new ApiError(500, 'server_error', 'Invalid server response.');
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new ApiError(500, 'server_error', 'The action response could not be confirmed. Refresh before trying again.');
       if (command === 'verifyDeliveryOtp') {
         const response = raw as Record<string, unknown>;
         if (typeof response.verified !== 'boolean' ||
           typeof response.attemptCount !== 'number' || !Number.isFinite(response.attemptCount) ||
           typeof response.attemptsRemaining !== 'number' || !Number.isFinite(response.attemptsRemaining)) {
-          throw new ApiError(500, 'server_error', 'Invalid server response.');
+          throw new ApiError(500, 'server_error', 'The action response could not be confirmed. Refresh before trying again.');
         }
         if (!response.verified) {
           const errorCode = typeof response.errorCode === 'string' ? response.errorCode : 'INVALID_OTP';
@@ -313,7 +314,7 @@ export function createMutationService(
             ? 'Too many incorrect delivery OTP attempts.'
             : 'Invalid delivery OTP.', { attemptCount: response.attemptCount, attemptsRemaining: response.attemptsRemaining });
         }
-        if (typeof response.orderId !== 'string') throw new ApiError(500, 'server_error', 'Invalid server response.');
+        if (typeof response.orderId !== 'string') throw new ApiError(500, 'server_error', 'The action response could not be confirmed. Refresh before trying again.');
         return {
           verified: true,
           orderId: response.orderId,
@@ -323,12 +324,18 @@ export function createMutationService(
         } as MutationResults[K];
       }
       if (command === 'setBatchQuality') {
-        const response = raw as Record<string, unknown>;
+        let response = raw as Record<string, unknown>;
+        // The deployed RPC returns qualityGrade/qualitySource, not the mobile DTO.
+        // Read persisted notes and status; do not manufacture them from input.
+        if (response.batchId === args.p_batch_id && response.qualitySource === 'farmer_declared' &&
+            ['A', 'B', 'C'].includes(String(response.qualityGrade))) {
+          response = await readQuality(String(args.p_batch_id), actor.accountId);
+        }
         if (typeof response.batchId !== 'string' ||
           (response.grade !== 'A' && response.grade !== 'B' && response.grade !== 'C') ||
           (response.notes !== null && typeof response.notes !== 'string') ||
           typeof response.status !== 'string') {
-          throw new ApiError(500, 'server_error', 'Invalid server response.');
+          throw new ApiError(502, 'QUALITY_RESPONSE_INVALID', 'Saved quality could not be confirmed. Refresh the batch before continuing.');
         }
         return {
           batchId: response.batchId,
@@ -343,12 +350,12 @@ export function createMutationService(
         const value = (raw as Record<string, unknown>)[key];
         const expected = numericFields.has(key) ? 'number' : booleanFields.has(key) ? 'boolean' : 'string';
         if (typeof value !== expected || (typeof value === 'number' && !Number.isFinite(value))) {
-          throw new ApiError(500, 'server_error', 'Invalid server response.');
+          throw new ApiError(500, 'server_error', 'The action response could not be confirmed. Refresh before trying again.');
         }
         result[key] = value;
       }
       if (command === 'acceptBid' || command === 'acceptPurchaseRequest') {
-        if (typeof result.orderId !== 'string') throw new ApiError(500, 'server_error', 'Invalid server response.');
+        if (typeof result.orderId !== 'string') throw new ApiError(500, 'server_error', 'The action response could not be confirmed. Refresh before trying again.');
         result.order = await readOrder(result.orderId);
       }
       if (command === 'payFarmerAdvance' || command === 'payLogisticsAdvance' || command === 'payFinalBalances') result.simulated = true;

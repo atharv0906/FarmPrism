@@ -1,5 +1,7 @@
 # FarmPrism
 
+Current local phase: [2.0.10 — cross-role stabilization](PHASE_2_0_10.md). This supersedes historical phase-status and temporary-UI restrictions below; approved Farmer Home/My Farm remain unchanged.
+
 FarmPrism is a mobile agricultural marketplace for farmers, buyers, and logistics partners. The app is currently structured around a React Native / Expo mobile client, Supabase for auth and persisted application data, and a separate Node/Express TypeScript API scaffold for future business and integration logic.
 
 ## Current Phase

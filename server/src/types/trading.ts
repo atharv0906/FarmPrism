@@ -9,4 +9,4 @@ export type Payment = { id: string; orderId: string; kind: string; amount: numbe
 export type Tracking = { id: string; jobId: string; latitude: number; longitude: number; source: 'actual' | 'simulated'; recordedAt: string };
 export type TimelineEvent = { id: string; orderId: string; type: string; createdAt: string };
 export type Notification = { id: string; title: string; body: string | null; type: string; entityType: string | null; entityKey: string | null; orderId: string | null; jobId: string | null; createdAt: string; readAt: string | null };
-export type TradingWorkspace = { me: Profile; profiles: Profile[]; batches: Batch[]; items: SellingItem[]; offers: Offer[]; orders: Order[]; jobs: Job[]; payments: Payment[]; tracking: Tracking[]; events: TimelineEvent[]; notifications: Notification[] };
+export type TradingWorkspace = { deliveryLocation?: { label: string; latitude: number | null; longitude: number | null } | null; me: Profile; profiles: Profile[]; batches: Batch[]; items: SellingItem[]; offers: Offer[]; orders: Order[]; jobs: Job[]; payments: Payment[]; tracking: Tracking[]; events: TimelineEvent[]; notifications: Notification[] };

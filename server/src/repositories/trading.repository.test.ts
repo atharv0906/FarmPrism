@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { transpileModule, ModuleKind } from 'typescript';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 process.env.SUPABASE_URL = 'https://test.supabase.co';
@@ -37,6 +39,19 @@ test('workspace isolates offers, payments, tracking and unassigned logistics ord
     };
     return query;
   });
+  // Validate actual repository JSON with the same runtime contract used by mobile.
+  const source = readFileSync(new URL('../../../src/services/api/workspace.contract.ts', import.meta.url), 'utf8');
+  const compiled = transpileModule(source, { compilerOptions: { module: ModuleKind.CommonJS } }).outputText;
+  const contract: { workspaceContractError?: (value: unknown) => string | null } = {};
+  new Function('exports', compiled)(contract);
+  for (const table of Object.values(fixtures)) for (const row of table) {
+    if (!('created_at' in row)) row.created_at = '2026-09-10T00:00:00Z';
+    if (!('updated_at' in row)) row.updated_at = '2026-09-10T00:00:00Z';
+  }
+  for (const [id, role] of [['farmer', 'farmer'], ['buyer', 'buyer'], ['driver', 'logistics']] as const) {
+    const workspace = await tradingWorkspace(id, role);
+    assert.equal(contract.workspaceContractError!(JSON.parse(JSON.stringify(workspace))), null, role + ' mobile contract');
+  }
   const buyer = await tradingWorkspace('buyer', 'buyer');
   assert.equal(buyer.orders.length, 1);
   assert.equal(buyer.offers[0].remainingKg, 100);

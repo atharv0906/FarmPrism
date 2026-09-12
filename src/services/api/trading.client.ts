@@ -1,9 +1,10 @@
 import { apiClient } from './api.client';
 import type { TradingWorkspace } from './trading.types';
 import type { Crop, MarketHistory, MarketPoint, PriceInsight } from './market.types';
+import { parseWorkspace } from './workspace.contract';
 
 export const tradingClient = {
-  async workspace() { return (await apiClient.get<{ data: TradingWorkspace }>('/api/workspace')).data; },
+  async workspace() { return parseWorkspace((await apiClient.get<{ data: unknown }>('/api/workspace'))?.data); },
   async history(crop: Crop, days: 30 | 60 | 90) {
     return (await apiClient.get<{ data: MarketHistory }>(`/api/market/${crop}/history?days=${days}`)).data;
   },

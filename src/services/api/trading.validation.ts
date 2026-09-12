@@ -5,5 +5,5 @@ export function validAdvance(percent: number): boolean {
   return Number.isFinite(percent) && percent >= 10 && percent <= 90;
 }
 export function marketSourceLabel(isDemo: boolean, source: string): string {
-  return isDemo ? 'Prototype market fallback' : source;
+  return isDemo ? 'Demo market data' : 'Market data: AGMARKNET';
 }

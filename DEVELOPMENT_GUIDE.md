@@ -1,5 +1,7 @@
 # FarmPrism Development Guide
 
+Current local phase: [2.0.10 — cross-role stabilization](PHASE_2_0_10.md). This supersedes historical phase-status and temporary-UI restrictions below; approved Farmer Home/My Farm remain unchanged.
+
 ## 1. Project Status
 
 The latest phase is [2.0.6](PHASE_2_0_6.md): cross-role mobile integration and

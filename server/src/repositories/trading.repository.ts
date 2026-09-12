@@ -3,8 +3,13 @@ import { expireMarketplace } from './mutation.repository.js';
 import { ApiError } from '../utils/apiError.js';
 import type { Batch, Profile, SellingItem, Offer, Order, Job, Role, TradingWorkspace } from '../types/trading.js';
 type Row = Record<string, any>;
-const n = (v: unknown): number => Number(v);
-const nullableNumber = (v: unknown): number | null => v == null ? null : Number(v);
+const n = (v: unknown): number => {
+  if ((typeof v !== 'number' && typeof v !== 'string') || String(v).trim() === '' || !Number.isFinite(Number(v))) {
+    throw new ApiError(503, 'DATA_INCOMPLETE', 'Trading data is incomplete. Please retry to load your workspace.');
+  }
+  return Number(v);
+};
+const nullableNumber = (v: unknown): number | null => v == null ? null : n(v);
 
 // Prototype read aggregation only. Every returned private row is scoped to the actor.
 async function rows(table: string): Promise<Row[]> {
@@ -21,7 +26,7 @@ export async function tradingWorkspace(accountId: string, role: Role): Promise<T
   const profiles: Profile[] = accounts.map(a => {
     const trust = trusts.find(t => t.account_id === a.id);
     const profile = [...farmers, ...buyers, ...logistics].find(p => p.account_id === a.id);
-    return { id: a.id, loginLabel: a.login_label, name: a.full_name, role: a.role_code,
+    return { id: a.id, loginLabel: a.login_label, name: a.role_code === 'buyer' ? profile?.business_name ?? a.full_name : a.full_name, role: a.role_code,
       trustScore: nullableNumber(trust?.score), completedTransactions: nullableNumber(trust?.completed_transactions),
       qualityConsistency: nullableNumber(trust?.quality_consistency_score), paymentReliability: nullableNumber(trust?.payment_reliability_score),
       deliveryReliability: nullableNumber(trust?.delivery_reliability_score), verification: profile?.verification_status ?? null,
@@ -44,7 +49,7 @@ export async function tradingWorkspace(accountId: string, role: Role): Promise<T
       pricePerKg: n(a.fixed_price_per_kg), startsAt: a.starts_at, endsAt: a.expires_at, status: a.status })),
   ];
   const jobs: Omit<Job, 'crop' | 'quantityKg' | 'orderCode'>[] = jobRows.map(j => ({ id: j.id, orderId: j.order_id, logisticsId: j.logistics_account_id, status: j.status,
-    fee: nullableNumber(j.proposed_fee), feeStatus: j.fee_status, pickup: j.pickup_label, delivery: j.delivery_label }));
+    fee: nullableNumber(j.proposed_fee), feeStatus: j.fee_status, pickup: j.pickup_label ?? null, delivery: j.delivery_label ?? null }));
   const visibleOrderRows = orderRows.filter(o => o.farmer_account_id === accountId || o.buyer_account_id === accountId ||
     jobs.some(j => j.orderId === o.id && (j.logisticsId === accountId || (role === 'logistics' && j.status === 'available' && me.verification === 'verified' && me.capacity !== null && n(o.allocated_quantity_kg) <= me.capacity))))
   const orders: Order[] = visibleOrderRows.filter(o => o.farmer_account_id === accountId || o.buyer_account_id === accountId || jobs.some(j => j.orderId === o.id && j.logisticsId === accountId))
@@ -63,7 +68,7 @@ export async function tradingWorkspace(accountId: string, role: Role): Promise<T
       const item = allItems.find(item => item.id === b.itemId)!;
       const allocated = orderRows.filter(o => o.status !== 'cancelled' && (o.accepted_bid_id === b.id || o.purchase_request_id === b.id)).reduce((sum, o) => sum + n(o.allocated_quantity_kg), 0);
       return { id: b.id, kind: b.kind, itemId: b.itemId, buyerId: b.buyer_account_id, quantityKg: n(b.quantity_kg), remainingKg: Math.max(0, n(b.quantity_kg) - allocated),
-        pricePerKg: b.kind === 'auction' ? n(b.price_per_kg) : item.pricePerKg, advancePercent: n(b.advance_percent), delivery: b.delivery_label,
+        pricePerKg: b.kind === 'auction' ? n(b.price_per_kg) : item.pricePerKg, advancePercent: n(b.advance_percent), delivery: b.delivery_label ?? null,
         latitude: nullableNumber(b.delivery_latitude), longitude: nullableNumber(b.delivery_longitude), status: b.status, createdAt: b.created_at, updatedAt: b.updated_at };
     });
   const items = allItems.filter(item => item.batch.farmerId === accountId || (role === 'buyer' && (['open', 'active', 'partially_sold'].includes(item.status) || offers.some(o => o.itemId === item.id))));
@@ -80,12 +85,26 @@ export async function tradingWorkspace(accountId: string, role: Role): Promise<T
   const trackingIds = visibleJobs.filter(j => privateOrderIds.includes(j.orderId)).map(j => j.id);
   const trackingResult = trackingIds.length ? await supabaseAdmin.from('demo_tracking_points').select('id,job_id,latitude,longitude,source,recorded_at').in('job_id', trackingIds).order('recorded_at', { ascending: false }).limit(200) : { data: [], error: null };
   if (trackingResult.error) throw new ApiError(503, 'DATA_UNAVAILABLE', 'Unable to load tracking.');
-  return { me, profiles, batches: batches.filter(b => b.farmerId === accountId), items, offers, orders, jobs: visibleJobs,
-    payments: payments.map(p => ({ id: p.id, orderId: p.order_id, kind: p.payment_kind, amount: n(p.amount), status: p.status, simulated: p.simulated, paidAt: p.paid_at })),
+  const deliveryProfile = role === 'buyer' ? buyers.find(p => p.account_id === accountId) : null;
+  const deliveryLocation = deliveryProfile?.delivery_label ? { label: deliveryProfile.delivery_label,
+    latitude: nullableNumber(deliveryProfile.delivery_latitude), longitude: nullableNumber(deliveryProfile.delivery_longitude) } : null;
+  return { me, profiles, deliveryLocation, batches: batches.filter(b => b.farmerId === accountId), items, offers, orders, jobs: visibleJobs,
+    payments: payments.map(p => ({ id: p.id, orderId: p.order_id, kind: p.payment_kind, amount: n(p.amount), status: p.status, simulated: p.simulated, paidAt: p.paid_at ?? null })),
     events: events.map(e => ({ id: e.id, orderId: e.order_id, type: e.event_type, createdAt: e.created_at })),
     tracking: trackingResult.data.map(p => ({ id: p.id, jobId: p.job_id, latitude: n(p.latitude), longitude: n(p.longitude), source: p.source, recordedAt: p.recorded_at })),
-    notifications: notifications.map(p => ({ id: p.id, title: p.title, body: p.notification_type === 'delivery_otp' ? 'Open the order for delivery confirmation.' : p.body,
-      type: p.notification_type, entityType: p.entity_type, entityKey: p.entity_key, orderId: typeof p.data?.orderId === 'string' ? p.data.orderId : null,
-      jobId: typeof p.data?.jobId === 'string' ? p.data.jobId : null, createdAt: p.created_at, readAt: p.read_at })),
+    notifications: notifications.map(p => {
+      // Seed notifications may use human batch/order codes. Resolve canonical IDs
+      // only against entities visible to this actor.
+      const item = items.find(i => i.id === p.entity_key || i.batch.code === p.entity_key);
+      const order = orders.find(o => o.id === p.entity_key || o.code === p.entity_key);
+      const job = visibleJobs.find(j => j.id === p.entity_key || j.orderId === p.entity_key || j.orderCode === p.entity_key);
+      const isListing = ['auction', 'fixed_listing'].includes(p.entity_type);
+      return { id: p.id, title: p.title, body: p.notification_type === 'delivery_otp' ? 'Open the order for delivery confirmation.' : p.body ?? null,
+        type: p.notification_type, entityType: p.entity_type ?? null,
+        entityKey: isListing ? item?.id ?? null : p.entity_type === 'order' ? order?.id ?? null : p.entity_key ?? null,
+        orderId: typeof p.data?.orderId === 'string' && orders.some(o => o.id === p.data.orderId) ? p.data.orderId : order?.id ?? null,
+        jobId: typeof p.data?.jobId === 'string' && visibleJobs.some(j => j.id === p.data.jobId) ? p.data.jobId : role === 'logistics' ? job?.id ?? null : null,
+        createdAt: p.created_at, readAt: p.read_at ?? null };
+    }),
   };
 }

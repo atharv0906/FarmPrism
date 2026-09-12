@@ -1,5 +1,7 @@
 # FarmPrism Project Requirements
 
+Current local phase: [2.0.10 — cross-role stabilization](PHASE_2_0_10.md). This supersedes historical phase-status and temporary-UI restrictions below; approved Farmer Home/My Farm remain unchanged.
+
 ## 1. Product Goal
 FarmPrism is a mobile agricultural marketplace designed to connect farmers, buyers, and logistics partners in a trusted supply chain. The current prototype focuses on the mobile app foundation, real authentication and role flow, approved Farmer Home and My Farm screens, and the architecture needed for later marketplace trading, orders, delivery coordination, and AI market guidance.
 

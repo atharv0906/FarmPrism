@@ -10,7 +10,7 @@ test('listing and advance validation enforce quantity, price and 10–90% bounds
   assert.equal(validListing(50, 100, 0), false);
   for (const p of [10, 30, 90]) assert.equal(validAdvance(p), true);
   for (const p of [5, 95, NaN]) assert.equal(validAdvance(p), false);
-  assert.equal(marketSourceLabel(true, 'seed'), 'Prototype market fallback');
+  assert.equal(marketSourceLabel(true, 'seed'), 'Demo market data');
 });
 test('401 expires only the current API session; network errors and 409 do not', async t => {
   let expired = 0;

@@ -1,7 +1,9 @@
+import { dashboardAssets as d } from '../components/farmer-dashboard/dashboardAssets';
+import { ui } from '../components/farmer-sell/FarmerSellUI';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { TradingRoutes } from './TradingRoutes';
 import type { FarmerStackParamList } from './FarmerNavigator';
@@ -20,11 +22,12 @@ function Tabs({ role }: { role: Role }) {
   const parent = navigation.getParent<NativeStackNavigationProp<FarmerStackParamList>>();
   const insets = useSafeAreaInsets();
   const route = useNavigationState(state => state.routes[state.index]?.name);
+  const selectedTarget = route === 'Item' || route === 'BidForm' ? 'BuyerMarket' : route === 'Order' ? 'Orders' : route === 'Job' ? 'Jobs' : route;
   const tabs: Array<[string, keyof TradingRoutes | 'Dashboard' | 'MyFarm']> = role === 'buyer'
     ? [['Home', 'BuyerHome'], ['Market', 'BuyerMarket'], ['My Bids', 'MyBids'], ['Orders', 'Orders'], ['Profile', 'Profile']]
     : [['Home', 'LogisticsHome'], ['Jobs', 'Jobs'], ['Active', 'Active'], ['History', 'History'], ['Profile', 'Profile']];
-  return <View style={[s.tabs, { paddingBottom: Math.max(10, insets.bottom) }]}>{tabs.map(([label, target]) =>
-    <Pressable accessibilityRole="tab" accessibilityState={{ selected: route === target }} key={label} style={s.tab} onPress={() => {
+  return <View style={[ui.nav, { paddingBottom: Math.max(10, insets.bottom) }]}>{tabs.map(([label, target]) =>
+    <Pressable accessibilityRole="tab" accessibilityState={{ selected: selectedTarget === target }} key={label} style={ui.navItem} onPress={() => {
       if (target === 'Dashboard' || target === 'MyFarm') parent?.navigate(target);
       else if (target === 'SellHome') navigation.navigate('SellHome');
       else if (target === 'Market') navigation.navigate('Market');
@@ -37,11 +40,11 @@ function Tabs({ role }: { role: Role }) {
       else if (target === 'Jobs') navigation.navigate('Jobs');
       else if (target === 'Active') navigation.navigate('Active');
       else if (target === 'History') navigation.navigate('History');
-    }}><Text style={s.tabText}>{label}</Text></Pressable>)}</View>;
+    }}><View style={[ui.navIcon, selectedTarget === target && ui.navSelected]}><Image resizeMode="contain" style={{ width: 27, height: 27, opacity: selectedTarget === target ? 1 : 0.65 }} source={label === 'Home' ? d.navHome : label === 'Profile' ? d.navProfile : label === 'Market' ? d.navSell : label === 'My Bids' ? d.offer : label === 'Jobs' ? d.orders : label === 'Active' ? d.listing : d.navInsights} /></View><Text style={[ui.navLabel, selectedTarget === target && ui.navSelectedLabel]}>{label}</Text></Pressable>)}</View>;
 }
 export function TradingNavigator({ role, initial = 'SellHome' }: { role: Role; initial?: keyof TradingRoutes }) {
   return <Stack.Navigator initialRouteName={initial} screenLayout={({ children }) => <View style={{ flex: 1 }}>{children}<Tabs role={role} /></View>}
-    screenOptions={({ navigation }) => ({ headerShown: role !== 'farmer', headerStyle: { backgroundColor: '#FAFAF2' }, headerTintColor: '#12642D',
+    screenOptions={({ navigation }) => ({ headerShown: false, headerStyle: { backgroundColor: '#FAFAF2' }, headerTintColor: '#12642D',
       headerRight: () => <Pressable accessibilityRole="button" accessibilityLabel="Notifications" style={{ padding: 10 }} onPress={() => navigation.navigate('Notifications')}><Text style={{ color: '#12642D' }}>Notifications</Text></Pressable> })}>
     {role === 'farmer' && <>
       <Stack.Screen name="SellHome" component={SellHomeScreen} options={{ title: 'Sell' }} />
