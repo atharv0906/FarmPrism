@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "FarmPrism",
+    "slug": "FarmPrism",
+    "version": "1.0.0",
+    "orientation": "portrait",
+
+    "icon": "./assets/1. FarmPrism_Splash_Assets/farmprism_splash_logo_badge_1024.png",
+
+    "splash": {
+      "backgroundColor": "#2D5B35",
+      "resizeMode": "contain"
+    },
+
+    "userInterfaceStyle": "light",
+
+    "ios": {
+      "supportsTablet": true
+    },
+
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#F7F7EF",
+        "foregroundImage": "./assets/1. FarmPrism_Splash_Assets/farmprism_splash_logo_badge_1024.png"
+      },
+
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.FarmPrism"
+    },
+
+    "web": {
+      "favicon": "./assets/1. FarmPrism_Splash_Assets/farmprism_splash_logo_badge_1024.png"
+    },
+
+    "plugins": [
+      "expo-video",
+      ["expo-location", { "locationWhenInUsePermission": "Allow FarmPrism to share your delivery location while you use the app." }]
+    ]
+  }
+}

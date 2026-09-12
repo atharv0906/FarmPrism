@@ -1,0 +1,79 @@
+[
+  {
+    "file": "role_bottom_landscape.png",
+    "width": 1672,
+    "height": 941,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "role_bottom_leaf_cluster.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "role_buyer_illustration.png",
+    "width": 1448,
+    "height": 1086,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "role_divider_sprout.png",
+    "width": 2172,
+    "height": 724,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "role_farmer_illustration.png",
+    "width": 1448,
+    "height": 1086,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "role_farmprism_logo.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "role_fpo_illustration.png",
+    "width": 1448,
+    "height": 1086,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "role_logistics_illustration.png",
+    "width": 1448,
+    "height": 1086,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "role_reference_1080x2340.png",
+    "width": 1080,
+    "height": 2340,
+    "mode": "RGB",
+    "transparent": false
+  },
+  {
+    "file": "role_top_left_leaves.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "role_top_right_leaves.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "transparent": true
+  }
+]

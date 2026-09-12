@@ -1,0 +1,12 @@
+export type Role = 'farmer' | 'buyer' | 'logistics';
+export type Profile = { id: string; loginLabel: string; name: string; role: Role; trustScore: number | null; completedTransactions: number | null; qualityConsistency: number | null; paymentReliability: number | null; deliveryReliability: number | null; verification: string | null; location: string | null; area: number | null; farmerCode: string | null; vehicle: string | null; capacity: number | null };
+export type Batch = { id: string; farmerId: string; code: string; crop: string; quantityKg: number; grade: 'A' | 'B' | 'C' | null; status: string };
+export type SellingItem = { id: string; kind: 'auction' | 'fixed'; batch: Batch; offeredKg: number; remainingKg: number; pricePerKg: number; startsAt: string; endsAt: string; status: string };
+export type Offer = { id: string; kind: 'auction' | 'fixed'; itemId: string; buyerId: string; quantityKg: number; remainingKg: number; pricePerKg: number; advancePercent: number; delivery: string | null; latitude: number | null; longitude: number | null; status: string; createdAt: string; updatedAt: string };
+export type Order = { id: string; code: string; kind: 'auction' | 'fixed'; batch: Batch; buyerId: string; farmerId: string; quantityKg: number; pricePerKg: number; total: number; advancePercent: number; status: string; createdAt: string };
+export type Job = { crop: string; quantityKg: number; orderCode: string; id: string; orderId: string; logisticsId: string | null; status: string; fee: number | null; feeStatus: string; pickup: string | null; delivery: string | null };
+export type Payment = { id: string; orderId: string; kind: string; amount: number; status: string; simulated: boolean; paidAt: string | null };
+export type Tracking = { id: string; jobId: string; latitude: number; longitude: number; source: 'actual' | 'simulated'; recordedAt: string };
+export type TimelineEvent = { id: string; orderId: string; type: string; createdAt: string };
+export type Notification = { id: string; title: string; body: string | null; type: string; entityType: string | null; entityKey: string | null; orderId: string | null; jobId: string | null; createdAt: string; readAt: string | null };
+export type TradingWorkspace = { deliveryLocation?: { label: string; latitude: number | null; longitude: number | null } | null; me: Profile; profiles: Profile[]; batches: Batch[]; items: SellingItem[]; offers: Offer[]; orders: Order[]; jobs: Job[]; payments: Payment[]; tracking: Tracking[]; events: TimelineEvent[]; notifications: Notification[] };

@@ -1,0 +1,48 @@
+// RPC response fields verified against existing public.demo_* functions.
+export type DeliveryInput = { label: string; latitude: number; longitude: number };
+export type CreateAuctionInput = { batchId: string; quantityKg: number; reservePricePerKg: number; durationHours: 6 | 12 | 24 };
+export type CreateFixedListingInput = { batchId: string; quantityKg: number; fixedPricePerKg: number };
+export type BidInput = { quantityKg: number; pricePerKg: number; advancePercent: number; delivery: DeliveryInput };
+export type PurchaseRequestInput = { quantityKg: number; advancePercent: number; delivery: DeliveryInput };
+export type AcceptInput = { quantityKg: number };
+export type FeeInput = { fee: number };
+export type FeeResponseInput = { accept: boolean };
+export type TrackingInput = { latitude: number; longitude: number; source: 'actual' | 'simulated' };
+export type VerifyDeliveryInput = { otp: string };
+export type SetBatchQualityInput = { grade: 'A' | 'B' | 'C'; notes?: string | null };
+export type FeedbackInput = { toAccountId: string; rating: number; comment?: string | null };
+export type DisputeInput = { againstAccountId: string | null; reason: string; description?: string | null };
+export type OrderContract = {
+  id: string; orderCode: string; sourceType: 'auction' | 'fixed_price';
+  farmerAccountId: string; buyerAccountId: string; batchId: string;
+  quantityKg: number; unitPricePerKg: number; totalAmount: number;
+  farmerAdvancePercent: number; status: string;
+};
+export type AcceptanceResult = { orderId: string; orderCode: string; status: string; acceptedQuantityKg: number; totalAmount: number; order: OrderContract };
+export type MutationResults = {
+  setBatchQuality: { batchId: string; grade: 'A' | 'B' | 'C'; notes: string | null; status: string };
+  rejectBid: { bidId: string; status: string };
+  rejectPurchaseRequest: { requestId: string; status: string };
+  createAuction: { auctionId: string; status: string };
+  closeAuction: { auctionId: string; status: string };
+  createFixedListing: { listingId: string; status: string; expiresAt: string };
+  closeFixedListing: { listingId: string; status: string };
+  placeOrReviseBid: { bidId: string; status: string; revised: boolean };
+  withdrawBid: { bidId: string; status: string };
+  createPurchaseRequest: { requestId: string; status: string };
+  withdrawPurchaseRequest: { requestId: string; status: string };
+  acceptBid: AcceptanceResult;
+  acceptPurchaseRequest: AcceptanceResult;
+  payFarmerAdvance: { orderId: string; paymentId: string; amount: number; status: string; simulated: true };
+  claimLogisticsJob: { jobId: string; orderId: string; status: string };
+  proposeLogisticsFee: { jobId: string; fee: number; feeStatus: string };
+  respondLogisticsFee: { jobId: string; accepted: boolean; status: string };
+  payLogisticsAdvance: { orderId: string; amount: number; status: string; simulated: true };
+  confirmPickup: { jobId: string; orderId: string; status: string };
+  updateTracking: { trackingPointId: string; jobId: string; source: 'actual' | 'simulated' };
+  generateDeliveryOtp: { orderId: string; otp: string; expiresAt: string };
+  verifyDeliveryOtp: { verified: boolean; orderId: string; status: string; attemptCount: number; attemptsRemaining: number; errorCode?: string };
+  payFinalBalances: { orderId: string; status: string; farmerBalance: number; logisticsBalance: number; simulated: true };
+  submitFeedback: { orderId: string; toAccountId: string; rating: number };
+  raiseDispute: { disputeId: string; orderId: string; status: string };
+};

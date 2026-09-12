@@ -1,0 +1,64 @@
+import { getApiBaseUrl } from './api.config';
+
+export type ApiClientOptions = {
+  baseUrl?: string;
+  bearerToken?: string;
+};
+
+let currentDemoApiToken: string | null = null;
+let unauthorized: (() => void) | null = null;
+export function onApiUnauthorized(handler: (() => void) | null) { unauthorized = handler; }
+export class ApiError extends Error {
+  constructor(public status: number, public code: string, message: string, public details?: Record<string, unknown>) { super(message); }
+}
+
+export function setCurrentDemoApiToken(token: string | null) {
+  currentDemoApiToken = token ?? null;
+}
+
+export function getCurrentDemoApiToken() {
+  return currentDemoApiToken;
+}
+
+export async function apiRequest<T>(path: string, options: { method?: 'GET' | 'POST'; body?: unknown; bearerToken?: string; headers?: Record<string, string> } = {}): Promise<T> {
+  let baseUrl: string;
+  try {
+    baseUrl = options.headers?.['x-api-base-url'] ?? getApiBaseUrl();
+  } catch (error) {
+    throw new ApiError(503, 'API_NOT_CONFIGURED', error instanceof Error ? error.message : 'The API address is not configured.');
+  }
+  const resolvedBearerToken = options.bearerToken ?? currentDemoApiToken;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
+  const response = await fetch(`${baseUrl}${path}`, {
+    signal: controller.signal,
+    method: options.method ?? 'GET',
+    headers: {
+      Accept: 'application/json',
+      ...(resolvedBearerToken ? { Authorization: `Bearer ${resolvedBearerToken}` } : {}),
+      ...(options.headers ?? {}),
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    ...(options.body ? { body: JSON.stringify(options.body) } : {}),
+  }).finally(() => clearTimeout(timeout));
+
+  const payload = (await response.json().catch(() => null)) as T | { error?: { code?: string; message?: string }; details?: Record<string, unknown> } | null;
+
+  if (!response.ok) {
+    const error = payload && typeof payload === 'object' && 'error' in payload ? payload.error : undefined;
+    if (response.status === 401 && resolvedBearerToken === currentDemoApiToken) unauthorized?.();
+    const details = payload !== null && typeof payload === 'object' && 'details' in payload ? payload.details : undefined;
+    throw new ApiError(response.status, error?.code ?? 'REQUEST_FAILED', error?.message ?? 'Request failed.', details);
+  }
+
+  return payload as T;
+}
+
+export const apiClient = {
+  get<T>(path: string, options: { bearerToken?: string; headers?: Record<string, string> } = {}) {
+    return apiRequest<T>(path, { method: 'GET', ...options });
+  },
+  post<T>(path: string, body: unknown, options: { bearerToken?: string; headers?: Record<string, string> } = {}) {
+    return apiRequest<T>(path, { method: 'POST', body, ...options });
+  },
+};
