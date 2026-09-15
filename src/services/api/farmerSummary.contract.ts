@@ -1,5 +1,4 @@
 import type { FarmerHomeSummary, FarmerMyFarmSummary } from '../demo/demo.types';
-import type { FarmBatch } from './farmerSummary.types';
 
 function invalid(): never { throw new Error('The farm API returned an unexpected response. Please retry.'); }
 function object(value: unknown): Record<string, unknown> {
@@ -47,12 +46,9 @@ export function parseFarmerHome(value: unknown): FarmerHomeSummary {
 export function parseFarmerMyFarm(value: unknown): FarmerMyFarmSummary {
   const v = object(value), farm = object(v.farm), summary = object(v.summary), activities = object(v.activities);
   return {
-    batches: array(v.batches).map(parseFarmBatch),
-    activityEvents: array(v.activityEvents).map(item => { const e = object(item); return { id: text(e.id), batchId: text(e.batchId), crop: oneOf(e.crop, ['Tomato', 'Onion', 'Potato']), type: oneOf(e.type, ['Crop Added', 'Produce Added', 'Produce Updated']), at: timestamp(e.at) }; }),
     farm: {
       id: text(farm.id), name: nullableText(farm.name), location: text(farm.location),
       area: nullableNumber(farm.area), areaUnit: oneOf(farm.areaUnit, ['acre']),
-      latitude: coordinate(farm.latitude, 90), longitude: coordinate(farm.longitude, 180),
     },
     summary: {
       cropCount: count(summary.cropCount), totalAvailableKg: nonnegative(summary.totalAvailableKg),
@@ -68,14 +64,4 @@ export function parseFarmerMyFarm(value: unknown): FarmerMyFarmSummary {
     }),
     activities: { cropsAdded: count(activities.cropsAdded), updatesThisMonth: count(activities.updatesThisMonth) },
   };
-}
-
-function coordinate(value: unknown, max: number): number | null { if (value === null) return null; const n = number(value); return Math.abs(n) <= max ? n : invalid(); }
-function timestamp(value: unknown): string { const s = text(value); return Number.isFinite(Date.parse(s)) ? s : invalid(); }
-export function parseFarmBatch(value: unknown): FarmBatch {
-  const b = object(value);
-  const remainingQuantityKg = nonnegative(b.remainingQuantityKg), status = text(b.status);
-  if (typeof b.sellable !== 'boolean' || b.sellable !== (remainingQuantityKg > 0 && status === 'available')) return invalid();
-  return { id: text(b.id), batchCode: text(b.batchCode), crop: oneOf(b.crop, ['Tomato', 'Onion', 'Potato']), originalQuantityKg: nonnegative(b.originalQuantityKg), remainingQuantityKg,
-    qualityGrade: b.qualityGrade === null ? null : oneOf(b.qualityGrade, ['A', 'B', 'C'] as const), status, createdAt: timestamp(b.createdAt), updatedAt: timestamp(b.updatedAt), sellable: b.sellable };
 }

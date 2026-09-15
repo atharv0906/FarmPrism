@@ -8,9 +8,9 @@ const { farmerSummaryRepository } = await import('./farmerSummary.repository.js'
 test('summary repository scopes every read to actor or owned parents and never calls snapshot/mutation RPCs', async t => {
   const fixtures: Record<string, Record<string, unknown>[]> = {
     demo_accounts: [{ id: 'owner', full_name: 'Owner' }, { id: 'other', full_name: 'Other' }],
-    demo_farmer_profiles: [{ account_id: 'owner', location_label: 'Pune', farm_area_acres: '2.5', latitude: null, longitude: null }],
+    demo_farmer_profiles: [{ account_id: 'owner', location_label: 'Pune', farm_area_acres: '2.5' }],
     demo_inventory_batches: [
-      { id: 'batch', batch_code: 'B1', original_quantity_kg: 100, quality_grade: null, farmer_account_id: 'owner', crop_name: 'Tomato', remaining_quantity_kg: '72.25', status: 'available', created_at: '2026-09-01', updated_at: '2026-09-02' },
+      { id: 'batch', farmer_account_id: 'owner', crop_name: 'Tomato', remaining_quantity_kg: '72.25', status: 'available', created_at: '2026-09-01', updated_at: '2026-09-02' },
       { id: 'foreign', farmer_account_id: 'other', crop_name: 'Onion', remaining_quantity_kg: 9999 },
     ],
     demo_auctions: [{ id: 'auction', batch_id: 'batch', remaining_quantity_kg: 72.25, starts_at: '2026-09-01', ends_at: '2026-09-20', status: 'open' }, { id: 'foreign-auction', batch_id: 'foreign' }],

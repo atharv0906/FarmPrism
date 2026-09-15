@@ -1,6 +1,6 @@
 import type { Crop } from '../services/api/market.types';
 export type TradingRoutes = {
-  SellHome: undefined; SelectBatch: { crop?: Crop } | undefined; Quality: { batchId: string };
+  SellHome: undefined; SelectBatch: undefined; Quality: { batchId: string };
   PriceInsight: { batchId: string }; ChooseMethod: { batchId: string; suggestedPrice?: number };
   CreateListing: { batchId: string; kind: 'auction' | 'fixed'; suggestedPrice?: number };
   Item: { itemId: string }; Offers: { kind?: 'auction' | 'fixed'; itemId?: string } | undefined;

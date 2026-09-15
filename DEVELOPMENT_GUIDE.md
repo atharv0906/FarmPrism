@@ -2,7 +2,7 @@
 
 ## Current architecture
 
-Phase 2.0.13 adds functional My Farm secondary screens and clean activity tooling to the working prototype. React Native / Expo / TypeScript → Node/Express business API → Supabase. Mobile API integration, Buyer/Logistics screens, demo sessions, marketplace and delivery flows are implemented. Supabase remains the persisted source of truth, real-auth RLS boundary and host of existing transactional/demo RPCs. Node owns authorization and business/integration orchestration.
+Phase 2.0.11 finalizes the working prototype. React Native / Expo / TypeScript → Node/Express business API → Supabase. Mobile API integration, Buyer/Logistics screens, demo sessions, marketplace and delivery flows are implemented. Supabase remains the persisted source of truth, real-auth RLS boundary and host of existing transactional/demo RPCs. Node owns authorization and business/integration orchestration.
 
 The current local Development tree is authoritative. Do not reset, revert, checkout, stash, create a branch, commit or push during this phase. Preserve existing user edits and assets. Approved Farmer Home/My Farm are visually frozen; do not broadly redesign Buyer/Logistics. Current screen brief: assets/FarmPrism_Designer_Screen_MDs/INDEX.md and MASTER_FLOW.md.
 
@@ -86,13 +86,13 @@ npm run test
 npm --prefix server run typecheck
 npm --prefix server run build
 npm --prefix server test
-npx expo export --platform android --output-dir .expo/phase-2-0-13-export
+npx expo export --platform android --output-dir .expo/phase-2-0-12-export
 git diff --check
 ```
 
 Server typecheck includes the reset CLI via tsconfig.scripts.json; normal build output stays under server/dist. Tests use mocked repositories/Supabase. Export output belongs in ignored .expo.
 
-Targeted live logout: create a session in memory → authenticated /api/workspace 200 → POST /api/demo/logout 200 → same token /api/workspace 401. Do not repeat full Auction/Fixed flows unless a proven regression requires it. Earlier completed E2E orders are historical evidence in phase reports; Phase 2.0.13 intentionally clears activity.
+Targeted live logout: create Farmer1 session in memory → authenticated /api/workspace 200 → POST /api/demo/logout 200 → same token /api/workspace 401. Do not repeat full Auction/Fixed flows unless a proven regression requires it. Existing completed orders FP-11332B8B3E and FP-25A03D7831 remain evidence.
 
 ## Product constraints
 
@@ -108,20 +108,4 @@ Mobile farmerSummary.client/contract feed the existing focus-refresh hooks and u
 
 DemoSession client/service retain existing SecureStore keys. Login identity comes from POST /api/demo/session, restore identity from GET /api/demo/me. Only session credentials and cached phone are cleared on logout/revocation. mockFlow.service keeps explicit role confirmation and Farmer completion preferences separately per phone. The completion marker is written only by Review Submit; no server profile write occurs. Auth navigation uses the existing language preference for returning login.
 
-PHASE_2_0_12.md contains the external grant handoff; do not apply grant changes locally.
-
-## Phase 2.0.13 My Farm and cleanup
-
-Current crop semantics are centralized in server/src/utils/farmerInventory.ts. Positive remaining KG and a non-terminal status make a current physical batch; only available batches contribute sellable KG. Add Crop creates the first batch; Add Produce creates an additional physical batch. Both start ungraded and use the existing Sell flow for quality. Farmer mutations reject unrecognized input fields and take identity from the authenticated session. Same-account/crop operations serialize within the single prototype Node process. Multiple replicas would require a database transaction/lock before deployment; no schema or RPC changes are made here.
-
-The strict My Farm contract includes saved coordinates, real batch details and batch-derived activities. Farm Updated history is omitted because there is no clean persisted edit-event model. Text-only farm edits preserve coordinates. Location uses existing expo-location and external Maps Linking, with no map library. Mock OTP remains intentionally unchanged: any six digits for fixed accounts, no SMS or Auth user requirement.
-
-After automated checks, the authorized Phase 2.0.13 live sequence is an empty Farmer2 session → Tomato 100 KG → duplicate 409 → another 50 KG batch → 150 KG/two batches → workspace/quality/Price Insight → reversible farm edit/restore → logout/revocation. Do not use unit tests to run these live mutations.
-
-For an explicitly requested empty activity state, stop the development API and run:
-
-```powershell
-npm --prefix server run clear:demo-activity -- CLEAR_FARMPRISM_ACTIVITY
-```
-
-This fixed-whitelist CLI refuses production and incorrect/extra arguments, verifies safe before/after counts, and never invokes demo_reset_prototype_data. It preserves accounts/profiles, categories/configuration and official market observations, clears activity and demo-only market observations, and clears sessions last. FK order is verified against deployed metadata. Deletions are sequential Data API operations, not a cross-table transaction; on failure inspect counts and rerun only after resolving the issue. No session should be created after the phase's final cleanup. Nullable trust displays Not available until real transactions establish it.
+Targeted live validation: Farmer1 session → /api/demo/me → /api/workspace → both Farmer summaries; compare eligible KG and crop groups against current workspace/DB, never seed totals. Compare market cards with the existing service; logout 200 then reuse 401. Preserve previous completed E2E orders. PHASE_2_0_12.md contains the external grant handoff; do not apply grant changes locally.

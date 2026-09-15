@@ -1,11 +1,9 @@
 import type { Crop, MarketHistory, MarketPoint } from '../types/market.js';
-import { isCurrentBatch, isSellableBatch } from '../utils/farmerInventory.js';
-import type { FarmBatch } from './farmerInventory.service.js';
 
 export type FarmerSummaryData = {
   account: { id: string; name: string };
-  profile: { location: string; area: number | null; latitude: number | null; longitude: number | null };
-  batches: (FarmBatch & { remainingKg: number })[];
+  profile: { location: string; area: number | null };
+  batches: { id: string; crop: Crop; remainingKg: number; status: string; createdAt: string; updatedAt: string }[];
   auctions: { id: string; batchId: string; remainingKg: number; startsAt: string; endsAt: string; status: string }[];
   bids: { id: string; auctionId: string; buyerId: string; quantityKg: number; pricePerKg: number; status: string }[];
   orders: { bidId: string | null; quantityKg: number; total: number; status: string; completedAt: string | null }[];
@@ -14,31 +12,22 @@ export type FarmerSummaryData = {
 export type FarmerSummaryRepository = { read(accountId: string): Promise<FarmerSummaryData> };
 type Market = { history(crop: string, days: 30 | 60 | 90, district?: string): Promise<MarketHistory> };
 const crops = ['Tomato', 'Onion', 'Potato'] as const;
-const eligible = isSellableBatch;
+const eligible = (batch: FarmerSummaryData['batches'][number]) => batch.status === 'available' && batch.remainingKg > 0;
 const round = (value: number) => Math.round(value * 100) / 100;
 const month = (date: string | Date) => {
   const d = new Date(date);
   return Number.isFinite(d.getTime()) ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit' }).format(d) : null;
 };
 function inventory(data: FarmerSummaryData, now: Date) {
-  const current = data.batches.filter(isCurrentBatch);
-  const represented = crops.filter(crop => current.some(b => b.crop === crop));
-  const events = [...data.batches].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.id.localeCompare(b.id));
-  const seen = new Set<Crop>();
-  const activityEvents = events.flatMap(b => {
-    const first = !seen.has(b.crop); seen.add(b.crop);
-    return [{ id: b.id + ':created', batchId: b.id, crop: b.crop, type: first ? 'Crop Added' as const : 'Produce Added' as const, at: b.createdAt },
-      ...(Date.parse(b.updatedAt) > Date.parse(b.createdAt) ? [{ id: b.id + ':updated', batchId: b.id, crop: b.crop, type: 'Produce Updated' as const, at: b.updatedAt }] : [])];
-  }).filter(e => Date.parse(e.at) <= now.getTime()).sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
+  const represented = crops.filter(crop => data.batches.some(b => b.crop === crop));
+  const current = data.batches.filter(eligible);
   return {
-    farm: { id: data.account.id, name: null, location: data.profile.location, area: data.profile.area, areaUnit: 'acre' as const, latitude: data.profile.latitude, longitude: data.profile.longitude },
-    summary: { cropCount: represented.length, totalAvailableKg: current.filter(eligible).reduce((sum, b) => sum + b.remainingKg, 0), activeBatchCount: current.length },
-    batches: data.batches.map(({ remainingKg, ...batch }) => ({ ...batch, remainingQuantityKg: remainingKg, sellable: eligible({ remainingKg, status: batch.status }) })),
-    activityEvents,
+    farm: { id: data.account.id, name: null, location: data.profile.location, area: data.profile.area, areaUnit: 'acre' as const },
+    summary: { cropCount: represented.length, totalAvailableKg: current.reduce((sum, b) => sum + b.remainingKg, 0), activeBatchCount: current.length },
     crops: represented.map(crop => {
       const batches = current.filter(b => b.crop === crop);
       return { id: crop.toLowerCase(), name: crop, status: batches.length ? 'active' as const : 'inactive' as const,
-        availableKg: batches.filter(eligible).reduce((sum, b) => sum + b.remainingKg, 0), batchCount: batches.length };
+        availableKg: batches.reduce((sum, b) => sum + b.remainingKg, 0), batchCount: batches.length };
     }),
     // Count distinct physical batches created OR updated this month, not edit events.
     activities: { cropsAdded: represented.length, updatesThisMonth: data.batches.filter(b =>

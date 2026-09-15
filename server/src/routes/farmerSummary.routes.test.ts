@@ -11,7 +11,7 @@ const { createFarmerSummaryService } = await import('../services/farmerSummary.s
 test('Farmer summaries reject no token/wrong role and use only the authenticated account', async t => {
   const ids: string[] = [];
   const service = createFarmerSummaryService({ read: async id => {
-    ids.push(id); return { account: { id, name: 'Farmer' }, profile: { location: '', area: null, latitude: null, longitude: null }, batches: [], auctions: [], bids: [], orders: [], notifications: [] };
+    ids.push(id); return { account: { id, name: 'Farmer' }, profile: { location: '', area: null }, batches: [], auctions: [], bids: [], orders: [], notifications: [] };
   } }, { history: async () => { throw new Error('offline'); } });
   const app = express();
   registerFarmerSummaryRoutes(app, service, (req: AuthenticatedRequest, res, next) => {

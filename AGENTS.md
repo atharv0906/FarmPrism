@@ -37,7 +37,7 @@
 - Preserve the existing SecureStore/provider token lifecycle; never add ad hoc password/token storage.
 - Keep root/server ignored .env private and unchanged unless an explicitly needed migration is authorized. Tracked .env.example files are blank templates with safe defaults only.
 - Government credentials belong only in server/.env. MARKET_API_KEY is canonical; DATA_GOV_IN_API_KEY is deprecated blank/missing-key fallback. Missing market configuration must preserve DB fallback.
-- The old reset CLI reseeds activity. Do not invoke it for a clean prototype. The development-only clear:demo-activity CLI requires exactly CLEAR_FARMPRISM_ACTIVITY and deletes only its fixed whitelist, preserving accounts/profiles/config and official market rows. Never clean automatically from tests; run only when explicitly authorized, after validation and live checks.
+- The reset CLI is development-only, requires exactly RESET_FARMPRISM_DEMO and calls only the existing reset RPC. Do not run live reset automatically or from tests; retain E2E data until the developer deliberately chooses reset.
 - Do not manufacture runtime business data or recreate existing functionality.
 - Work in the current local Development tree. Preserve pre-existing edits. Do not reset, revert, checkout, stash, create a branch, commit, push or rewrite Git history during this phase.
 
@@ -47,22 +47,12 @@
 - Use mocked/injected dependencies for unit tests, never live Supabase reset or live data.gov.in.
 - Run npm run typecheck and npm run test.
 - Run npm --prefix server run typecheck, npm --prefix server run build and npm --prefix server test.
-- Run npx expo export --platform android --output-dir .expo/phase-2-0-13-export and git diff --check.
+- Run npx expo export --platform android --output-dir .expo/phase-2-0-12-export and git diff --check.
 - Report measured validation and exact live failures honestly. Never claim UI/device verification from API-only checks.
 
 ## Phase 2.0.12 boundaries
 
-- Farmer Home/My Farm summaries are Node-authoritative; preserve strict clients, focus refresh and frozen visuals. Do not restore direct mobile snapshot RPCs. My Farm writes now use the authenticated Node endpoints described below.
+- Farmer Home/My Farm summaries are Node-authoritative; preserve strict clients, focus refresh and frozen visuals/mappers. Do not restore direct mobile snapshot RPCs or fake unsupported My Farm writes.
 - Mock account identity comes from session creation and /api/demo/me restoration. Keep existing SecureStore lifecycle and reject revoked sessions.
 - Fresh accounts require explicit assigned-role confirmation. Farmer completion is local per-account UX state written only on Submit, preserved with remembered roles on logout; it is not a profile write.
 - Five retired mobile RPC anon/authenticated grants await external owner revocation. Retain service_role and do not change grants/schema/RLS/RPC definitions.
-
-## Phase 2.0.13 boundaries
-
-- My Farm secondary screens are implemented. Preserve the approved main Home/My Farm layouts/assets. No screenshot supplied outside the design pack is a design reference.
-- Current crops require positive physical batches excluding sold/completed/cancelled. Sellable KG requires available status. No zero-only crop or separate Farmer Crops table.
-- POST /api/farmer/crops creates the first batch; POST /api/farmer/batches creates an additional batch for a current crop. New batches have null grade, farmer_declared source and available status. Grade remains Sell-only.
-- PATCH /api/farmer/farm updates own existing location/area/explicit coordinates only. No Farm Name. Preserve omitted coordinates. Maps uses persisted coordinates and Linking; no embedded map dependency.
-- Batch activity is derived from real creation/update timestamps. No invented Farm Updated history, fixture quantities, transactional examples or trust scores.
-- Prototype OTP remains any six digits for fixed demo accounts; no real SMS or Supabase Auth user dependency added.
-- Preserve the final clean activity state and all nine identities/profiles plus official Government observations. Do not seed activity or create another test session after final cleanup unless a new task explicitly authorizes it.

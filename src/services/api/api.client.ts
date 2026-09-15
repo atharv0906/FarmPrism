@@ -20,7 +20,7 @@ export function getCurrentDemoApiToken() {
   return currentDemoApiToken;
 }
 
-export async function apiRequest<T>(path: string, options: { method?: 'GET' | 'POST' | 'PATCH'; body?: unknown; bearerToken?: string; headers?: Record<string, string> } = {}): Promise<T> {
+export async function apiRequest<T>(path: string, options: { method?: 'GET' | 'POST'; body?: unknown; bearerToken?: string; headers?: Record<string, string> } = {}): Promise<T> {
   let baseUrl: string;
   try {
     baseUrl = options.headers?.['x-api-base-url'] ?? getApiBaseUrl();
@@ -55,9 +55,6 @@ export async function apiRequest<T>(path: string, options: { method?: 'GET' | 'P
 }
 
 export const apiClient = {
-  patch<T>(path: string, body: unknown, options: { bearerToken?: string; headers?: Record<string, string> } = {}) {
-    return apiRequest<T>(path, { method: 'PATCH', body, ...options });
-  },
   get<T>(path: string, options: { bearerToken?: string; headers?: Record<string, string> } = {}) {
     return apiRequest<T>(path, { method: 'GET', ...options });
   },

@@ -40,16 +40,12 @@ export type FarmerHomeSummary = {
 };
 
 export type FarmerMyFarmSummary = {
-  batches: import('../api/farmerSummary.types').FarmBatch[];
-  activityEvents: import('../api/farmerSummary.types').FarmActivity[];
   farm: {
     id: string;
     name: string | null;
     location: string;
     area: number | null;
     areaUnit: 'acre';
-    latitude: number | null;
-    longitude: number | null;
   };
   summary: {
     cropCount: number;

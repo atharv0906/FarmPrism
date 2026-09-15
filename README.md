@@ -2,7 +2,7 @@
 
 FarmPrism is an agricultural marketplace prototype with implemented Farmer, Buyer and Logistics workflows. React Native / Expo communicates with the Node/Express TypeScript business API and Supabase, the persisted source of truth and transactional RPC boundary.
 
-Current phase: [2.0.13 — functional My Farm and clean prototype activity](PHASE_2_0_13.md). Earlier Auction and Fixed Price E2E results remain documented in the historical phase reports. This phase adds farm/inventory writes and secondary screens, preserves marketplace rules, and clears demo activity without reseeding.
+Current phase: [2.0.12 — authoritative Farmer data and onboarding consistency](PHASE_2_0_12.md). The preceding live demo completed both Auction and Fixed Price through delivery OTP, final simulated payments, feedback, trust and inventory reconciliation: FP-11332B8B3E and FP-25A03D7831. Phase 2.0.11 fixes logout, makes government market configuration explicit, adds bounded contextual price adjustments and provides a guarded reset CLI.
 
 ## Implemented prototype
 
@@ -18,9 +18,7 @@ Current phase: [2.0.13 — functional My Farm and clean prototype activity](PHAS
 
 ## Authoritative Farmer reads and onboarding
 
-Home and My Farm use authenticated Farmer-only Node summaries. A current crop requires positive physical inventory with a non-terminal status. Available quantity includes only available batches. Add Crop creates the first physical batch; Add Produce creates a separate batch for a current crop. New batches have null grade; Farmer Declared A/B/C remains in Sell. No crop table or farm-name field was added.
-
-Farm Overview, Edit Farm, My Crops, Add Crop, Available Produce, Add Produce, Crop Details, Physical Batches, Batch Details, Farm Activities and Farm Location are implemented. Farm editing persists area/location and optional device coordinates. Open in Maps uses saved coordinates and React Native Linking; no embedded map package. Main Home/My Farm layouts and assets remain frozen, with the map placeholder copy updated for its working action.
+Home and My Farm now use authenticated Farmer-only Node summaries backed by current physical inventory, profiles, orders and notifications. The mobile snapshot RPC service is removed; approved visuals and mappers are unchanged. Unsupported My Farm write modules remain unavailable.
 
 Mock login uses the account returned by POST /api/demo/session; saved sessions restore through GET /api/demo/me. First login requires explicit confirmation of the assigned role. Remembered roles skip selection. Farmer Submit saves a per-account local onboarding completion marker; returning completed Farmers enter Dashboard. Logout preserves role/onboarding preferences. These local UX markers do not write server profiles or store secrets.
 
@@ -56,13 +54,13 @@ Mobile .env contains public Supabase values and EXPO_PUBLIC_API_URL only. The pu
 
 ## Deliberate demo reset
 
-For an empty activity state, stop the development API and run the guarded, fixed-whitelist cleanup:
+The development CLI calls only the existing service-role-only demo_reset_prototype_data RPC. It rejects production and requires exact confirmation:
 
 ```powershell
-npm --prefix server run clear:demo-activity -- CLEAR_FARMPRISM_ACTIVITY
+npm --prefix server run reset:demo -- RESET_FARMPRISM_DEMO
 ```
 
-It preserves the nine identities and profiles, categories/configuration and official Government observations. It deletes activity, sessions, trust rows and demo-only market rows without reseeding. Production and incorrect confirmation are refused; before/after counts are verified. It is sequential, so failures may leave partial cleanup and must be resolved before a guarded rerun. The older reset CLI reseeds a scenario and must not be used for this clean-state workflow. No cleanup HTTP/mobile UI exists.
+This clears demo sessions and transaction evidence and restores the RPC's defined scenario. Run only when intentionally discarding the current demo runtime state. It was not executed during Phase 2.0.11. No reset HTTP/mobile UI exists.
 
 ## Scope and documentation
 

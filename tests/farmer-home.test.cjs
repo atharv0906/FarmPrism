@@ -62,12 +62,13 @@ test('every canonical Home destination navigates or responds with context', () =
 
 });
 
-test('My Farm intents all navigate using stable keys, with no alert stubs', () => {
-  navigations.length = 0; alerts.length = 0;
-  const open = load('src/hooks/useMyFarmAction.ts').useMyFarmAction();
-  for (const type of ['FARM_OVERVIEW', 'EDIT_FARM', 'CROPS', 'AVAILABLE_PRODUCE', 'ADD_CROP', 'UPDATES', 'MAP']) open({ type });
-  open({ type: 'CROP_DETAILS', cropId: 'onion', cropName: 'Onion' });
-  open({ type: 'BATCHES', cropId: 'onion', cropName: 'Onion' });
-  assert.deepEqual(navigations.map(n => n[0]), ['FarmOverview', 'EditFarm', 'MyCrops', 'AvailableProduce', 'AddCrop', 'FarmActivities', 'FarmLocation', 'CropDetails', 'CropBatches']);
-  assert.deepEqual(navigations[8][1], { cropKey: 'onion' }); assert.equal(alerts.length, 0);
+test('My Farm prototype keeps kg totals consistent and supports both empty states', () => {
+  const { myFarmPrototype, myFarmEmptyStates, quintals, myFarmIntentMessage } = load('src/components/farmer-my-farm/myFarmData.ts');
+  assert.equal(myFarmPrototype.summary.cropCount, myFarmPrototype.crops.length);
+  assert.equal(myFarmPrototype.summary.totalAvailableKg, myFarmPrototype.crops.reduce((sum, crop) => sum + crop.availableKg, 0));
+  assert.equal(quintals(1200), '12 Quintals');
+  assert.equal(myFarmEmptyStates.noCrops.crops.length, 0);
+  assert.equal(myFarmEmptyStates.noCrops.summary.totalAvailableKg, 0);
+  assert.ok(myFarmEmptyStates.noAvailableProduce.crops.every(crop => crop.availableKg === 0 && crop.batchCount === 0));
+  assert.match(myFarmIntentMessage({ type: 'BATCHES', cropId: 'test', cropName: 'Onion' }), /Physical batches — Onion/);
 });

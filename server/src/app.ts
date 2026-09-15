@@ -1,5 +1,4 @@
 import express from 'express';
-import { registerFarmerInventoryRoutes } from './routes/farmerInventory.routes.js';
 import { registerFarmerSummaryRoutes } from './routes/farmerSummary.routes.js';
 import { registerIntegrationRoutes } from './routes/integration.routes.js';
 import { registerMutationRoutes } from './routes/mutation.routes.js';
@@ -14,7 +13,6 @@ export function createApp() {
   app.use('/', healthRoutes);
   registerIntegrationRoutes(app);
   registerFarmerSummaryRoutes(app);
-  registerFarmerInventoryRoutes(app);
   registerDemoRoutes(app);
   registerMutationRoutes(app);
   app.use(notFoundHandler);
