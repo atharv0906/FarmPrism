@@ -4,12 +4,12 @@ import { createFarmerSummaryService, type FarmerSummaryData, marketTrend } from 
 import type { Crop, MarketPoint } from '../types/market.js';
 
 const now = new Date('2026-09-12T12:00:00Z');
-const batch = (id: string, crop: Crop, remainingKg: number, status = 'available') => ({ id, crop, remainingKg, status, createdAt: '2026-08-01T00:00:00Z', updatedAt: '2026-09-10T00:00:00Z' });
+const batch = (id: string, crop: Crop, remainingKg: number, status = 'available') => ({ id, crop, remainingKg, status, batchCode: id, originalQuantityKg: Math.max(remainingKg, 1), remainingQuantityKg: remainingKg, qualityGrade: null, sellable: status === 'available' && remainingKg > 0, createdAt: '2026-08-01T00:00:00Z', updatedAt: '2026-09-10T00:00:00Z' });
 const auction = (id: string, batchId: string, status = 'open', endsAt = '2026-09-13T00:00:00Z') => ({ id, batchId, remainingKg: 50, status, startsAt: '2026-09-11T00:00:00Z', endsAt });
 const bid = (id: string, auctionId: string, pricePerKg: number, status = 'active') => ({ id, auctionId, pricePerKg, status, buyerId: id, quantityKg: 10 });
 function fixture(): FarmerSummaryData {
   return {
-    account: { id: 'farmer', name: 'Current Farmer' }, profile: { location: 'Wagholi, Pune, Maharashtra', area: 7.5 },
+    account: { id: 'farmer', name: 'Current Farmer' }, profile: { location: 'Wagholi, Pune, Maharashtra', area: 7.5, latitude: null, longitude: null },
     batches: [batch('t1', 'Tomato', 123.5), batch('t2', 'Tomato', 10), batch('o', 'Onion', 7), batch('p', 'Potato', 0), batch('reserved', 'Potato', 80, 'reserved')],
     auctions: [auction('a', 't1'), auction('a2', 'o', 'partially_sold'), auction('expired', 't2', 'open', '2026-09-01T00:00:00Z'), auction('closed', 't2', 'closed')],
     bids: [bid('b1', 'a', 30), bid('b2', 'a', 31), bid('b3', 'a2', 40), bid('old', 'a2', 100, 'replaced'), bid('late', 'expired', 200), bid('fixed', 'fixed-listing', 1000)],
@@ -54,8 +54,8 @@ test('My Farm groups current physical batches, uses actual timestamp activity an
   const data = fixture(); data.batches[1].updatedAt = '2026-08-01T00:00:00Z';
   const summaries = service(data); let farm = await summaries.myFarm('farmer');
   assert.equal(farm.farm.name, null); assert.equal(farm.farm.areaUnit, 'acre');
-  assert.deepEqual(farm.summary, { cropCount: 3, totalAvailableKg: 140.5, activeBatchCount: 3 });
-  assert.deepEqual(farm.crops.map(c => [c.name, c.availableKg, c.batchCount, c.status]), [['Tomato', 133.5, 2, 'active'], ['Onion', 7, 1, 'active'], ['Potato', 0, 0, 'inactive']]);
+  assert.deepEqual(farm.summary, { cropCount: 3, totalAvailableKg: 140.5, activeBatchCount: 4 });
+  assert.deepEqual(farm.crops.map(c => [c.name, c.availableKg, c.batchCount, c.status]), [['Tomato', 133.5, 2, 'active'], ['Onion', 7, 1, 'active'], ['Potato', 0, 1, 'active']]);
   assert.deepEqual(farm.activities, { cropsAdded: 3, updatesThisMonth: 4 });
   data.batches[0].remainingKg = 1;
   farm = await summaries.myFarm('farmer'); assert.equal(farm.summary.totalAvailableKg, 18);
@@ -66,7 +66,7 @@ test('Farmer with no batches and zero remaining inventory yields honest empty/ze
   assert.deepEqual(farm.summary, { cropCount: 0, totalAvailableKg: 0, activeBatchCount: 0 }); assert.deepEqual(farm.crops, []);
   assert.deepEqual(farm.activities, { cropsAdded: 0, updatesThisMonth: 0 });
   data.batches = [batch('t', 'Tomato', 0)]; farm = await service(data).myFarm('farmer');
-  assert.equal(farm.summary.totalAvailableKg, 0); assert.equal(farm.crops[0].status, 'inactive');
+  assert.equal(farm.summary.totalAvailableKg, 0); assert.deepEqual(farm.crops, []);
 });
 test('trend compares earlier same-market observations only; no market data invents no price', async () => {
   const latest = point('Tomato');
@@ -74,4 +74,18 @@ test('trend compares earlier same-market observations only; no market data inven
   assert.equal(marketTrend([point('Tomato', '2026-09-11T00:00:00Z', 20)], latest), 25);
   const home = await createFarmerSummaryService({ read: async () => fixture() }, { history: async () => { throw new Error('offline'); } }, () => now).home('farmer');
   assert.deepEqual(home.marketPrices, []); assert.equal(home.topOpportunity?.marketReferencePerQuintal, null);
+});
+
+test('terminal batches never keep crops current; reserved inventory counts physically but is not sellable', async () => {
+  const data = fixture(); data.batches = [batch('t', 'Tomato', 100, 'sold'), batch('o', 'Onion', 20, 'cancelled'), batch('o2', 'Onion', 30, 'completed'), batch('p', 'Potato', 40, 'reserved')];
+  let farm = await service(data).myFarm('farmer');
+  assert.deepEqual(farm.summary, { cropCount: 1, totalAvailableKg: 0, activeBatchCount: 1 });
+  assert.deepEqual(farm.crops.map(c => [c.name, c.availableKg, c.batchCount]), [['Potato', 0, 1]]);
+  data.batches[3].remainingKg = 0; farm = await service(data).myFarm('farmer'); assert.deepEqual(farm.crops, []);
+  assert.equal((await service(data).home('farmer')).farm.cropCount, 0);
+});
+test('activity derives first creation, additional creation and real update without a farm edit fiction', async () => {
+  const data = fixture(); data.batches = [batch('a', 'Tomato', 100), { ...batch('b', 'Tomato', 50), createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z' }];
+  const farm = await service(data).myFarm('farmer');
+  assert.deepEqual(farm.activityEvents.map(e => [e.type, e.batchId]), [['Produce Updated', 'a'], ['Produce Added', 'b'], ['Crop Added', 'a']]);
 });

@@ -18,6 +18,26 @@ function load(file: string, dependencies: Record<string, unknown>) {
   return exports;
 }
 const primitives = Object.fromEntries(['FarmerPage', 'Card', 'ActionTile', 'SectionTitle', 'Field', 'Button'].map(name => [name, name]));
+
+test('clean Buyer and Logistics screens display honest empty states and nullable Trust', () => {
+  const data = { me: { id: 'account', role: 'buyer', name: 'Buyer', trustScore: null, completedTransactions: null }, items: [], offers: [], orders: [], jobs: [], profiles: [] };
+  const deps = {
+    react: { useState: (initial: unknown) => [initial, () => {}] },
+    'react-native': { Text: 'Text', View: 'View', ScrollView: 'ScrollView' },
+    '../../components/farmer-dashboard/dashboardAssets': { dashboardAssets: {} },
+    '../../components/farmprism-shell/RoleUI': { ...primitives, Page: 'Page', Metric: 'Metric', Badge: 'Badge', SelectChip: 'SelectChip', ui: {} },
+    '../../hooks/useTrading': { useTrading: () => ({ data, loading: false, refresh() {} }) },
+    '../../hooks/useTradingAction': { useTradingAction: () => ({ pending: false }) },
+    '../../hooks/useAuth': { useAuth: () => ({ demoApiToken: null }) },
+  };
+  const buyer = load('src/screens/trading/BuyerLogisticsScreens.tsx', deps);
+  assert.ok(nodes(buyer.BuyerHomeScreen({ navigation: {}, route: { name: 'BuyerMarket' } })).some(n => n.props.title === 'No listings right now'));
+  assert.ok(nodes(buyer.MyBidsScreen({ navigation: {} })).some(n => n.props.title === 'No active bids or requests'));
+  for (const name of ['Jobs', 'History', 'Active', 'LogisticsHome']) assert.ok(nodes(buyer.JobsScreen({ navigation: {}, route: { name } })).some(n => typeof n.props.children === 'string' && n.props.children.startsWith('No jobs in this view')));
+  const shared = load('src/screens/trading/SharedScreens.tsx', deps);
+  assert.ok(nodes(shared.OrdersScreen({ navigation: {}, route: { name: 'Orders' } })).some(n => n.props.children === 'No orders in this view yet.'));
+  for (const role of ['farmer', 'buyer', 'logistics']) assert.ok(nodes(shared.ProfileCard({ profile: { ...data.me, role } })).some(n => n.props.label === 'Trust Score' && n.props.value === 'Not available'));
+});
 function screens(stateValues: unknown[] = []) {
   const setters: Record<number, unknown> = {};
   let index = 0;

@@ -1,5 +1,5 @@
 import { useRef, type PropsWithChildren } from 'react';
-import { ActivityIndicator, Alert, Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
+import { ActivityIndicator, Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -7,12 +7,14 @@ import type { FarmerStackParamList } from '../navigation/FarmerNavigator';
 import { dashboardAssets as a } from '../components/farmer-dashboard/dashboardAssets';
 import { s as navStyles } from '../components/farmer-dashboard/dashboardStyles';
 import { useFarmerHomeAction } from '../hooks/useFarmerHomeAction';
-import { myFarmIntentMessage, quintals, type FarmerMyFarmData, type MyFarmIntent } from '../components/farmer-my-farm/myFarmData';
+import { quintals, type FarmerMyFarmData, type MyFarmIntent } from '../components/farmer-my-farm/myFarmData';
+import { useMyFarmAction } from '../hooks/useMyFarmAction';
 import { useFarmerMyFarm } from '../hooks/useFarmerMyFarm';
 
 function Icon({ source, size = 24 }: { source: ImageSourcePropType; size?: number }) { return <Image source={source} resizeMode="contain" style={{ width: size, height: size }} />; }
 function Intent({ intent, label, children, style }: PropsWithChildren<{ intent: MyFarmIntent; label: string; style?: import('react-native').StyleProp<import('react-native').ViewStyle> }>) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => Alert.alert('Coming Soon', myFarmIntentMessage(intent))} style={({ pressed }) => [style, pressed && { opacity: 0.65 }]}>{children}</Pressable>;
+  const open = useMyFarmAction();
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => open(intent)} style={({ pressed }) => [style, pressed && { opacity: 0.65 }]}>{children}</Pressable>;
 }
 function Heading({ title, icon = a.farm, action }: { title: string; icon?: number; action?: { label: string; intent: MyFarmIntent } }) {
   return <View style={s.heading}><Icon source={icon} /><Text style={s.headingText}>{title}</Text>{action && <Intent intent={action.intent} label={action.label} style={s.link}><Text style={s.linkText}>{action.label} ›</Text></Intent>}</View>;
@@ -57,7 +59,7 @@ export function FarmerMyFarmView({ data, onHome }: { data: FarmerMyFarmData; onH
       <View style={s.card}><Heading title="Farm Activities" icon={a.listing} action={{ label: 'View All', intent: { type: 'UPDATES' } }} /><View style={s.cropRow}>
         {[{ value: data.activities.cropsAdded, label: 'Crops Added', action: 'View Crops', type: 'CROPS' as const, icon: a.farm, color: '#EFF8EB' }, { value: data.activities.updatesThisMonth, label: 'Updates This Month', action: 'View Updates', type: 'UPDATES' as const, icon: a.navMyFarm, color: '#FFF4E2' }].map(item => <Intent key={item.type} intent={{ type: item.type }} label={item.action} style={[s.activity, { backgroundColor: item.color }]}><View style={s.activityTop}><Icon source={item.icon} size={28} /><Text style={s.metricValue}>{item.value}</Text></View><Text style={s.meta}>{item.label}</Text><Text style={s.linkText}>{item.action} ›</Text></Intent>)}
       </View></View>
-      <View style={s.card}><Heading title="Farm Location" action={{ label: 'View on Map', intent: { type: 'MAP' } }} /><View style={s.locationRow}><Intent intent={{ type: 'MAP' }} label="Farm map preview" style={s.map}><ImageBackground source={a.heroBackground} resizeMode="cover" style={s.mapArt}><Text style={s.pin}>⌖</Text><Text style={s.mapLabel}>Map preview coming soon</Text></ImageBackground></Intent><View style={s.locationDetails}><Text style={s.label}>{data.farm.location || 'Location not added'}</Text><Text style={s.meta}>{data.farm.area ?? '—'} Acres · Total Land Area</Text><Intent intent={{ type: 'MAP' }} label="View Full Map" style={s.outline}><Text style={s.linkText}>View Full Map →</Text></Intent></View></View></View>
+      <View style={s.card}><Heading title="Farm Location" action={{ label: 'View on Map', intent: { type: 'MAP' } }} /><View style={s.locationRow}><Intent intent={{ type: 'MAP' }} label="Farm map preview" style={s.map}><ImageBackground source={a.heroBackground} resizeMode="cover" style={s.mapArt}><Text style={s.pin}>⌖</Text><Text style={s.mapLabel}>Open saved farm location</Text></ImageBackground></Intent><View style={s.locationDetails}><Text style={s.label}>{data.farm.location || 'Location not added'}</Text><Text style={s.meta}>{data.farm.area ?? '—'} Acres · Total Land Area</Text><Intent intent={{ type: 'MAP' }} label="View Full Map" style={s.outline}><Text style={s.linkText}>View Full Map →</Text></Intent></View></View></View>
     </View>
   </ScrollView><FarmerBottomNav onHome={onHome} /></View>;
 }
