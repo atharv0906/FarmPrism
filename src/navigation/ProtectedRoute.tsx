@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useRole } from '../hooks/useRole';
 import type { ApplicationRole } from '../types/role';
+import { SplashScreen } from '../screens/SplashScreen';
 
 interface ProtectedRouteProps {
   requiredRole: ApplicationRole;
@@ -14,7 +15,7 @@ export function ProtectedRoute({ requiredRole, children }: ProtectedRouteProps) 
   const { selectedRole } = useRole();
 
   if (!authenticated || selectedRole?.code !== requiredRole) {
-    return null;
+    return <SplashScreen />;
   }
 
   return children;

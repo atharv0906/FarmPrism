@@ -5,6 +5,7 @@ import { parseMarketConfig, type MarketConfig } from '../config/marketConfig.js'
 
 export interface MarketRepository {
   history(crop: Crop, days: 30 | 60 | 90): Promise<MarketPoint[]>;
+  historyMany?(crops: Crop[], days: 30 | 60 | 90): Promise<MarketPoint[][]>;
   cache?(points: MarketPoint[]): Promise<void>;
 }
 export interface PriceInsightAiProvider {
@@ -63,6 +64,16 @@ export function createMarketService(repository: MarketRepository, config: Market
       return points;
     } catch { return []; } // Never log a URL containing the API key.
   }
+  const combine = (cropValue: Crop, days: 30 | 60 | 90, district: string | undefined, stored: MarketPoint[], live: MarketPoint[]): MarketHistory => {
+    const local = district ? stored.filter(point => point.district?.toLowerCase() === district.toLowerCase()) : stored;
+    const fallback = local.length ? local : stored;
+    const points = [...fallback, ...live].filter(p => p.modalPricePerKg > 0 && Number.isFinite(p.modalPricePerKg) && Number.isFinite(Date.parse(p.observedAt)));
+    const latestTime = Math.max(...points.map(p => Date.parse(p.observedAt)));
+    const unique = new Map(points.filter(p => Date.parse(p.observedAt) >= latestTime - days * 86400000).map(p => [p.mandi + ':' + p.observedAt, p]));
+    return { crop: cropValue, days, points: [...unique.values()].sort((a, b) => Date.parse(a.observedAt) - Date.parse(b.observedAt)),
+      retrievedAt: new Date().toISOString(), fallback: !live.length };
+  };
+  const loadStored = async (crops: Crop[], days: 30 | 60 | 90) => repository.historyMany ? repository.historyMany(crops, days) : Promise.all(crops.map(crop => repository.history(crop, days)));
   return {
     async history(cropValue: string, days: 30 | 60 | 90, district?: string): Promise<MarketHistory> {
       if (!isCrop(cropValue)) throw new ApiError(400, 'INVALID_INPUT', 'Crop must be Tomato, Onion or Potato.');
@@ -72,13 +83,20 @@ export function createMarketService(repository: MarketRepository, config: Market
       let stored: MarketPoint[] = [];
       try { stored = await repository.history(cropValue, days); }
       catch (error) { if (!live.length) throw error; }
-      const local = district ? stored.filter(point => point.district?.toLowerCase() === district.toLowerCase()) : stored;
-      const fallback = local.length ? local : stored;
-      const points = [...fallback, ...live].filter(p => p.modalPricePerKg > 0 && Number.isFinite(p.modalPricePerKg) && Number.isFinite(Date.parse(p.observedAt)));
-      const latestTime = Math.max(...points.map(p => Date.parse(p.observedAt)));
-      const unique = new Map(points.filter(p => Date.parse(p.observedAt) >= latestTime - days * 86400000).map(p => [p.mandi + ':' + p.observedAt, p]));
-      return { crop: cropValue, days, points: [...unique.values()].sort((a, b) => Date.parse(a.observedAt) - Date.parse(b.observedAt)),
-        retrievedAt: new Date().toISOString(), fallback: !live.length };
+      return combine(cropValue, days, district, stored, live);
+    },
+    async historyMany(cropValues: Crop[], days: 30 | 60 | 90, district?: string): Promise<MarketHistory[]> {
+      const [storedResults, liveResults] = await Promise.all([
+        loadStored(cropValues, days),
+        Promise.all(cropValues.map(async crop => {
+          const live = official(crop, district).then(async points => {
+            if (points.length || district?.toLowerCase() === 'pune') return points;
+            return official(crop, 'Pune');
+          });
+          return Promise.race([live, new Promise<MarketPoint[]>(resolve => setTimeout(() => resolve([]), 1500))]);
+        })),
+      ]);
+      return cropValues.map((crop, index) => combine(crop, days, district, storedResults[index] ?? [], liveResults[index] ?? []));
     },
   };
 }

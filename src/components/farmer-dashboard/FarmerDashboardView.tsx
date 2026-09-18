@@ -28,7 +28,6 @@ function DashboardHeader({ data, top, compact }: { data: DashboardData; top: num
   const artworkWidth = (width - 32) * 0.45;
   const farmerWidth = Math.min(145, artworkWidth - 20);
   const farmerHeight = farmerWidth * 1402 / 1122;
-  const calloutSize = Image.resolveAssetSource(a.heroCallout);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good Morning,' : hour < 18 ? 'Good Afternoon,' : 'Good Evening,';
   return <ImageBackground source={a.heroBackground} resizeMode="cover" style={[s.hero, { paddingTop: top }]}>
@@ -36,7 +35,7 @@ function DashboardHeader({ data, top, compact }: { data: DashboardData; top: num
     <View style={s.heroWash} pointerEvents="none" /><View style={s.top}><Image source={a.logo} resizeMode="contain" style={s.logo} /><Action destination="Notifications" label="Notifications" style={s.bell}><Icon source={a.notification} size={23} /><View style={s.bellMask} />{data.notifications.unreadCount > 0 && <View style={s.dot} />}</Action></View>
     <View style={[s.heroRow, { minHeight: Math.max(120, farmerHeight - 40) }]}>
       <View style={s.greetingBlock}><Text style={s.greeting}>{greeting}</Text><Text style={[s.name, { fontSize: compact ? 26 : 28 }]}>{data.fullName}</Text><Text style={s.subtitle}>Better markets. Brighter futures.</Text><Text style={s.location}>⌖ {data.location}</Text></View>
-      <View style={s.artwork}><Image source={a.hero} resizeMode="contain" style={[s.farmer, { width: farmerWidth, height: farmerHeight }]} /><Image source={a.heroCallout} resizeMode="contain" style={[s.callout, { width: 62, height: 62 * calloutSize.height / calloutSize.width }]} /></View>
+      <View style={s.artwork}><Image source={a.hero} resizeMode="contain" style={[s.farmer, { width: farmerWidth, height: farmerHeight }]} /><Image source={a.heroCallout} resizeMode="contain" style={[s.callout, { width: 62, height: 62 * 3 / 4 }]} /></View>
     </View>
   </ImageBackground>;
 }

@@ -43,6 +43,22 @@ export const marketRepository: MarketRepository = {
       modalPricePerKg: Number(row.modal_price_per_kg), observedAt: row.observed_at, source: row.source, isDemo: row.is_demo,
     } satisfies MarketPoint));
   },
+  async historyMany(crops, days) {
+    const categories = await supabaseAdmin.from('categories').select('id,name').in('name', crops);
+    if (categories.error) throw new ApiError(503, 'MARKET_UNAVAILABLE', 'Market data is unavailable.');
+    const ids = (categories.data ?? []).map(row => row.id);
+    if (!ids.length) return crops.map(() => []);
+    const result = await supabaseAdmin.from('mandi_prices').select('*').in('crop_category_id', ids)
+      .order('observed_at', { ascending: false }).limit(crops.length * 1000);
+    if (result.error) throw new ApiError(503, 'MARKET_UNAVAILABLE', 'Market data is unavailable.');
+    const names = new Map((categories.data ?? []).map(row => [String(row.id), String(row.name)]));
+    return crops.map(crop => (result.data ?? []).filter(row => names.get(String(row.crop_category_id)) === crop).map(row => ({
+      crop, mandi: row.mandi_name, district: row.district, state: row.state,
+      minPricePerKg: row.min_price_per_kg === null ? null : Number(row.min_price_per_kg),
+      maxPricePerKg: row.max_price_per_kg === null ? null : Number(row.max_price_per_kg),
+      modalPricePerKg: Number(row.modal_price_per_kg), observedAt: row.observed_at, source: row.source, isDemo: row.is_demo,
+    } satisfies MarketPoint)));
+  },
 };
 
 export async function cropDemand(crop: string): Promise<number> {

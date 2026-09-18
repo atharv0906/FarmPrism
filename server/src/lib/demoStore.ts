@@ -76,7 +76,7 @@ export async function getDemoAccountByPhone(phoneValue: string): Promise<DemoAcc
     throw new Error(error.message);
   }
 
-  return data ? withProfile(data as Record<string, unknown>) : null;
+  return data ? toDemoAccount(data as Record<string, unknown>) : null;
 }
 
 export async function getDemoAccountById(accountId: string): Promise<DemoAccountRecord | null> {

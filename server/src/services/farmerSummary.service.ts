@@ -10,7 +10,7 @@ export type FarmerSummaryData = {
   notifications: { type: string; readAt: string | null }[];
 };
 export type FarmerSummaryRepository = { read(accountId: string): Promise<FarmerSummaryData> };
-type Market = { history(crop: string, days: 30 | 60 | 90, district?: string): Promise<MarketHistory> };
+type Market = { history(crop: string, days: 30 | 60 | 90, district?: string): Promise<MarketHistory>; historyMany?(crops: string[], days: 30 | 60 | 90, district?: string): Promise<MarketHistory[]> };
 const crops = ['Tomato', 'Onion', 'Potato'] as const;
 const eligible = (batch: FarmerSummaryData['batches'][number]) => batch.status === 'available' && batch.remainingKg > 0;
 const round = (value: number) => Math.round(value * 100) / 100;
@@ -46,9 +46,11 @@ export function createFarmerSummaryService(repository: FarmerSummaryRepository, 
     async home(accountId: string) {
       const data = await repository.read(accountId), now = clock(), farm = inventory(data, now);
       const district = data.profile.location.split(',').map(p => p.trim()).find(p => /^(Pune|Nashik|Nagpur|Satara|Solapur|Ahmednagar)$/i.test(p));
-      const histories = await Promise.all(crops.map(async crop => {
-        try { return await market.history(crop, 30, district); } catch { return null; }
-      }));
+      const histories = await (market.historyMany
+        ? market.historyMany([...crops], 30, district).then(values => values.map(value => value ?? null)).catch(() => crops.map(() => null))
+        : Promise.all(crops.map(async crop => {
+          try { return await market.history(crop, 30, district); } catch { return null; }
+        })));
       const marketPrices = histories.flatMap((history, i) => {
         const points = history?.points.filter(p => p.crop === crops[i] && validPoint(p)) ?? [];
         const latest = [...points].sort((a, b) => Date.parse(a.observedAt) - Date.parse(b.observedAt)).at(-1);

@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
 import { useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase/client';
@@ -10,11 +9,12 @@ import { SplashScreen } from '../../screens/SplashScreen';
 import { isDevelopmentMockOtpEnabled } from '../../services/auth/otp.strategy';
 import { demoSessionClient } from '../../services/api/demoSession.client';
 import { createDemoSessionService } from '../../services/auth/demoSession.service';
+import { sessionStorage } from '../../services/auth/sessionStorage';
 import type { DemoAccount } from '../../services/demo/demo.types';
 import { getCurrentDemoApiToken, setCurrentDemoApiToken, onApiUnauthorized } from '../../services/api/api.client';
 
 
-const demoSessions = createDemoSessionService(SecureStore, AsyncStorage, demoSessionClient);
+const demoSessions = createDemoSessionService(sessionStorage, AsyncStorage, demoSessionClient);
 
 function createMockUser(phone: string): User {
   return { id: `development-mock:${phone}`, app_metadata: {}, user_metadata: {},
