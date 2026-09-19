@@ -7,6 +7,7 @@ import { createMockFlowService } from '../services/roles/mockFlow.service';
 import { SplashScreen } from '../screens/SplashScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { FarmerMyFarmScreen } from '../screens/FarmerMyFarmScreen';
+import { FarmOverviewScreen, EditFarmScreen, MyCropsScreen, AddCropScreen, AvailableProduceScreen, CropDetailsScreen, CropBatchesScreen, AddProduceScreen, BatchDetailsScreen, FarmActivitiesScreen, FarmLocationScreen } from '../screens/FarmerFarmScreens';
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { TradingRoutes } from './TradingRoutes';
 import { FarmerSellNavigator, FarmerInsightsNavigator } from './TradingNavigator';
@@ -26,6 +27,17 @@ export type FarmerStackParamList = {
   Submitted: undefined;
   Dashboard: undefined;
   MyFarm: undefined;
+  FarmOverview: undefined;
+  EditFarm: undefined;
+  MyCrops: undefined;
+  AddCrop: undefined;
+  AvailableProduce: undefined;
+  CropDetails: { cropKey: string };
+  CropBatches: { cropKey?: string } | undefined;
+  AddProduce: { cropKey?: string } | undefined;
+  BatchDetails: { batchId: string };
+  FarmActivities: undefined;
+  FarmLocation: undefined;
   Notifications: undefined;
   Sell: NavigatorScreenParams<TradingRoutes> | undefined;
   Insights: NavigatorScreenParams<TradingRoutes> | undefined;
@@ -57,6 +69,17 @@ export function FarmerNavigator() {
       <Stack.Screen name="Submitted" component={ProfileSubmittedScreen} />
       <Stack.Screen name="Dashboard" component={FarmerDashboardScreen} />
       <Stack.Screen name="MyFarm" component={FarmerMyFarmScreen} />
+      <Stack.Screen name="FarmOverview" component={FarmOverviewScreen} />
+      <Stack.Screen name="EditFarm" component={EditFarmScreen} />
+      <Stack.Screen name="MyCrops" component={MyCropsScreen} />
+      <Stack.Screen name="AddCrop" component={AddCropScreen} />
+      <Stack.Screen name="AvailableProduce" component={AvailableProduceScreen} />
+      <Stack.Screen name="CropDetails" component={CropDetailsScreen} />
+      <Stack.Screen name="CropBatches" component={CropBatchesScreen} />
+      <Stack.Screen name="AddProduce" component={AddProduceScreen} />
+      <Stack.Screen name="BatchDetails" component={BatchDetailsScreen} />
+      <Stack.Screen name="FarmActivities" component={FarmActivitiesScreen} />
+      <Stack.Screen name="FarmLocation" component={FarmLocationScreen} />
       <Stack.Screen name="Sell" component={FarmerSellNavigator} />
       <Stack.Screen name="Insights" component={FarmerInsightsNavigator} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: true, title: 'Notifications', headerTintColor: '#12642D', headerStyle: { backgroundColor: '#FAFAF2' } }} />

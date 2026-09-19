@@ -7,7 +7,7 @@ import { marketRepository } from '../repositories/market.repository.js';
 import { env } from '../config/env.js';
 
 // Summary reads use the existing official/fallback service without persisting market cache rows.
-const service = createFarmerSummaryService(farmerSummaryRepository, createMarketService({ history: marketRepository.history }, env.market));
+const service = createFarmerSummaryService(farmerSummaryRepository, createMarketService({ history: marketRepository.history, historyMany: marketRepository.historyMany }, env.market));
 export function registerFarmerSummaryRoutes(router: Router, summaries = service, authenticate: RequestHandler = requireDemoSession) {
   for (const [path, read] of [['home-summary', summaries.home], ['my-farm-summary', summaries.myFarm]] as const) {
     router.get('/api/farmer/' + path, authenticate, requireDemoRole('farmer'), (req: AuthenticatedRequest, res, next) => {

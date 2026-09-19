@@ -73,7 +73,7 @@ test('roles require explicit confirmation and onboarding completion is isolated 
   }
 });
 const home = () => ({ farmer: { id: 'farmer', name: 'Current', location: 'Pune' }, farm: { cropCount: 0, totalAcres: null, quantityUnit: 'Quintals', availableQuantity: 0, availableQuantityKg: 0 }, topOpportunity: null, marketPrices: [], sellingActivity: { currency: 'INR', newOffers: 0, soldThisMonth: 0, activeAuctions: 0 }, notifications: { unreadCount: 0 } });
-const farm = () => ({ farm: { id: 'farmer', name: null, location: 'Pune', area: null, areaUnit: 'acre' }, summary: { cropCount: 0, totalAvailableKg: 0, activeBatchCount: 0 }, crops: [], activities: { cropsAdded: 0, updatesThisMonth: 0 } });
+const farm = () => ({ farm: { id: 'farmer', name: null, location: 'Pune', area: null, areaUnit: 'acre', latitude: null, longitude: null }, batches: [], activityEvents: [], summary: { cropCount: 0, totalAvailableKg: 0, activeBatchCount: 0 }, crops: [], activities: { cropsAdded: 0, updatesThisMonth: 0 } });
 test('summary contracts accept honest zero and reject malformed nested values or missing nullable fields', () => {
   assert.deepEqual(parseFarmerHome(home()), home()); assert.deepEqual(parseFarmerMyFarm(farm()), farm());
   for (const [factory, parse, paths] of [[home, parseFarmerHome, ['farm.totalAcres', 'farm.availableQuantityKg', 'notifications.unreadCount', 'marketPrices', 'topOpportunity']], [farm, parseFarmerMyFarm, ['farm.area', 'farm.name', 'summary.totalAvailableKg', 'crops', 'activities.updatesThisMonth']]] as const) {

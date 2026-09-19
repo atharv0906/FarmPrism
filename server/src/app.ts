@@ -1,4 +1,5 @@
 import express from 'express';
+import { registerFarmerInventoryRoutes } from './routes/farmerInventory.routes.js';
 import { registerFarmerSummaryRoutes } from './routes/farmerSummary.routes.js';
 import { registerIntegrationRoutes } from './routes/integration.routes.js';
 import { registerMutationRoutes } from './routes/mutation.routes.js';
@@ -21,7 +22,7 @@ export function createApp() {
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Vary', 'Origin');
       res.setHeader('Access-Control-Allow-Headers', 'Accept, Authorization, Content-Type');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
     }
     if (req.method === 'OPTIONS') {
       res.sendStatus(204);
@@ -33,6 +34,7 @@ export function createApp() {
   app.use('/', healthRoutes);
   registerIntegrationRoutes(app);
   registerFarmerSummaryRoutes(app);
+  registerFarmerInventoryRoutes(app);
   registerDemoRoutes(app);
   registerMutationRoutes(app);
   app.use(notFoundHandler);
