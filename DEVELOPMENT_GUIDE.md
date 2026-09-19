@@ -2,7 +2,7 @@
 
 ## Current architecture
 
-Phase 2.0.11 finalizes the working prototype. React Native / Expo / TypeScript → Node/Express business API → Supabase. Mobile API integration, Buyer/Logistics screens, demo sessions, marketplace and delivery flows are implemented. Supabase remains the persisted source of truth, real-auth RLS boundary and host of existing transactional/demo RPCs. Node owns authorization and business/integration orchestration.
+Phase 2.0.16 integrates audit fixes and Pickup OTP into the existing prototype; planned database changes remain an external deployment requirement. React Native / Expo / TypeScript → Node/Express business API → Supabase. Mobile API integration, Buyer/Logistics screens, demo sessions, marketplace and delivery flows are implemented. Supabase remains the persisted source of truth, real-auth RLS boundary and host of existing transactional/demo RPCs. Node owns authorization and business/integration orchestration.
 
 The current local Development tree is authoritative. Do not reset, revert, checkout, stash, create a branch, commit or push during this phase. Preserve existing user edits and assets. Approved Farmer Home/My Farm are visually frozen; do not broadly redesign Buyer/Logistics. Current screen brief: assets/FarmPrism_Designer_Screen_MDs/INDEX.md and MASTER_FLOW.md.
 
@@ -86,7 +86,7 @@ npm run test
 npm --prefix server run typecheck
 npm --prefix server run build
 npm --prefix server test
-npx expo export --platform android --output-dir .expo/phase-2-0-14-export
+npx expo export --platform android --output-dir .expo/phase-2-0-16-export
 git diff --check
 ```
 
@@ -102,7 +102,7 @@ Disputes are backend-only. Production SMS, payment gateway, genuine camera/video
 
 ## Phase 2.0.12 read and session boundaries
 
-Phase 2.0.14 validation overrides historical live-validation examples in this guide: use mocked/injected tests only. Do not create live sessions, run reset/cleanup/seed commands or write live Supabase data for this restoration. See PHASE_2_0_14.md for measured results.
+Phase 2.0.16 validation overrides historical live-validation examples in this guide: use mocked/injected tests only. Do not create live sessions, run reset/cleanup/seed commands or write live Supabase data for this phase. See PHASE_2_0_16.md for measured results.
 
 The Farmer summary repository scopes accounts/profiles/batches/orders/notifications by req.demoSession.accountId and auctions/bids by owned parent IDs. Both routes require requireDemoSession and requireDemoRole('farmer'). They call no legacy snapshot or expiry RPC. At 1000 rows the read fails explicitly rather than silently returning truncated totals. Summary market service injection omits optional cache writes, retaining official reads and DB fallback without writing non-demo market rows.
 
@@ -110,7 +110,7 @@ Mobile farmerSummary.client/contract feed the existing focus-refresh hooks and u
 
 DemoSession client/service retain existing SecureStore keys. Login identity comes from POST /api/demo/session, restore identity from GET /api/demo/me. Only session credentials and cached phone are cleared on logout/revocation. mockFlow.service keeps explicit role confirmation and Farmer completion preferences separately per phone. The completion marker is written only by Review Submit; no server profile write occurs. Auth navigation uses the existing language preference for returning login.
 
-Targeted live validation: Farmer1 session → /api/demo/me → /api/workspace → both Farmer summaries; compare eligible KG and crop groups against current workspace/DB, never seed totals. Compare market cards with the existing service; logout 200 then reuse 401. Preserve previous completed E2E orders. PHASE_2_0_12.md contains the external grant handoff; do not apply grant changes locally.
+Historical Phase 2.0.12 live-validation procedure (not authorized in Phase 2.0.16): Farmer1 session → /api/demo/me → /api/workspace → both Farmer summaries; compare eligible KG and crop groups against current workspace/DB, never seed totals. Compare market cards with the existing service; logout 200 then reuse 401. Preserve previous completed E2E orders. The five retired mobile RPC grants documented in PHASE_2_0_12.md have already had anon/authenticated EXECUTE revoked externally; service_role remains. Do not apply grant changes locally.
 
 ## Phase 2.0.14 restored My Farm writes
 
@@ -119,3 +119,23 @@ POST /api/farmer/crops creates a first current crop batch; POST /api/farmer/batc
 The service serializes crop checks/inserts per account/crop within one Node process. Multi-replica deployment needs database transaction/locking work before relying on this guard; schema changes are outside this phase. Activities use actual batch timestamps, without claiming a persisted farm-edit log. Summary DTOs include safe batch details and nullable saved coordinates, with strict client validation.
 
 Preserve tester sessionStorage (web AsyncStorage, native SecureStore), AuthProvider lifecycle, ProtectedRoute Splash fallback and Home rendering changes. Preserve batched historyMany through repository/service/summary; summary injection includes both read methods and excludes cache writes. Development CORS retains its four localhost origins and additionally permits PATCH. No dependencies or environment files change. Main Farmer Home/My Farm layout and assets remain frozen.
+
+## Phase 2.0.16 handoff and expiry contract
+
+- Pickup: Buyer pays 40% logistics advance; the order Farmer generates/regenerates a six-digit Pickup OTP only while order = logistics_advance_paid and assigned job = advance_paid. Only assigned Logistics verifies it; verification itself sets order/job = pickup_confirmed and enables tracking. OTP display is component memory only. Delivery OTP remains the delivery confirmation step.
+- The external pickup RPCs own hashed storage, 15-minute expiry, five wrong attempts, regeneration resetting attempts, ownership/state validation and event/notification writes. No SMS or extra pickup confirmation step.
+- Accepted allocation is already deducted: a 650 KG batch with a 200 KG order keeps its 450 KG available source remainder during pickup. Only the order allocation travels; mobile performs no subtraction/status write.
+- Auction Option A: 6/12/24 hours, default 24. Open and partially_sold expire at ends_at; unaccepted active/partially-accepted bid remainder goes to history and cannot be accepted. Accepted orders remain valid, no auto-award, unsold remainder is relistable.
+- One hour before expiry, actionable unaccepted bids trigger one idempotent Farmer in-app warning; auctions with no actionable bids get none. Expiry with unsold quantity triggers one in-app expiry notification. External demo_expire_marketplace owns creation/deduplication; mobile supports auction_expiring and auction_expired with entity_type = auction, entity_key = auction ID, data.auctionId = auction ID. No push infrastructure.
+- Quality declaration consistency covers produce entering the selling/listing workflow, not all stored inventory. Unlisted grade-null batches are not a trust failure; A/B/C declarations have equal trust meaning. Nullable trust stays backend-controlled and off Farmer Home.
+- Required external deployment: demo_generate_pickup_otp, demo_verify_pickup_otp_v2, updated demo_expire_marketplace and updated demo_recalculate_trust. UI/API integration does not establish that these are deployed.
+
+### Integration and verification boundary
+
+POST /api/farmer/orders/:orderId/pickup-otp calls demo_generate_pickup_otp(p_farmer_account_id, p_order_id).
+POST /api/logistics/orders/:orderId/verify-pickup calls demo_verify_pickup_otp_v2(p_logistics_account_id, p_order_id, p_otp).
+Actor IDs come only from the session. INVALID_OTP and OTP_ATTEMPTS_EXCEEDED expose safe attempt counts. The old direct pickup route/client/command is retired; stale requests receive 404.
+
+Node checks the owned auction deadline before accept/reject. This read cannot replace an atomic deadline check under the acceptance RPC's transaction lock: the owner must verify that behavior before rollout. Workspace reads invoke the existing expiry RPC, so exact wall-clock one-hour warning delivery with no reader requires owner-managed invocation timing. This phase adds no scheduler, SQL or push service.
+
+Use mocked/injected RPCs and market fetches for all tests. Never exercise these commands on the retained Farmer2/Buyer1 scenario. Expo export and component tests are not device or live E2E verification. Market historyMany keeps one stored batch read and retains official observations if that read fails.

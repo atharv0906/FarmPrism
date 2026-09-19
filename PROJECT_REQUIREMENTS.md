@@ -2,7 +2,7 @@
 
 ## Product and source of truth
 
-FarmPrism is an implemented agricultural marketplace prototype connecting farmers, buyers and logistics partners. Current phase: [2.0.14 — tester fixes and functional My Farm restoration](PHASE_2_0_14.md). The current local Development working tree and latest explicit product decisions are authoritative. Phase files preserve historical implementation and validation records; they do not override current requirements.
+FarmPrism is an implemented agricultural marketplace prototype connecting farmers, buyers and logistics partners. Current phase: [2.0.16 — audit fixes and Farmer Pickup OTP integration](PHASE_2_0_16.md). The current local Development working tree and latest explicit product decisions are authoritative. Phase files preserve historical implementation and validation records; they do not override current requirements.
 
 The current screen-behavior/design brief is [the designer screen pack](assets/FarmPrism_Designer_Screen_MDs/INDEX.md), with [master flow](assets/FarmPrism_Designer_Screen_MDs/MASTER_FLOW.md). Preserve this pack. Approved Farmer Home and My Farm visuals remain frozen. Do not infer that every designer brief represents an implemented screen.
 
@@ -56,7 +56,7 @@ Quality is Farmer Declared A/B/C, never certified or AI Verified. The current pr
 
 Auction and Fixed Price are implemented, including partial quantities.
 
-Auction duration is 6, 12 or 24 hours, default 24. Buyers propose quantity, price and Farmer advance of 10–90%; they can revise or withdraw active bids before acceptance. Previous bids remain historical and only the latest is current. Farmers may accept any suitable eligible bid, partially or fully, reject bids, or close early. An auction can create multiple orders. No automatic highest-bid winner or auto-award on expiry: the farmer decides whether to accept eligible existing bids, and backend rules govern unaccepted quantity.
+Auction duration is 6, 12 or 24 hours, default 24. Buyers propose quantity, price and Farmer advance of 10–90%; they can revise or withdraw active bids before acceptance. Previous bids remain historical and only the latest is current. Farmers may accept any suitable eligible bid, partially or fully, reject bids, or close early. An auction can create multiple orders. Option A: at ends_at, open and partially_sold auctions expire. Still-unaccepted active/partially-accepted bid remainder becomes expired/history and cannot be accepted. No auto-award; accepted orders stay valid and unsold physical remainder can be listed again.
 
 Fixed Price uses the Farmer's locked price and 24-hour expiry unless sold or closed earlier. Buyer cannot negotiate price; a purchase request proposes quantity and 10–90% Farmer advance. Farmer accepts or rejects. Partial purchases preserve eligible remaining quantity. Purchase requests are distinct from auction bids.
 
@@ -86,7 +86,7 @@ Buyer Home, Market, My Bids/Requests, Orders, Profile, notifications and transac
 
 Accepted bids/requests create authoritative orders containing Farmer, Buyer, batch, source, allocated quantity, unit price, total, accepted advance and payment/logistics/delivery status.
 
-Implemented flow: Order → Buyer pays accepted Farmer advance (10–90%) → logistics job → agreed fee → Buyer pays logistics 40% advance → pickup → tracking → delivery OTP verified → Buyer pays Farmer balance and logistics 60% balance → completed order/job → feedback and trust update.
+Implemented flow: Order → Buyer pays accepted Farmer advance (10–90%) → logistics job → agreed fee → Buyer pays logistics 40% advance → Farmer generates Pickup OTP → assigned Logistics verifies Pickup OTP (confirms pickup) → tracking → delivery OTP verified → Buyer pays Farmer balance and logistics 60% balance → completed order/job → feedback and trust update.
 
 Payments are simulated prototype records, not real gateway transactions. Only the Buyer pays logistics; Farmer may view its status/fee. Platform logistics fee is ₹0 and Logistics receives 100% of the agreed fee.
 
@@ -98,7 +98,7 @@ Clearly distinguish simulated tracking from actual device GPS. Farmer/Buyer may 
 
 ## Feedback, trust, notifications and refresh
 
-Feedback and backend-controlled Trust Score (0–100 with completion/rating context) are implemented. Feedback is order-linked after completion. Trust is not directly editable. Farmer quality consistency means consistency of declaring produce quality for listed produce. It does not mean percentage of Grade A/B produce. Grade C alone is not untrustworthy and must not reduce Farmer Trust. The externally corrected demo_recalculate_trust function must not be modified.
+Feedback and backend-controlled Trust Score (0–100 with completion/rating context) are implemented. Feedback is order-linked after completion. Trust is not directly editable. Farmer quality declaration consistency applies to produce that entered the selling/listing workflow. Unlisted/ungraded inventory in My Farm does not dilute it. It does not mean percentage of Grade A/B produce. Grade C alone is not untrustworthy and must not reduce Farmer Trust. The further external demo_recalculate_trust correction to exclude unlisted/ungraded inventory must be deployed and verified by the owner; Codex must not modify it.
 
 Buyer trust reflects feedback, payment and transaction reliability; Logistics trust reflects feedback, delivery and job reliability. Trust remains off Farmer Home and available on relevant profiles.
 
@@ -126,4 +126,14 @@ Phase 2.0.14 restores all eleven My Farm secondary routes. Add Crop creates the 
 
 Mock login trusts the session response; restore validates GET /api/demo/me. Invalid/revoked sessions clear credentials. Fresh accounts explicitly confirm only their persisted role; remembered per-account roles skip selection. FPO remains Coming Soon. Fresh Farmers continue Personal → Farm Details → Review → Submitted → Dashboard. Only Submit saves farmprism.mock.farmerOnboarding.v1:<phone> = complete, a local UX preference without secrets or profile writes. Incomplete Farmers resume Personal; completed returning Farmers enter Dashboard. Logout preserves role/completion preferences. Buyer/Logistics retain preseeded profiles and enter their dashboard after role confirmation.
 
-Database permissions were not changed. The five retired mobile RPCs listed in PHASE_2_0_12.md await external anon/authenticated EXECUTE revocation, retaining service_role.
+The database owner has already revoked anon/authenticated EXECUTE for the five retired mobile RPCs listed in PHASE_2_0_12.md; service_role is retained. Codex makes no database permission changes in this phase.
+
+## Phase 2.0.16 handoff and expiry contract
+
+- Pickup: Buyer pays 40% logistics advance; the order Farmer generates/regenerates a six-digit Pickup OTP only while order = logistics_advance_paid and assigned job = advance_paid. Only assigned Logistics verifies it; verification itself sets order/job = pickup_confirmed and enables tracking. OTP display is component memory only. Delivery OTP remains the delivery confirmation step.
+- The external pickup RPCs own hashed storage, 15-minute expiry, five wrong attempts, regeneration resetting attempts, ownership/state validation and event/notification writes. No SMS or extra pickup confirmation step.
+- Accepted allocation is already deducted: a 650 KG batch with a 200 KG order keeps its 450 KG available source remainder during pickup. Only the order allocation travels; mobile performs no subtraction/status write.
+- Auction Option A: 6/12/24 hours, default 24. Open and partially_sold expire at ends_at; unaccepted active/partially-accepted bid remainder goes to history and cannot be accepted. Accepted orders remain valid, no auto-award, unsold remainder is relistable.
+- One hour before expiry, actionable unaccepted bids trigger one idempotent Farmer in-app warning; auctions with no actionable bids get none. Expiry with unsold quantity triggers one in-app expiry notification. External demo_expire_marketplace owns creation/deduplication; mobile supports auction_expiring and auction_expired with entity_type = auction, entity_key = auction ID, data.auctionId = auction ID. No push infrastructure.
+- Quality declaration consistency covers produce entering the selling/listing workflow, not all stored inventory. Unlisted grade-null batches are not a trust failure; A/B/C declarations have equal trust meaning. Nullable trust stays backend-controlled and off Farmer Home.
+- Required external deployment: demo_generate_pickup_otp, demo_verify_pickup_otp_v2, updated demo_expire_marketplace and updated demo_recalculate_trust. UI/API integration does not establish that these are deployed.

@@ -976,8 +976,8 @@ export function FarmerDetailsScreen({
       return setMessage('Complete all required location fields.');
     }
     if (draft.crops.length === 0) return setMessage('Select at least one main crop.');
-    if (draft.farmSize && Number(draft.farmSize) <= 0) {
-      return setMessage('Farm size must be greater than 0 if entered.');
+    if (draft.farmSize && (!/^\d+(\.\d+)?$/.test(draft.farmSize) || !Number.isFinite(Number(draft.farmSize)) || Number(draft.farmSize) <= 0)) {
+      return setMessage('Enter a valid farm size greater than 0, or leave it blank.');
     }
     navigation.navigate('Review');
   };

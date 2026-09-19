@@ -1,5 +1,6 @@
+import { listingActive, listingExpired } from '../../services/api/listingState';
 import { dashboardAssets as d } from '../../components/farmer-dashboard/dashboardAssets';
-import { useState, type PropsWithChildren } from 'react';
+import { useEffect, useState, type PropsWithChildren } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { TradingRoutes } from '../../navigation/TradingRoutes';
@@ -46,7 +47,7 @@ export function OrdersScreen({ navigation, route }: Props<'Orders'> | Props<'His
       <Text style={ui.muted}>Buyer: {state.data?.profiles.find(p => p.id === o.buyerId)?.name ?? 'Unavailable'}</Text><Badge>{o.status.replaceAll('_', ' ')}</Badge><Text style={ui.muted}>{date(o.createdAt)}</Text>
       <Button title="View Order" onPress={() => navigation.navigate('Order', { orderId: o.id })} />
     </Card>)}
-    {history && state.data?.items.filter(i => !['open', 'active', 'partially_sold'].includes(i.status)).map(i => <Card key={i.id} title={i.batch.crop + ' · ' + i.status}>
+    {history && state.data?.items.filter(i => !listingActive(i)).map(i => <Card key={i.id} title={i.batch.crop + ' · ' + (listingExpired(i) ? 'expired' : i.status)}>
       <Text style={ui.muted}>{i.kind} · {i.offeredKg} KG offered · {i.remainingKg} KG remaining</Text><Button title="View Listing" onPress={() => navigation.navigate('Item', { itemId: i.id })} />
     </Card>)}
   </TradingPage>;
@@ -56,6 +57,9 @@ export function OrderScreen({ route, navigation }: Props<'Order'>) {
   const [otp, setOtp] = useState<{ value: string; expiresAt: string } | null>(null), [rating, setRating] = useState('5'), [comment, setComment] = useState(''), [to, setTo] = useState('');
   const data = state.data, order = data?.orders.find(o => o.id === route.params.orderId), job = data?.jobs.find(j => j.orderId === order?.id);
   const options = { bearerToken: demoApiToken ?? '' }, buyer = data?.me.role === 'buyer', logistics = data?.me.role === 'logistics';
+  const [pickupOtp, setPickupOtp] = useState<{ orderId: string; otp: string; expiresAt: string } | null>(null);
+  const pickupPending = data?.me.role === 'farmer' && order?.farmerId === data.me.id && order?.status === 'logistics_advance_paid' && !!job?.logisticsId && job.status === 'advance_paid';
+  useEffect(() => { setPickupOtp(null); }, [order?.id, pickupPending]);
   const participants = data?.profiles.filter(p => p.id !== data.me.id && [order?.farmerId, order?.buyerId, job?.logisticsId].includes(p.id)) ?? [];
   return <TradingPage title={order?.code ?? 'Order Details'} hasData={!!state.data} loading={state.loading} error={state.error} mutationError={action.error} retry={() => void state.refresh()}>
     {order ? <>
@@ -63,6 +67,12 @@ export function OrderScreen({ route, navigation }: Props<'Order'>) {
         <Text style={ui.muted}>Farmer advance: {order.advancePercent}% · {order.status}</Text><Text style={ui.muted}>Logistics: {job?.status ?? 'Not assigned'}</Text>
         <Text style={ui.muted}>Logistics fee: {money(job?.fee)} · {job?.feeStatus ?? 'No proposal'}</Text>
         <Badge>{order.status.replaceAll('_', ' ')}</Badge>
+        {pickupPending && <><Button title={pickupOtp?.orderId === order.id ? 'Regenerate Pickup OTP' : 'Generate Pickup OTP'} disabled={action.pending || !demoApiToken} onPress={() => {
+          if (!pickupPending || !demoApiToken) return;
+          setPickupOtp(null);
+          void action.run(() => mutations.generatePickupOtp(order.id, options), result => setPickupOtp(result.data));
+        }} />
+        {pickupOtp?.orderId === order.id && <Text selectable>Pickup OTP: {Date.parse(pickupOtp.expiresAt) > Date.now() ? pickupOtp.otp : 'Expired'} · Expires: {date(pickupOtp.expiresAt)}. Share this OTP only with the assigned logistics partner when they arrive for pickup.</Text>}</>}
         {buyer && order.status === 'farmer_advance_pending' && <Button title="Pay simulated Farmer advance" disabled={action.pending} onPress={() => action.pay(() => mutations.payFarmerAdvance(order.id, options))} />}
         {buyer && job?.feeStatus === 'proposed' && <><Button title="Accept logistics fee" disabled={action.pending} onPress={() => void action.run(() => mutations.respondLogisticsFee(job.id, { accept: true }, options))} />
           <Button title="Reject logistics fee" disabled={action.pending} onPress={() => void action.run(() => mutations.respondLogisticsFee(job.id, { accept: false }, options))} /></>}
@@ -77,12 +87,12 @@ export function OrderScreen({ route, navigation }: Props<'Order'>) {
         {data?.payments.filter(p => p.orderId === order.id).map(p => <Text key={p.id}>{p.kind}: {money(p.amount)} · {p.status} · {p.simulated ? 'Simulated' : 'Recorded payment'} · {date(p.paidAt)}</Text>)}</Card>
       <Card title="Tracking">{!data?.tracking.some(p => p.jobId === job?.id) && <Text style={ui.muted}>No tracking points yet.</Text>}
         {data?.tracking.filter(p => p.jobId === job?.id).slice(0, 10).map(p => <Text key={p.id}>{p.source === 'simulated' ? 'Simulated tracking · development only' : 'Actual device location received'} · {date(p.recordedAt)}</Text>)}</Card>
-      <Card title="Timeline">{data?.events.filter(e => e.orderId === order.id).map(e => <View key={e.id} style={ui.separator}><Badge>{e.type.replaceAll('_', ' ')}</Badge><Text style={ui.muted}>{date(e.createdAt)}</Text></View>)}</Card>
+      <Card title="Timeline">{data?.events.filter(e => e.orderId === order.id).map(e => <View key={e.id} style={ui.separator}><Badge>{e.type === 'pickup_confirmed' ? 'Farmer handoff verified by Pickup OTP' : e.type.replaceAll('_', ' ')}</Badge><Text style={ui.muted}>{date(e.createdAt)}</Text></View>)}</Card>
       {order.status === 'completed' && <Card title="Transaction feedback">{participants.map(p => <Button key={p.id} title={(to === p.id ? '✓ ' : '') + p.name} onPress={() => setTo(p.id)} />)}
         <Field label="Rating (1–5)" value={rating} onChange={setRating} numeric /><Field label="Comment" value={comment} onChange={setComment} />
         <Button title="Submit feedback" disabled={action.pending || !to || !Number.isInteger(Number(rating)) || Number(rating) < 1 || Number(rating) > 5} onPress={() => void action.run(() => mutations.submitFeedback(order.id, { toAccountId: to, rating: Number(rating), comment }, options))} />
         <Text style={ui.muted}>Your feedback helps build trust in the marketplace.</Text></Card>}
-    </> : data && <Text style={ui.muted}>Order is unavailable for this account.</Text>}
+    </> : data && <Card><Text style={ui.muted}>Order is unavailable for this account.</Text><Button title="Refresh Orders" onPress={() => void state.refresh()} /></Card>}
   </TradingPage>;
 }
 export function TradingNotificationsScreen({ navigation }: Props<'Notifications'>) {

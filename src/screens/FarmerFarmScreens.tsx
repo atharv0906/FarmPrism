@@ -1,3 +1,4 @@
+import { listingActive } from '../services/api/listingState';
 import { useCallback, useEffect, useRef, useState, type PropsWithChildren } from 'react';
 import { Image, Linking, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -70,8 +71,8 @@ export function AvailableProduceScreen({ navigation }: Props<'AvailableProduce'>
 }
 export function BatchDetailsScreen({ navigation, route }: Props<'BatchDetails'>) {
   const state = useFarmerMyFarm(), workspace = useTrading(), batch = state.data?.batches.find(b => b.id === route.params.batchId);
-  const listing = workspace.data?.items.find(i => i.batch.id === batch?.id && ['open', 'active', 'partially_sold'].includes(i.status));
-  return <Page title="Batch Details" state={state}>{batch ? <Card><SectionTitle title={`${batch.crop} · ${batch.batchCode}`} icon={cropArtwork(batch.crop)} /><Text style={ui.value}>Original: {batch.originalQuantityKg} KG</Text><Text style={ui.value}>Remaining: {batch.remainingQuantityKg} KG</Text><Badge>{batch.status}</Badge><Text style={ui.muted}>{batch.qualityGrade === null ? 'Not declared' : `Farmer Declared Grade ${batch.qualityGrade}`}</Text><Text style={ui.muted}>Created {date(batch.createdAt)}{'\n'}Updated {date(batch.updatedAt)}</Text>{listing ? <Button title="Current Listing" onPress={() => navigation.navigate('Sell', { screen: 'Item', params: { itemId: listing.id } })} /> : batch.sellable && <Button title="Sell Produce" disabled={!workspace.data || workspace.loading} onPress={() => navigation.navigate('Sell', { screen: 'Quality', params: { batchId: batch.id } })} />}{workspace.error && <Text style={ui.error}>{workspace.error}</Text>}</Card> : <Text style={ui.muted}>Batch unavailable. Refresh your farm.</Text>}</Page>;
+  const listing = workspace.data?.items.find(i => i.batch.id === batch?.id && listingActive(i));
+  return <Page title="Batch Details" state={state}>{batch ? <Card><SectionTitle title={`${batch.crop} · ${batch.batchCode}`} icon={cropArtwork(batch.crop)} /><Text style={ui.value}>Original: {batch.originalQuantityKg} KG</Text><Text style={ui.value}>Remaining: {batch.remainingQuantityKg} KG</Text><Badge>{batch.status}</Badge><Text style={ui.muted}>{batch.qualityGrade === null ? 'Not declared' : `Farmer Declared Grade ${batch.qualityGrade}`}</Text><Text style={ui.muted}>Created {date(batch.createdAt)}{'\n'}Updated {date(batch.updatedAt)}</Text>{listing ? <Button title="Current Listing" onPress={() => navigation.navigate('Sell', { screen: 'Item', params: { itemId: listing.id } })} /> : batch.sellable && <Button title="Sell Produce" disabled={!workspace.data || workspace.loading} onPress={() => navigation.navigate('Sell', { screen: 'Quality', params: { batchId: batch.id } })} />}{workspace.error && <Text style={ui.error}>{workspace.error}</Text>}</Card> : <Card><Text style={ui.muted}>Batch unavailable. Refresh your farm.</Text><Button title="Refresh My Farm" onPress={() => void state.refresh()} /></Card>}</Page>;
 }
 export function FarmActivitiesScreen({ navigation }: Props<'FarmActivities'>) {
   const state = useFarmerMyFarm();
@@ -95,7 +96,7 @@ export function EditFarmScreen({ navigation }: Props<'EditFarm'>) {
   async function save() {
     if (!valid || submitting.current) return;
     submitting.current = true; setPending(true); setError(null); setSuccess(false);
-    const patch: FarmPatch = { locationLabel: label.trim(), ...(area.trim() ? { farmAreaAcres: Number(area) } : {}), ...(coordinates ?? {}) };
+    const patch: FarmPatch = { locationLabel: label.trim(), farmAreaAcres: area.trim() ? Number(area) : null, ...(coordinates ?? {}) };
     try { await farmerInventoryClient.editFarm(patch); await state.refresh(); setSuccess(true); }
     catch (e) { setError(e instanceof Error ? e.message : 'Unable to save farm.'); } finally { submitting.current = false; setPending(false); }
   }

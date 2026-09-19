@@ -87,7 +87,9 @@ export function createMarketService(repository: MarketRepository, config: Market
     },
     async historyMany(cropValues: Crop[], days: 30 | 60 | 90, district?: string): Promise<MarketHistory[]> {
       const [storedResults, liveResults] = await Promise.all([
-        loadStored(cropValues, days),
+        // Storage is independent of official observations. Preserve one batched
+        // read, but let each crop retain its usable live result during an outage.
+        loadStored(cropValues, days).catch(() => cropValues.map(() => [] as MarketPoint[])),
         Promise.all(cropValues.map(async crop => {
           const live = official(crop, district).then(async points => {
             if (points.length || district?.toLowerCase() === 'pune') return points;

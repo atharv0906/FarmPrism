@@ -1,3 +1,4 @@
+import * as listingState from '../src/services/api/listingState';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -14,7 +15,7 @@ function nodes(value: any): Element[] {
 function load(file: string, dependencies: Record<string, unknown>) {
   const exports: Record<string, (...args: any[]) => any> = {};
   const code = transpileModule(readFileSync(file, 'utf8'), { compilerOptions: { module: ModuleKind.CommonJS, jsx: JsxEmit.ReactJSX } }).outputText;
-  new Function('require', 'exports', '__DEV__', code)((id: string) => id === 'react/jsx-runtime' ? require(id) : dependencies[id] ?? {}, exports, true);
+  new Function('require', 'exports', '__DEV__', code)((id: string) => id === 'react/jsx-runtime' ? require(id) : (id.endsWith('/listingState') ? listingState : dependencies[id] ?? {}), exports, true);
   return exports;
 }
 const primitives = Object.fromEntries(['FarmerPage', 'Card', 'ActionTile', 'SectionTitle', 'Field', 'Button'].map(name => [name, name]));
@@ -69,7 +70,7 @@ test('whole selling-method cards navigate with the batch and distinct listing ki
 
 test('Select Batch preserves eligibility and canonical Quality navigation with optional crop filter', () => {
   const batch = (id: string, crop = 'Tomato', status = 'available', quantityKg = 100) => ({ id, crop, status, quantityKg, grade: null, code: id });
-  const data = { batches: [batch('tomato'), batch('onion', 'Onion'), batch('reserved', 'Tomato', 'reserved'), batch('zero', 'Tomato', 'available', 0), batch('listed')], items: [{ status: 'open', batch: { id: 'listed' } }] };
+  const data = { batches: [batch('tomato'), batch('onion', 'Onion'), batch('reserved', 'Tomato', 'reserved'), batch('zero', 'Tomato', 'available', 0), batch('listed')], items: [{ status: 'open', endsAt: '2099-01-01T00:00:00Z', batch: { id: 'listed' } }] };
   const mod = load('src/screens/trading/FarmerSellScreens.tsx', {
     'react-native': { Text: 'Text', View: 'View', Image: 'Image' },
     '../../hooks/useTrading': { useTrading: () => ({ data, loading: false, refresh() {} }) },
@@ -113,13 +114,13 @@ test('logistics controls follow the job stage and simulated coordinates start co
   for (const [status, orderStatus, expected, absent] of [
     ['available', 'logistics_pending', 'Claim Job', 'Propose Logistics Fee'],
     ['claimed', 'logistics_pending', 'Propose Logistics Fee', 'Confirm Pickup'],
-    ['advance_paid', 'pickup_pending', 'Confirm Pickup', 'Verify Delivery OTP'],
+    ['advance_paid', 'logistics_advance_paid', 'Verify Pickup OTP', 'Verify Delivery OTP'],
     ['in_transit', 'delivery_otp_pending', 'Verify Delivery OTP', 'Claim Job'],
     ['completed', 'completed', 'View Order / Feedback', 'Verify Delivery OTP'],
   ]) {
     const data = { me: { id: 'driver' }, profiles: [], jobs: [{ id: 'job', orderId: 'order', orderCode: 'FP-1', crop: 'Onion', quantityKg: 100, status, fee: null, feeStatus: 'awaiting_proposal', logisticsId: status === 'available' ? null : 'driver' }], orders: [{ id: 'order', status: orderStatus }] };
     const { JobScreen } = load('src/screens/trading/BuyerLogisticsScreens.tsx', {
-      react: { useState: (v: unknown) => [v, () => {}] },
+      react: { useState: (v: unknown) => [v, () => {}], useEffect() {} },
       'react-native': { Text: 'Text', View: 'View' },
       '../../hooks/useTrading': { useTrading: () => ({ data, refresh() {} }) },
       '../../hooks/useTradingAction': { useTradingAction: () => ({ pending: false }) },

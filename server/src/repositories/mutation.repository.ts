@@ -29,6 +29,20 @@ export async function expireMarketplace(): Promise<void> {
   await executeRpc('demo_expire_marketplace', {});
 }
 
+// Read-only guard for stale clients. The RPC must still enforce the deadline atomically.
+export async function assertBidBeforeExpiry(bidId: string, farmerId: string): Promise<void> {
+  const { data, error } = await supabaseAdmin.from('demo_bids')
+    .select('demo_auctions!inner(status,ends_at,demo_inventory_batches!inner(farmer_account_id))')
+    .eq('id', bidId).eq('demo_auctions.demo_inventory_batches.farmer_account_id', farmerId).maybeSingle();
+  if (error) throw new ApiError(503, 'AUCTION_READ_UNAVAILABLE', 'Unable to confirm the auction deadline. Refresh and retry.');
+  if (!data) throw new ApiError(404, 'BID_NOT_FOUND', 'This offer is unavailable.');
+  const relation = data.demo_auctions;
+  const auction = Array.isArray(relation) ? relation[0] : relation;
+  if (!auction || auction.status === 'expired' || !Number.isFinite(Date.parse(auction.ends_at)) || Date.parse(auction.ends_at) <= Date.now()) {
+    throw new ApiError(409, 'AUCTION_EXPIRED', 'This auction has expired. Unaccepted offers are no longer actionable.');
+  }
+}
+
 export async function readBatchQuality(id: string, farmerId: string) {
   const { data, error } = await supabaseAdmin.from('demo_inventory_batches')
     .select('id,quality_grade,quality_notes,status').eq('id', id).eq('farmer_account_id', farmerId).single();

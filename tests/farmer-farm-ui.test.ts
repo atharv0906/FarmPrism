@@ -1,3 +1,4 @@
+import * as listingState from '../src/services/api/listingState';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -27,7 +28,7 @@ function harness(data = farm(), stateValues: unknown[] = []) {
   };
   const exports: Record<string, (props: any) => Element> = {};
   const code = transpileModule(readFileSync('src/screens/FarmerFarmScreens.tsx', 'utf8'), { compilerOptions: { module: ModuleKind.CommonJS, jsx: JsxEmit.ReactJSX } }).outputText;
-  new Function('require', 'exports', code)((id: string) => id === 'react/jsx-runtime' ? require(id) : dependencies[id] ?? {}, exports);
+  new Function('require', 'exports', code)((id: string) => id === 'react/jsx-runtime' ? require(id) : (id.endsWith('/listingState') ? listingState : dependencies[id] ?? {}), exports);
   function render(name: string, params?: unknown) { index = 0; refIndex = 0; let tree = exports[name]({ navigation, route: { params } }); if (name === 'AddCropScreen' || name === 'AddProduceScreen') tree = tree.type(tree.props); return tree; }
   return { render, calls, states, mutations, workspace };
 }
@@ -65,11 +66,20 @@ test('Batch Details keeps null grade and routes existing listings instead of rel
   const h = harness(); let tree = h.render('BatchDetailsScreen', { batchId: 'available' });
   assert.ok(nodes(tree).some(n => n.props.children === 'Not declared'));
   button(tree, 'Sell Produce').props.onPress(); assert.deepEqual(h.calls[0], ['Sell', { screen: 'Quality', params: { batchId: 'available' } }]);
-  h.workspace.data.items = [{ id: 'listing', batch: { id: 'available' }, status: 'active' }]; tree = h.render('BatchDetailsScreen', { batchId: 'available' });
+  h.workspace.data.items = [{ id: 'listing', batch: { id: 'available' }, status: 'active', endsAt: '2099-01-01T00:00:00Z' }]; tree = h.render('BatchDetailsScreen', { batchId: 'available' });
   assert.equal(button(tree, 'Sell Produce'), undefined); button(tree, 'Current Listing').props.onPress(); assert.deepEqual(h.calls[1], ['Sell', { screen: 'Item', params: { itemId: 'listing' } }]);
 });
 test('Map missing-coordinate state disables link; farm edit preserves omitted coordinates', async () => {
   const h = harness(); assert.equal(button(h.render('FarmLocationScreen'), 'Open in Maps').props.disabled, true);
   const edit = harness(farm(), ['5', 'Village, Pune']); button(edit.render('EditFarmScreen'), 'Save Farm').props.onPress(); await new Promise(r => setImmediate(r));
   assert.deepEqual(edit.calls, [['editFarm', { locationLabel: 'Village, Pune', farmAreaAcres: 5 }], ['refresh']]);
+});
+
+test('missing Batch Details offers a working farm refresh', async () => {
+  const h = harness();
+  const tree = h.render('BatchDetailsScreen', { batchId: 'missing' });
+  assert.ok(nodes(tree).some(n => n.props.children === 'Batch unavailable. Refresh your farm.'));
+  button(tree, 'Refresh My Farm').props.onPress();
+  await new Promise(r => setImmediate(r));
+  assert.deepEqual(h.calls, [['refresh']]);
 });

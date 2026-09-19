@@ -42,6 +42,7 @@ test('mutation routes use authenticated actors and existing atomic RPCs', async 
           const role = Object.keys(actors).find(role => actors[role as keyof typeof actors] === filters.id);
           return { data: { id: filters.id, login_label: role, role_code: role, is_enabled: !disabled, full_name: 'Test account' }, error: null };
         }
+        if (table === 'demo_bids') return { data: { demo_auctions: { status: 'open', ends_at: '2099-01-01T00:00:00Z' } }, error: null };
         return { data: null, error: null };
       },
       async single() {
@@ -60,7 +61,7 @@ test('mutation routes use authenticated actors and existing atomic RPCs', async 
       jobId: id, paymentId: id, trackingPointId: id, disputeId: id,
       amount: 750, farmerBalance: 1750, logisticsBalance: 600,
       fee: 1000, feeStatus: 'proposed', accepted: true, revised: true,
-      source: 'simulated', status: 'test', toAccountId: actors.buyer, rating: 5,
+      source: 'simulated', status: name === 'demo_verify_pickup_otp_v2' ? 'pickup_confirmed' : 'test', toAccountId: actors.buyer, rating: 5,
       batchId: id, grade: 'A', notes: null, verified: true, attemptCount: 1, attemptsRemaining: 4,
       otp: '123456', expiresAt: '2026-09-10T00:10:00Z',
       private_key: 'must never be returned',
@@ -101,7 +102,8 @@ test('mutation routes use authenticated actors and existing atomic RPCs', async 
     ['/api/logistics/jobs/:id/fee', 'logistics', 'propose_logistics_fee', { fee: 1000 }],
     ['/api/buyer/logistics-jobs/:id/fee-response', 'buyer', 'respond_logistics_fee', { accept: true }],
     ['/api/buyer/orders/:id/pay-logistics-advance', 'buyer', 'pay_logistics_advance', {}],
-    ['/api/logistics/jobs/:id/pickup', 'logistics', 'confirm_pickup', {}],
+    ['/api/farmer/orders/:id/pickup-otp', 'farmer', 'generate_pickup_otp', {}],
+    ['/api/logistics/orders/:id/verify-pickup', 'logistics', 'verify_pickup_otp_v2', { otp: '123456' }],
     ['/api/logistics/jobs/:id/location', 'logistics', 'update_tracking', { latitude: 18.5, longitude: 73.8, source: 'simulated' }],
     ['/api/buyer/orders/:id/delivery-otp', 'buyer', 'generate_delivery_otp', {}],
     ['/api/logistics/orders/:id/verify-delivery', 'logistics', 'verify_delivery_otp_v2', { otp: '123456' }],
@@ -118,12 +120,25 @@ test('mutation routes use authenticated actors and existing atomic RPCs', async 
     const actorKey = rpc === 'submit_feedback' || rpc === 'raise_dispute' ? 'p_from_account_id' : 'p_' + role + '_account_id';
     assert.equal(calls[0].args[actorKey], actors[role]);
     assert.equal(JSON.stringify(result.payload).includes('private_key'), false);
-    if (rpc !== 'generate_delivery_otp') assert.equal(JSON.stringify(result.payload).includes('123456'), false);
+    if (rpc !== 'generate_delivery_otp' && rpc !== 'generate_pickup_otp') assert.equal(JSON.stringify(result.payload).includes('123456'), false);
     if (rpc.startsWith('pay_')) assert.equal(result.payload.data?.simulated, true);
     if (rpc.startsWith('accept_')) assert.equal((result.payload.data?.order as { totalAmount: number }).totalAmount, 2500);
   });
 
+  await t.test('retired direct pickup route cannot bypass OTP', async () => {
+    calls = [];
+    const response = await fetch(base + '/api/logistics/jobs/' + id + '/pickup', { method: 'POST', headers: { Authorization: 'Bearer logistics' } });
+    assert.equal(response.status, 404);
+    assert.equal(calls.length, 0);
+  });
+
   const invalid: Array<[string, string | null, unknown, number]> = [
+    ['/api/farmer/orders/:id/pickup-otp', 'buyer', {}, 403],
+    ['/api/farmer/orders/:id/pickup-otp', 'logistics', {}, 403],
+    ['/api/logistics/orders/:id/verify-pickup', 'farmer', { otp: '123456' }, 403],
+    ['/api/logistics/orders/:id/verify-pickup', 'buyer', { otp: '123456' }, 403],
+    ['/api/farmer/orders/:id/pickup-otp', 'farmer', { farmerAccountId: id }, 400],
+    ...['12345', '1234567', 'abcdef', 123456].map(otp => ['/api/logistics/orders/:id/verify-pickup', 'logistics', { otp }, 400] as [string, string, unknown, number]),
     ['/api/farmer/batches/:id/quality', 'farmer', { grade: 'D' }, 400],
     ['/api/farmer/batches/:id/quality', 'buyer', { grade: 'A' }, 403],
     ['/api/farmer/bids/:id/reject', 'buyer', {}, 403],

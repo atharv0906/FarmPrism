@@ -1,6 +1,6 @@
 import type { DemoRole } from '../types/domain.js';
 import type { MutationResults, OrderContract } from '../types/mutations.js';
-import { executeRpc, readCreatedOrder, readBatchQuality, type RpcExecutor, type RpcArguments } from '../repositories/mutation.repository.js';
+import { executeRpc, readCreatedOrder, readBatchQuality, assertBidBeforeExpiry, type RpcExecutor, type RpcArguments } from '../repositories/mutation.repository.js';
 import { ApiError } from '../utils/apiError.js';
 import * as v from '../utils/mutationValidation.js';
 
@@ -205,13 +205,24 @@ export const commands: Record<keyof MutationResults, Command> = {
       };
     },
   },
-  confirmPickup: {
-    role: 'logistics', rpc: 'demo_confirm_pickup',
+  generatePickupOtp: {
+    role: 'farmer', rpc: 'demo_generate_pickup_otp',
     params: (actor, id, body) => {
       v.object(body ?? {}, []);
       return {
+        p_farmer_account_id: v.uuid(actor.accountId),
+        p_order_id: v.uuid(id),
+      };
+    },
+  },
+  verifyPickupOtp: {
+    role: 'logistics', rpc: 'demo_verify_pickup_otp_v2',
+    params: (actor, id, body) => {
+      const input = v.object(body ?? {}, ['otp']);
+      return {
         p_logistics_account_id: v.uuid(actor.accountId),
-        p_job_id: v.uuid(id),
+        p_order_id: v.uuid(id),
+        p_otp: v.otp(input.otp),
       };
     },
   },
@@ -291,6 +302,7 @@ export function createMutationService(
   rpc: RpcExecutor = executeRpc,
   readOrder: (id: string) => Promise<OrderContract> = readCreatedOrder,
   readQuality: typeof readBatchQuality = readBatchQuality,
+  checkBidDeadline: typeof assertBidBeforeExpiry = assertBidBeforeExpiry,
 ) {
   return {
     async execute<K extends keyof MutationResults>(command: K, actor: Actor, id: unknown, body: unknown): Promise<MutationResults[K]> {
@@ -298,10 +310,25 @@ export function createMutationService(
       if (!actor.accountId) throw new ApiError(401, 'invalid_session', 'Missing or invalid demo session.');
       if (definition.role && definition.role !== actor.role) throw new ApiError(403, 'FORBIDDEN', 'This action is not allowed.');
       const args = definition.params(actor, id, body);
+      if (command === 'acceptBid' || command === 'rejectBid') await checkBidDeadline(String(args.p_bid_id), actor.accountId);
       const raw = await rpc(definition.rpc, args);
       if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new ApiError(500, 'server_error', 'The action response could not be confirmed. Refresh before trying again.');
-      if (command === 'verifyDeliveryOtp') {
+      if (command === 'generatePickupOtp') {
         const response = raw as Record<string, unknown>;
+        if (response.orderId !== args.p_order_id || typeof response.otp !== 'string' || !/^\d{6}$/.test(response.otp) ||
+            typeof response.expiresAt !== 'string' || !Number.isFinite(Date.parse(response.expiresAt))) {
+          throw new ApiError(502, 'PICKUP_RESPONSE_INVALID', 'Pickup OTP could not be confirmed. Regenerate before sharing.');
+        }
+      }
+      if (command === 'verifyDeliveryOtp' || command === 'verifyPickupOtp') {
+        const pickup = command === 'verifyPickupOtp';
+        const response = raw as Record<string, unknown>;
+        if (pickup && (!Number.isInteger(response.attemptCount) || !Number.isInteger(response.attemptsRemaining) ||
+            Number(response.attemptCount) < 0 || Number(response.attemptCount) > 5 || Number(response.attemptsRemaining) < 0 || Number(response.attemptsRemaining) > 5 ||
+            (response.verified === true && (response.orderId !== args.p_order_id || response.status !== 'pickup_confirmed')) ||
+            (response.verified === false && !['INVALID_OTP', 'OTP_ATTEMPTS_EXCEEDED'].includes(String(response.errorCode))))) {
+          throw new ApiError(502, 'PICKUP_RESPONSE_INVALID', 'Pickup verification could not be confirmed. Refresh before trying again.');
+        }
         if (typeof response.verified !== 'boolean' ||
           typeof response.attemptCount !== 'number' || !Number.isFinite(response.attemptCount) ||
           typeof response.attemptsRemaining !== 'number' || !Number.isFinite(response.attemptsRemaining)) {
@@ -311,14 +338,14 @@ export function createMutationService(
           const errorCode = typeof response.errorCode === 'string' ? response.errorCode : 'INVALID_OTP';
           const status = errorCode === 'OTP_ATTEMPTS_EXCEEDED' ? 409 : 400;
           throw new ApiError(status, errorCode, errorCode === 'OTP_ATTEMPTS_EXCEEDED'
-            ? 'Too many incorrect delivery OTP attempts.'
-            : 'Invalid delivery OTP.', { attemptCount: response.attemptCount, attemptsRemaining: response.attemptsRemaining });
+            ? `Too many incorrect ${pickup ? 'pickup' : 'delivery'} OTP attempts.`
+            : `Invalid ${pickup ? 'pickup' : 'delivery'} OTP.`, { attemptCount: response.attemptCount, attemptsRemaining: response.attemptsRemaining });
         }
         if (typeof response.orderId !== 'string') throw new ApiError(500, 'server_error', 'The action response could not be confirmed. Refresh before trying again.');
         return {
           verified: true,
           orderId: response.orderId,
-          status: typeof response.status === 'string' ? response.status : 'balance_pending',
+          status: typeof response.status === 'string' ? response.status : pickup ? 'pickup_confirmed' : 'balance_pending',
           attemptCount: response.attemptCount,
           attemptsRemaining: response.attemptsRemaining,
         } as MutationResults[K];
@@ -386,7 +413,8 @@ const responseFields: Record<keyof MutationResults, readonly string[]> = {
   proposeLogisticsFee: ['jobId', 'fee', 'feeStatus'],
   respondLogisticsFee: ['jobId', 'accepted', 'status'],
   payLogisticsAdvance: ['orderId', 'amount', 'status'],
-  confirmPickup: ['jobId', 'orderId', 'status'],
+  generatePickupOtp: ['orderId', 'otp', 'expiresAt'],
+  verifyPickupOtp: [],
   updateTracking: ['trackingPointId', 'jobId', 'source'],
   generateDeliveryOtp: ['orderId', 'otp', 'expiresAt'],
   verifyDeliveryOtp: ['verified', 'orderId', 'status', 'attemptCount', 'attemptsRemaining'],

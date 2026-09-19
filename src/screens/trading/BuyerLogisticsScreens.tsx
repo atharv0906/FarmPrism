@@ -1,3 +1,4 @@
+import { offerExpired } from '../../services/api/listingState';
 import { dashboardAssets as d } from '../../components/farmer-dashboard/dashboardAssets';
 import { validAdvance } from '../../services/api/trading.validation';
 import { useEffect, useState } from 'react';
@@ -68,22 +69,23 @@ export function BidFormScreen({ route, navigation }: Props<'BidForm'>) {
         if (item.kind === 'auction') void action.run(() => mutations.placeOrReviseBid(item.id, { ...body, pricePerKg: p }, { bearerToken: demoApiToken }), () => navigation.navigate('MyBids'));
         else void action.run(() => mutations.createPurchaseRequest(item.id, body, { bearerToken: demoApiToken }), () => navigation.navigate('MyBids'));
       }} />
-    </Card>}
+    </Card>}{state.data && !item && <Card><Text>This listing is unavailable.</Text><Button title="Return to Market" onPress={() => navigation.navigate('BuyerMarket')} /></Card>}
   </Page>;
 }
 export function MyBidsScreen({ navigation }: Props<'MyBids'>) {
   const state = useTrading(), action = useTradingAction(state.refresh), { demoApiToken } = useAuth();
   const [group, setGroup] = useState('Active');
-  const statuses: Record<string, string[]> = { Active: ['active', 'pending', 'partially_accepted'], History: ['revised', 'superseded', 'expired'], Accepted: ['accepted'], Rejected: ['rejected'], Withdrawn: ['withdrawn'] };
+  const statuses: Record<string, string[]> = { Active: ['active', 'pending', 'partially_accepted'], History: ['replaced', 'outbid', 'expired'], Accepted: ['accepted'], Rejected: ['rejected'], Withdrawn: ['withdrawn'] };
+  const effectiveStatus = (offer: NonNullable<typeof state.data>['offers'][number]) => offerExpired(offer, state.data?.items.find(i => i.id === offer.itemId)) ? 'expired' : offer.status;
   return <Page title="My Bids / Purchase Requests" hasData={!!state.data} loading={state.loading} error={state.error} mutationError={action.error} retry={() => void state.refresh()}>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>{Object.keys(statuses).map(label => <SelectChip key={label} label={label} selected={group === label} onPress={() => setGroup(label)} />)}</ScrollView>
-    {state.data && !state.data.offers.some(o => statuses[group].includes(o.status) || (group === 'History' && !Object.values(statuses).flat().includes(o.status))) && <Card title={`No ${group.toLowerCase()} bids or requests`}><Text style={ui.muted}>Open Market to find produce or choose another status.</Text></Card>}
-    {state.data?.offers.filter(o => statuses[group].includes(o.status) || (group === 'History' && !Object.values(statuses).flat().includes(o.status))).map(o => <Card key={o.id} title={(o.kind === 'auction' ? 'Bid' : 'Fixed-price request') + ' · ' + (state.data?.items.find(i => i.id === o.itemId)?.batch.crop ?? 'Produce')}>
-      <Text style={ui.muted}>{o.quantityKg} KG · {money(o.pricePerKg)}/KG · {o.advancePercent}% advance</Text><Badge>{o.status.replaceAll('_', ' ')}</Badge><Text style={ui.muted}>{date(o.createdAt)}</Text>
+    {state.data && !state.data.offers.some(o => statuses[group].includes(effectiveStatus(o)) || (group === 'History' && !Object.values(statuses).flat().includes(effectiveStatus(o)))) && <Card title={`No ${group.toLowerCase()} bids or requests`}><Text style={ui.muted}>Open Market to find produce or choose another status.</Text></Card>}
+    {state.data?.offers.filter(o => statuses[group].includes(effectiveStatus(o)) || (group === 'History' && !Object.values(statuses).flat().includes(effectiveStatus(o)))).map(o => <Card key={o.id} title={(o.kind === 'auction' ? 'Bid' : 'Fixed-price request') + ' · ' + (state.data?.items.find(i => i.id === o.itemId)?.batch.crop ?? 'Produce')}>
+      <Text style={ui.muted}>{o.quantityKg} KG · {money(o.pricePerKg)}/KG · {o.advancePercent}% advance</Text><Badge>{effectiveStatus(o).replaceAll('_', ' ')}</Badge><Text style={ui.muted}>{date(o.createdAt)}</Text>
       <Button title="View Listing" onPress={() => navigation.navigate('Item', { itemId: o.itemId })} />
-      {o.kind === 'auction' && o.status === 'active' && <Button title="Revise Bid" onPress={() => navigation.navigate('BidForm', { itemId: o.itemId })} />}
-      {['active', 'pending'].includes(o.status) && <Button title="Withdraw" disabled={action.pending} onPress={() => {
-        if (!demoApiToken) return;
+      {o.kind === 'auction' && effectiveStatus(o) === 'active' && <Button title="Revise Bid" onPress={() => navigation.navigate('BidForm', { itemId: o.itemId })} />}
+      {['active', 'pending'].includes(effectiveStatus(o)) && <Button title="Withdraw" disabled={action.pending} onPress={() => {
+        if (!demoApiToken || effectiveStatus(o) === 'expired') return;
         void action.run<unknown>(() => o.kind === 'auction' ? mutations.withdrawBid(o.id, { bearerToken: demoApiToken }) : mutations.withdrawPurchaseRequest(o.id, { bearerToken: demoApiToken }));
       }} />}
     </Card>)}
@@ -105,7 +107,11 @@ export function JobScreen({ route, navigation }: Props<'Job'>) {
   const [fee, setFee] = useState(''), [otp, setOtp] = useState(''), [otpMessage, setOtpMessage] = useState<string | null>(null), [latitude, setLatitude] = useState(''), [longitude, setLongitude] = useState('');
   const job = state.data?.jobs.find(j => j.id === route.params.jobId), order = state.data?.orders.find(o => o.id === job?.orderId), options = { bearerToken: demoApiToken ?? '' };
   const [showSimulation, setShowSimulation] = useState(false);
-  const assigned = job?.logisticsId === state.data?.me.id;
+  const assigned = !!job?.logisticsId && job.logisticsId === state.data?.me.id;
+  const [pickupOtp, setPickupOtp] = useState(''), [pickupMessage, setPickupMessage] = useState<string | null>(null);
+  const pickupPending = assigned && job?.status === 'advance_paid' && order?.status === 'logistics_advance_paid';
+  useEffect(() => { setPickupOtp(''); setPickupMessage(null); }, [job?.id]);
+  useEffect(() => { if (!pickupPending) setPickupOtp(''); }, [pickupPending]);
   async function actualLocation() {
     if (!job) return;
     const permission = await Location.requestForegroundPermissionsAsync();
@@ -121,7 +127,18 @@ export function JobScreen({ route, navigation }: Props<'Job'>) {
       {job.status === 'available' && <Button primary title="Claim Job" disabled={action.pending} onPress={() => void action.run(() => mutations.claimLogisticsJob(job.id, options))} />}
       {assigned && ['claimed', 'fee_rejected'].includes(job.status) && <><Field label="Proposed fee (₹)" value={fee} onChange={setFee} numeric />
         <Button primary title="Propose Logistics Fee" disabled={action.pending || !Number.isFinite(Number(fee)) || Number(fee) <= 0} onPress={() => void action.run(() => mutations.proposeLogisticsFee(job.id, { fee: Number(fee) }, options))} /></>}
-      {assigned && job.status === 'advance_paid' && <Button primary title="Confirm Pickup" disabled={action.pending} onPress={() => void action.run(() => mutations.confirmPickup(job.id, options))} />}
+      {pickupMessage && <Text accessibilityRole="alert" style={ui.muted}>{pickupMessage}</Text>}
+      {pickupPending && <><Field label="Farmer Pickup OTP (6 digits)" value={pickupOtp} onChange={value => setPickupOtp(value.replace(/\D/g, '').slice(0, 6))} numeric secure />
+        <Button primary title="Verify Pickup OTP" disabled={action.pending || !demoApiToken || !/^\d{6}$/.test(pickupOtp)} onPress={() => {
+          if (!pickupPending || !demoApiToken || !/^\d{6}$/.test(pickupOtp)) return;
+          setPickupMessage(null);
+          void action.run(() => mutations.verifyPickupOtp(job.orderId, { otp: pickupOtp }, options), () => { setPickupOtp(''); setPickupMessage('Pickup confirmed. Tracking is now available.'); }, error => {
+            if (error instanceof ApiError && (error.code === 'INVALID_OTP' || error.code === 'OTP_ATTEMPTS_EXCEEDED')) {
+              const remaining = typeof error.details?.attemptsRemaining === 'number' ? error.details.attemptsRemaining : 0;
+              setPickupMessage(remaining > 0 ? `Incorrect pickup OTP. ${remaining} attempts remaining.` : 'Too many incorrect attempts. Ask the Farmer to generate a new Pickup OTP.');
+            }
+          });
+        }} /><Text style={ui.muted}>Ask the Farmer for the OTP when you arrive. Verification confirms the handoff.</Text></>}
       {assigned && ['pickup_confirmed', 'in_transit'].includes(job.status) && <>
         <Button title="Send actual device location" disabled={action.pending} onPress={() => void action.run(actualLocation)} />
         {__DEV__ && <Button title={showSimulation ? 'Hide development controls' : 'Development only: simulated tracking'} onPress={() => setShowSimulation(!showSimulation)} />}{__DEV__ && showSimulation && <Card title="DEVELOPMENT ONLY · Simulated tracking"><Field label="Simulated latitude" value={latitude} onChange={setLatitude} numeric /><Field label="Simulated longitude" value={longitude} onChange={setLongitude} numeric />
@@ -137,6 +154,6 @@ export function JobScreen({ route, navigation }: Props<'Job'>) {
         }); }} />
         <Text style={ui.muted}>Successful OTP verification confirms delivery. There is no additional confirmation step.</Text></>}
       {assigned && <Button title="View Order / Feedback" onPress={() => navigation.navigate('Order', { orderId: job.orderId })} />}
-    </Card>{order && <><ProfileCard profile={state.data?.profiles.find(p => p.id === order.farmerId)} /><ProfileCard profile={state.data?.profiles.find(p => p.id === order.buyerId)} /></>}</> : state.data && <Text style={ui.muted}>This job is no longer available to this account. Refresh Jobs.</Text>}
+    </Card>{order && <><ProfileCard profile={state.data?.profiles.find(p => p.id === order.farmerId)} /><ProfileCard profile={state.data?.profiles.find(p => p.id === order.buyerId)} /></>}</> : state.data && <Card><Text style={ui.muted}>This job is no longer available to this account.</Text><Button title="Refresh Jobs" onPress={() => void state.refresh()} /></Card>}
   </Page>;
 }

@@ -60,8 +60,11 @@ export const marketplaceMutations = {
   payLogisticsAdvance(orderId: string, options: Options) {
     return apiClient.post<ApiSuccessEnvelope<T.MutationResults['payLogisticsAdvance']>>(`/api/buyer/orders/${encodeURIComponent(orderId)}/pay-logistics-advance`, {}, options);
   },
-  confirmPickup(jobId: string, options: Options) {
-    return apiClient.post<ApiSuccessEnvelope<T.MutationResults['confirmPickup']>>(`/api/logistics/jobs/${encodeURIComponent(jobId)}/pickup`, {}, options);
+  generatePickupOtp(orderId: string, options: Options) {
+    return apiClient.post<ApiSuccessEnvelope<T.MutationResults['generatePickupOtp']>>(`/api/farmer/orders/${encodeURIComponent(orderId)}/pickup-otp`, {}, options);
+  },
+  verifyPickupOtp(orderId: string, body: T.VerifyPickupInput, options: Options) {
+    return apiClient.post<ApiSuccessEnvelope<T.MutationResults['verifyPickupOtp']>>(`/api/logistics/orders/${encodeURIComponent(orderId)}/verify-pickup`, body, options);
   },
   updateTracking(jobId: string, body: T.TrackingInput, options: Options) {
     return apiClient.post<ApiSuccessEnvelope<T.MutationResults['updateTracking']>>(`/api/logistics/jobs/${encodeURIComponent(jobId)}/location`, body, options);

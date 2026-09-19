@@ -9,6 +9,7 @@ export type FeeInput = { fee: number };
 export type FeeResponseInput = { accept: boolean };
 export type TrackingInput = { latitude: number; longitude: number; source: 'actual' | 'simulated' };
 export type VerifyDeliveryInput = { otp: string };
+export type VerifyPickupInput = { otp: string };
 export type SetBatchQualityInput = { grade: 'A' | 'B' | 'C'; notes?: string | null };
 export type FeedbackInput = { toAccountId: string; rating: number; comment?: string | null };
 export type DisputeInput = { againstAccountId: string | null; reason: string; description?: string | null };
@@ -38,7 +39,8 @@ export type MutationResults = {
   proposeLogisticsFee: { jobId: string; fee: number; feeStatus: string };
   respondLogisticsFee: { jobId: string; accepted: boolean; status: string };
   payLogisticsAdvance: { orderId: string; amount: number; status: string; simulated: true };
-  confirmPickup: { jobId: string; orderId: string; status: string };
+  generatePickupOtp: { orderId: string; otp: string; expiresAt: string };
+  verifyPickupOtp: { verified: boolean; orderId: string; status: string; attemptCount: number; attemptsRemaining: number };
   updateTracking: { trackingPointId: string; jobId: string; source: 'actual' | 'simulated' };
   generateDeliveryOtp: { orderId: string; otp: string; expiresAt: string };
   verifyDeliveryOtp: { verified: boolean; orderId: string; status: string; attemptCount: number; attemptsRemaining: number; errorCode?: string };

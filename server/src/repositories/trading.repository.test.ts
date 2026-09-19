@@ -26,7 +26,10 @@ test('workspace isolates offers, payments, tracking and unassigned logistics ord
     demo_logistics_jobs: [{ id: 'job', order_id: 'order', logistics_account_id: null, status: 'available', proposed_fee: null, fee_status: 'not_proposed' }],
     demo_payments: [{ id: 'payment', order_id: 'order', payment_kind: 'farmer_advance', amount: 750, simulated: true, status: 'paid' }],
     demo_order_events: [{ id: 'event', order_id: 'order', event_type: 'order_created', created_at: '2026-09-10' }],
-    demo_notifications: [{ id: 'notification', account_id: 'buyer', notification_type: 'delivery_otp', title: 'Delivery confirmation', body: '123456', data: { otp: '123456', orderId: 'order' } }],
+    demo_notifications: [
+      { id: 'notification', account_id: 'buyer', notification_type: 'delivery_otp', title: 'Delivery confirmation', body: '123456', data: { otp: '123456', orderId: 'order' } },
+      ...['auction_expiring', 'auction_expired'].map(type => ({ id: type, account_id: 'farmer', notification_type: type, title: type, body: 'Review auction', entity_type: 'auction', entity_key: 'auction', data: { auctionId: 'auction' } })),
+    ],
     demo_tracking_points: [{ id: 'point', job_id: 'job', latitude: 18, longitude: 73, source: 'actual', recorded_at: '2026-09-10' }],
   };
   t.mock.method(supabaseAdmin, 'rpc', async () => ({ data: {}, error: null }));
@@ -53,6 +56,10 @@ test('workspace isolates offers, payments, tracking and unassigned logistics ord
     assert.equal(contract.workspaceContractError!(JSON.parse(JSON.stringify(workspace))), null, role + ' mobile contract');
   }
   const buyer = await tradingWorkspace('buyer', 'buyer');
+  const farmer = await tradingWorkspace('farmer', 'farmer');
+  assert.deepEqual(farmer.notifications.map(n => [n.type, n.entityType, n.entityKey]), [
+    ['auction_expiring', 'auction', 'auction'], ['auction_expired', 'auction', 'auction'],
+  ]);
   assert.equal(buyer.orders.length, 1);
   assert.equal(buyer.offers[0].remainingKg, 100);
   assert.equal(buyer.payments.length, 1);
@@ -72,4 +79,12 @@ test('workspace isolates offers, payments, tracking and unassigned logistics ord
   const assigned = await tradingWorkspace('driver', 'logistics');
   assert.equal(assigned.orders.length, 1);
   assert.equal(assigned.tracking.length, 1);
+  fixtures.demo_orders[0].status = fixtures.demo_logistics_jobs[0].status = 'pickup_confirmed';
+  fixtures.demo_inventory_batches[0].remaining_quantity_kg = 450;
+  fixtures.demo_inventory_batches[0].quality_grade = null;
+  const afterPickup = await tradingWorkspace('farmer', 'farmer');
+  assert.equal(afterPickup.batches[0].quantityKg, 450);
+  assert.equal(afterPickup.batches[0].status, 'available');
+  assert.equal(afterPickup.orders[0].quantityKg, 100, 'workspace must not subtract the accepted allocation again');
+  assert.equal(afterPickup.me.trustScore, null);
 });
