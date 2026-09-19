@@ -9,7 +9,7 @@
 
 ## Current implementation
 
-- Phase 2.0.16 integrates audit fixes and Pickup OTP against planned external database contracts. React Native / Expo / TypeScript → Node/Express business API → Supabase.
+- Phase 2.0.17 completes the deployed database contracts for the unchanged Phase 2.0.16 application. React Native / Expo / TypeScript → Node/Express business API → Supabase.
 - Mobile API integration, server-issued demo sessions and SecureStore session lifecycle are implemented.
 - Farmer Home/My Farm/Sell/Insights/Profile, Buyer screens, Logistics screens and shared transaction/notification/profile flows are implemented.
 - Supabase remains the persisted source of truth and real-auth RLS boundary. Existing transactional/demo RPCs enforce atomic business operations.
@@ -32,7 +32,7 @@
 
 ## Security and change boundaries
 
-- Do not change Supabase schema, migrations, RLS or deployed RPC definitions in this phase. The existing demo_reset_prototype_data RPC stays untouched. Planned Pickup OTP, expiry and declaration-scope trust changes are external owner work.
+- Phase 2.0.17 explicitly authorized the scoped Pickup OTP, deadline, expiry and declaration-scope trust migration. It is deployed; see PHASE_2_0_17.md. Do not replay it or make unrelated database changes. The existing demo_reset_prototype_data RPC stays untouched.
 - Never expose service-role keys, market/AI secrets, raw bearer tokens or OTPs in frontend code, EXPO_PUBLIC_* values or logs.
 - Preserve the existing SecureStore/provider token lifecycle; never add ad hoc password/token storage.
 - Keep root/server ignored .env private and unchanged unless an explicitly needed migration is authorized. Tracked .env.example files are blank templates with safe defaults only.
@@ -47,7 +47,7 @@
 - Use mocked/injected dependencies for unit tests, never live Supabase reset or live data.gov.in.
 - Run npm run typecheck and npm run test.
 - Run npm --prefix server run typecheck, npm --prefix server run build and npm --prefix server test.
-- Run npx expo export --platform android --output-dir .expo/phase-2-0-16-export and git diff --check.
+- Run npx expo export --platform android --output-dir .expo/phase-2-0-17-export and git diff --check.
 - Report measured validation and exact live failures honestly. Never claim UI/device verification from API-only checks.
 
 ## Current read/session and Phase 2.0.16 boundaries
@@ -57,12 +57,12 @@
 - Fresh accounts require explicit assigned-role confirmation. Farmer completion is local per-account UX state written only on Submit, preserved with remembered roles on logout; it is not a profile write.
 - Five retired mobile RPC anon/authenticated EXECUTE grants have already been revoked externally. Retain service_role and do not change grants/schema/RLS/RPC definitions.
 
-## Phase 2.0.16 handoff and expiry contract
+## Phase 2.0.17 deployed handoff and expiry contract
 
 - Pickup: Buyer pays 40% logistics advance; the order Farmer generates/regenerates a six-digit Pickup OTP only while order = logistics_advance_paid and assigned job = advance_paid. Only assigned Logistics verifies it; verification itself sets order/job = pickup_confirmed and enables tracking. OTP display is component memory only. Delivery OTP remains the delivery confirmation step.
-- The external pickup RPCs own hashed storage, 15-minute expiry, five wrong attempts, regeneration resetting attempts, ownership/state validation and event/notification writes. No SMS or extra pickup confirmation step.
+- The deployed pickup RPCs own hashed storage, 15-minute expiry, five wrong attempts, regeneration resetting attempts, ownership/state validation and event/notification writes. No SMS or extra pickup confirmation step.
 - Accepted allocation is already deducted: a 650 KG batch with a 200 KG order keeps its 450 KG available source remainder during pickup. Only the order allocation travels; mobile performs no subtraction/status write.
 - Auction Option A: 6/12/24 hours, default 24. Open and partially_sold expire at ends_at; unaccepted active/partially-accepted bid remainder goes to history and cannot be accepted. Accepted orders remain valid, no auto-award, unsold remainder is relistable.
-- One hour before expiry, actionable unaccepted bids trigger one idempotent Farmer in-app warning; auctions with no actionable bids get none. Expiry with unsold quantity triggers one in-app expiry notification. External demo_expire_marketplace owns creation/deduplication; mobile supports auction_expiring and auction_expired with entity_type = auction, entity_key = auction ID, data.auctionId = auction ID. No push infrastructure.
+- On an expiry invocation during the last hour, actionable unaccepted bids trigger one idempotent Farmer in-app warning; auctions with no actionable bids get none. No database scheduler was found; exact one-hour delivery is not guaranteed. Expiry with unsold quantity triggers one in-app expiry notification. Deployed demo_expire_marketplace owns creation/deduplication; mobile supports auction_expiring and auction_expired with entity_type = auction, entity_key = auction ID, data.auctionId = auction ID. No push infrastructure.
 - Quality declaration consistency covers produce entering the selling/listing workflow, not all stored inventory. Unlisted grade-null batches are not a trust failure; A/B/C declarations have equal trust meaning. Nullable trust stays backend-controlled and off Farmer Home.
-- Required external deployment: demo_generate_pickup_otp, demo_verify_pickup_otp_v2, updated demo_expire_marketplace and updated demo_recalculate_trust. UI/API integration does not establish that these are deployed.
+- Deployed and rollback-tested: demo_generate_pickup_otp, demo_verify_pickup_otp_v2, demo_expire_marketplace and demo_recalculate_trust. Auction and Fixed Price acceptance check clock_timestamp() after row locks; active/partially_sold listings expire with unaccepted request remainder. The old demo_confirm_pickup RPC is denied to all API roles and its owner-call stub raises PICKUP_OTP_REQUIRED. See PHASE_2_0_17.md for security and validation limits.
