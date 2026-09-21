@@ -21,6 +21,19 @@ const actors = {
 };
 const delivery = { label: 'Warehouse', latitude: 18.5, longitude: 73.8 };
 
+test('auction policy defaults ON for older callers, validates explicit booleans and stays auction-only', async () => {
+  const { commands } = await import('../services/mutation.service.js');
+  const actor = { accountId: actors.farmer, role: 'farmer' as const };
+  const body = { batchId: id, quantityKg: 10, reservePricePerKg: 20, durationHours: 24 };
+  assert.equal(commands.createAuction.params(actor, null, body).p_allow_partial_sale, true);
+  for (const allowPartialSale of [true, false]) assert.equal(commands.createAuction.params(actor, null, { ...body, allowPartialSale }).p_allow_partial_sale, allowPartialSale);
+  for (const allowPartialSale of [null, 'false', 0, 1, {}]) assert.throws(() => commands.createAuction.params(actor, null, { ...body, allowPartialSale }));
+  assert.throws(() => commands.closeAuction.params(actor, id, { allowPartialSale: false }));
+  assert.throws(() => commands.createFixedListing.params(actor, null, { batchId: id, quantityKg: 10, fixedPricePerKg: 20, allowPartialSale: false }));
+  assert.equal(mapRpcError({ message: 'FULL_LOT_REQUIRED' }).status, 409);
+  assert.equal(mapRpcError({ message: 'FULL_LOT_REQUIRED' }).code, 'FULL_LOT_REQUIRED');
+});
+
 test('mutation routes use authenticated actors and existing atomic RPCs', async t => {
   let calls: Array<{ name: string; args: Record<string, unknown> }> = [];
   let rpcError: string | null = null;

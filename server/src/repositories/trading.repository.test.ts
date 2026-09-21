@@ -19,7 +19,7 @@ test('workspace isolates offers, payments, tracking and unassigned logistics ord
     demo_buyer_profiles: [{ account_id: 'buyer', verification_status: 'verified' }],
     demo_logistics_profiles: [{ account_id: 'driver', verification_status: 'verified', capacity_kg: 200 }],
     demo_inventory_batches: [{ id: 'batch', farmer_account_id: 'farmer', batch_code: 'B-1', crop_name: 'Tomato', remaining_quantity_kg: 300, quality_grade: 'A', status: 'available' }],
-    demo_auctions: [{ id: 'auction', batch_id: 'batch', offered_quantity_kg: 300, remaining_quantity_kg: 200, reserve_price_per_kg: 25, status: 'open', starts_at: '2026-09-10', ends_at: '2026-09-11' }],
+    demo_auctions: [{ allow_partial_sale: true, id: 'auction', batch_id: 'batch', offered_quantity_kg: 300, remaining_quantity_kg: 200, reserve_price_per_kg: 25, status: 'open', starts_at: '2026-09-10', ends_at: '2026-09-11' }],
     demo_bids: [{ id: 'bid', auction_id: 'auction', buyer_account_id: 'buyer', quantity_kg: 200, price_per_kg: 25, advance_percent: 30, status: 'partially_accepted' }],
     demo_orders: [{ id: 'order', order_code: 'FP-1', source_type: 'auction', accepted_bid_id: 'bid', batch_id: 'batch', farmer_account_id: 'farmer', buyer_account_id: 'buyer',
       allocated_quantity_kg: 100, unit_price_per_kg: 25, total_amount: 2500, farmer_advance_percent: 30, status: 'logistics_pending', created_at: '2026-09-10' }],

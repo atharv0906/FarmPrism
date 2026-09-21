@@ -34,3 +34,11 @@ test('saved delivery coordinates are optional but validated when supplied', () =
   assert.equal(workspaceContractError(data), null);
   assert.equal(workspaceContractError({ ...data, deliveryLocation: { label: 'Saved address', latitude: 'bad', longitude: null } }), 'workspace.deliveryLocation.latitude');
 });
+
+test('auction policy is an explicit boolean; Fixed Price has no policy contract', () => {
+  const data = fixture('buyer');
+  const item = { id: 'a', kind: 'auction', batch: { id: 'b', farmerId: 'f', code: 'B', crop: 'Tomato', quantityKg: 10, grade: 'A', status: 'available' }, offeredKg: 10, remainingKg: 10, pricePerKg: 20, startsAt: '2026-09-01', endsAt: '2099-01-01', status: 'open' };
+  for (const allowPartialSale of [true, false]) assert.equal(workspaceContractError({ ...data, items: [{ ...item, allowPartialSale }] }), null);
+  for (const allowPartialSale of [undefined, null, 'false', 0]) assert.equal(workspaceContractError({ ...data, items: [{ ...item, allowPartialSale }] }), 'workspace.items[0].allowPartialSale');
+  assert.equal(workspaceContractError({ ...data, items: [{ ...item, kind: 'fixed' }] }), null);
+});

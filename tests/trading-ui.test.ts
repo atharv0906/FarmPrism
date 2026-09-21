@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { JsxEmit, ModuleKind, transpileModule } from 'typescript';
-import { validListing } from '../src/services/api/trading.validation';
+import { validListing, validAdvance } from '../src/services/api/trading.validation';
 const require = createRequire(import.meta.url);
 type Element = { type: unknown; props: Record<string, any> };
 function nodes(value: any): Element[] {
@@ -19,6 +19,105 @@ function load(file: string, dependencies: Record<string, unknown>) {
   return exports;
 }
 const primitives = Object.fromEntries(['FarmerPage', 'Card', 'ActionTile', 'SectionTitle', 'Field', 'Button'].map(name => [name, name]));
+
+function partialScreens(data: any, initial: unknown[] = []) {
+  const values = [...initial], calls: Array<{ name: string; args: any[] }> = [];
+  let index = 0;
+  const mutations = Object.fromEntries(['createAuction', 'createFixedListing', 'placeOrReviseBid', 'createPurchaseRequest', 'acceptBid', 'acceptPurchaseRequest'].map(name => [name, (...args: any[]) => { calls.push({ name, args }); return Promise.resolve({ data: {} }); }]));
+  const deps = {
+    react: { useState: (value: unknown) => { const i = index++; if (!(i in values)) values[i] = value; return [values[i], (next: unknown) => { values[i] = next; }]; }, useEffect() {} },
+    'react-native': { Text: 'Text', View: 'View', Image: 'Image', Switch: 'Switch' },
+    '../../services/api/trading.validation': { validListing, validAdvance },
+    '../../services/api/mutation.client': { marketplaceMutations: mutations },
+    '../../hooks/useTrading': { useTrading: () => ({ data, refresh() {} }) },
+    '../../hooks/useTradingAction': { useTradingAction: () => ({ pending: false, run: (fn: () => unknown) => fn() }) },
+    '../../hooks/useAuth': { useAuth: () => ({ demoApiToken: 'in-memory-test' }) },
+    '../../components/farmer-sell/FarmerSellUI': { ...primitives, ui: {}, sellAssets: {}, quintals: String, cropArtwork: () => null },
+    '../../components/farmprism-shell/RoleUI': { ...primitives, Page: 'Page', Badge: 'Badge', ui: {}, money: String, date: String },
+    './SharedScreens': { ProfileCard: 'ProfileCard' },
+  };
+  const farmer = load('src/screens/trading/FarmerSellScreens.tsx', deps);
+  const buyer = load('src/screens/trading/BuyerLogisticsScreens.tsx', deps);
+  return { calls, render(name: string, params: any) { index = 0; return nodes((farmer[name] ?? buyer[name])({ route: { params }, navigation: {} })); } };
+}
+
+test('Auction creation defaults ON, toggles OFF before publishing and excludes Fixed Price', () => {
+  for (const kind of ['auction', 'fixed']) {
+    const h = partialScreens({ batches: [{ id: 'b', quantityKg: 10, crop: 'Tomato' }] }, ['10', '20']);
+    let tree = h.render('CreateListingScreen', { batchId: 'b', kind });
+    const toggle = tree.find(n => n.type === 'Switch');
+    if (kind === 'auction') {
+      assert.equal(toggle?.props.value, true);
+      tree.find(n => n.props.title === 'Publish Auction')!.props.onPress();
+      assert.equal(h.calls[0].args[0].allowPartialSale, true);
+      toggle!.props.onValueChange(false);
+      tree = h.render('CreateListingScreen', { batchId: 'b', kind });
+      assert.ok(tree.some(n => n.props.children === 'Buyers must bid for the full auction quantity.'));
+      tree.find(n => n.props.title === 'Publish Auction')!.props.onPress();
+      assert.equal(h.calls[1].args[0].allowPartialSale, false);
+    } else {
+      assert.equal(toggle, undefined);
+      tree.find(n => n.props.title === 'Publish Fixed Price')!.props.onPress();
+      assert.equal('allowPartialSale' in h.calls[0].args[0], false);
+    }
+  }
+});
+
+test('Buyer full-lot quantity stays visible, ignores edits, follows refreshed data and submits full bids/revisions', () => {
+  for (const [kind, allowPartialSale] of [['auction', false], ['auction', true], ['fixed', undefined]] as const) {
+    const item = { id: 'a', kind, allowPartialSale, status: kind === 'auction' ? 'open' : 'active', remainingKg: 10, pricePerKg: 20, endsAt: '2099-01-01', batch: { crop: 'Tomato' } };
+    const h = partialScreens({ items: [item] }, ['4', '25', '30', 'Warehouse', '18', '73']);
+    let tree = h.render('BidFormScreen', { itemId: 'a' });
+    const field = tree.find(n => n.props.label === 'Quantity (KG)')!;
+    const locked = kind === 'auction' && allowPartialSale === false;
+    assert.equal(field.props.editable, !locked);
+    assert.equal(field.props.value, locked ? '10' : '4');
+    field.props.onChange('5');
+    tree = h.render('BidFormScreen', { itemId: 'a' });
+    assert.equal(tree.find(n => n.props.label === 'Quantity (KG)')!.props.value, locked ? '10' : '5');
+    tree.find(n => n.props.title === 'Submit')!.props.onPress();
+    assert.equal(h.calls[0].args[1].quantityKg, locked ? 10 : 5);
+    if (locked) {
+      item.remainingKg = 8;
+      tree = h.render('BidFormScreen', { itemId: 'a' });
+      assert.equal(tree.find(n => n.props.label === 'Quantity (KG)')!.props.value, '8');
+      tree.find(n => n.props.title === 'Submit')!.props.onPress();
+      assert.equal(h.calls[1].args[1].quantityKg, 8);
+      item.status = 'completed';
+      tree = h.render('BidFormScreen', { itemId: 'a' });
+      assert.equal(tree.find(n => n.props.title === 'Submit')!.props.disabled, true);
+    }
+  }
+});
+
+test('Farmer OFF acceptance has one full-lot action; ON and Fixed Price retain partial acceptance', () => {
+  for (const [kind, allowPartialSale] of [['auction', false], ['auction', true], ['fixed', undefined]] as const) {
+    const item = { id: 'a', kind, allowPartialSale, remainingKg: 10, endsAt: '2099-01-01', status: kind === 'auction' ? 'open' : 'active', batch: { quantityKg: 20 } };
+    const offer = { id: 'bid', itemId: 'a', kind, remainingKg: 10, status: kind === 'auction' ? 'active' : 'pending' };
+    const h = partialScreens({ items: [item], offers: [offer], profiles: [] }, ['2']);
+    const tree = h.render('OfferScreen', { offerId: 'bid' });
+    const full = kind === 'auction' && allowPartialSale === false;
+    assert.equal(tree.some(n => n.props.label?.startsWith('Accept quantity')), !full);
+    const button = tree.find(n => n.props.title === (full ? 'Accept Full Bid — 10 KG' : 'Accept Offer'))!;
+    assert.equal(button.props.disabled, false);
+    button.props.onPress();
+    assert.equal(h.calls[0].args[1].quantityKg, full ? 10 : 2);
+    assert.equal(tree.some(n => n.type === 'Switch'), false);
+  }
+});
+
+test('shared Field disables native editing and drops the change handler when read-only', () => {
+  const { Field } = load('src/components/farmer-sell/FarmerSellUI.tsx', {
+    'react-native': { Text: 'Text', View: 'View', TextInput: 'TextInput', Platform: { select: () => 'serif' }, StyleSheet: { create: (s: unknown) => s } },
+  });
+  const onChange = () => {};
+  for (const editable of [false, true]) {
+    const input = nodes(Field({ label: 'Quantity (KG)', value: '10', onChange, editable })).find(n => n.type === 'TextInput')!;
+    assert.equal(input.props.editable, editable);
+    assert.equal(input.props.onChangeText, editable ? onChange : undefined);
+    assert.equal(input.props.accessibilityState.disabled, !editable);
+  }
+});
 
 test('clean Buyer and Logistics screens display honest empty states and nullable Trust', () => {
   const data = { me: { id: 'account', role: 'buyer', name: 'Buyer', trustScore: null, completedTransactions: null }, items: [], offers: [], orders: [], jobs: [], profiles: [] };

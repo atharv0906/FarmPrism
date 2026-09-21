@@ -49,6 +49,10 @@ export function workspaceContractError(value: unknown): string | null {
   const error = check(value, { object: workspace }, 'workspace');
   if (error) return error;
   const data = value as TradingWorkspace;
+  for (let i = 0; i < data.items.length; i++) {
+    const item = data.items[i];
+    if (item.kind === 'auction' && typeof item.allowPartialSale !== 'boolean') return 'workspace.items[' + i + '].allowPartialSale';
+  }
   if (data.deliveryLocation !== undefined && data.deliveryLocation !== null) {
     return check(data.deliveryLocation, { object: { label: 'text', latitude: nullable('number'), longitude: nullable('number') } }, 'workspace.deliveryLocation');
   }

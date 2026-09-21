@@ -1,6 +1,6 @@
 // RPC response fields verified against existing public.demo_* functions.
 export type DeliveryInput = { label: string; latitude: number; longitude: number };
-export type CreateAuctionInput = { batchId: string; quantityKg: number; reservePricePerKg: number; durationHours: 6 | 12 | 24 };
+export type CreateAuctionInput = { batchId: string; quantityKg: number; reservePricePerKg: number; durationHours: 6 | 12 | 24; allowPartialSale: boolean };
 export type CreateFixedListingInput = { batchId: string; quantityKg: number; fixedPricePerKg: number };
 export type BidInput = { quantityKg: number; pricePerKg: number; advancePercent: number; delivery: DeliveryInput };
 export type PurchaseRequestInput = { quantityKg: number; advancePercent: number; delivery: DeliveryInput };

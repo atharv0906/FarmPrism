@@ -9,6 +9,10 @@ const n = (v: unknown): number => {
   }
   return Number(v);
 };
+const boolean = (value: unknown): boolean => {
+  if (typeof value !== 'boolean') throw new ApiError(503, 'DATA_INCOMPLETE', 'Trading data is incomplete. Please retry to load your workspace.');
+  return value;
+};
 const nullableNumber = (v: unknown): number | null => v == null ? null : n(v);
 
 // Prototype read aggregation only. Every returned private row is scoped to the actor.
@@ -43,7 +47,7 @@ export async function tradingWorkspace(accountId: string, role: Role): Promise<T
     return result;
   };
   const allItems: SellingItem[] = [
-    ...auctions.map(a => ({ id: a.id, kind: 'auction' as const, batch: batch(a.batch_id), offeredKg: n(a.offered_quantity_kg), remainingKg: n(a.remaining_quantity_kg),
+    ...auctions.map(a => ({ id: a.id, kind: 'auction' as const, allowPartialSale: boolean(a.allow_partial_sale), batch: batch(a.batch_id), offeredKg: n(a.offered_quantity_kg), remainingKg: n(a.remaining_quantity_kg),
       pricePerKg: n(a.reserve_price_per_kg), startsAt: a.starts_at, endsAt: a.ends_at, status: a.status })),
     ...listings.map(a => ({ id: a.id, kind: 'fixed' as const, batch: batch(a.batch_id), offeredKg: n(a.offered_quantity_kg), remainingKg: n(a.remaining_quantity_kg),
       pricePerKg: n(a.fixed_price_per_kg), startsAt: a.starts_at, endsAt: a.expires_at, status: a.status })),

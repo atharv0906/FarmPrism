@@ -48,14 +48,16 @@ export function BidFormScreen({ route, navigation }: Props<'BidForm'>) {
   const [editDelivery, setEditDelivery] = useState(false);
   const savedDelivery = state.data?.deliveryLocation;
   useEffect(() => { if (savedDelivery && !editDelivery) { setLabel(savedDelivery.label); setLatitude(savedDelivery.latitude?.toString() ?? ''); setLongitude(savedDelivery.longitude?.toString() ?? ''); } }, [savedDelivery?.label, savedDelivery?.latitude, savedDelivery?.longitude, editDelivery]);
-  const q = Number(quantity), p = Number(price), a = Number(advance), lat = Number(latitude), lon = Number(longitude);
+  const fullLot = item?.kind === 'auction' && item.allowPartialSale === false;
+  const q = fullLot ? item.remainingKg : Number(quantity), p = Number(price), a = Number(advance), lat = Number(latitude), lon = Number(longitude);
   const valid = item && (item.kind === 'auction' ? item.status === 'open' : ['active', 'partially_sold'].includes(item.status)) && Date.parse(item.endsAt) > Date.now() &&
     q > 0 && q <= item.remainingKg && Number.isFinite(q) && validAdvance(a) &&
     (item.kind === 'fixed' || (p >= item.pricePerKg && Number.isFinite(p))) && label.trim() && latitude.trim() && longitude.trim() &&
     Number.isFinite(lat) && lat >= -90 && lat <= 90 && Number.isFinite(lon) && lon >= -180 && lon <= 180;
   return <Page title={item?.kind === 'fixed' ? 'Purchase Request' : 'Place / Revise Bid'} hasData={!!state.data} loading={state.loading} error={state.error} mutationError={action.error} retry={() => void state.refresh()}>
     {item && <Card title={item.batch.crop}><Text style={ui.muted}>{item.remainingKg} KG available · {money(item.pricePerKg)}/KG {item.kind === 'fixed' ? '(locked fixed price)' : 'reserve'}</Text>
-      <Field label="Quantity (KG)" value={quantity} onChange={setQuantity} numeric />
+      <Field label="Quantity (KG)" value={fullLot ? String(item.remainingKg) : quantity} onChange={value => { if (!fullLot) setQuantity(value); }} editable={!fullLot} numeric />
+      {fullLot && <Text style={ui.muted}>Full lot required for this auction.</Text>}
       {item.kind === 'auction' && <Field label="Your price (₹/KG)" value={price} onChange={setPrice} numeric />}
       <Field label="Farmer advance (10–90%)" value={advance} onChange={setAdvance} numeric />
       <Card title="Delivery location"><Text style={ui.muted}>{label || 'Add your delivery address below.'}</Text>

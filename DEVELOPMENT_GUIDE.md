@@ -2,7 +2,7 @@
 
 ## Current architecture
 
-Current phase: [2.0.18 — prototype Buyer verification Admin portal](PHASE_2_0_18.md). No Phase 2.0.18 auction re-entry fix existed at the starting HEAD; this phase adds only the admin utility described below.
+Current phase: [2.0.19 — Auction Allow Partial Sale](PHASE_2_0_19.md). No Phase 2.0.18 auction re-entry fix existed at the starting HEAD; this phase adds only the admin utility described below.
 
 Phase 2.0.17 deploys and validates the database contracts for the unchanged Phase 2.0.16 application. React Native / Expo / TypeScript → Node/Express business API → Supabase. Mobile API integration, Buyer/Logistics screens, demo sessions, marketplace and delivery flows are implemented. Supabase remains the persisted source of truth, real-auth RLS boundary and host of existing transactional/demo RPCs. Node owns authorization and business/integration orchestration.
 
@@ -98,7 +98,7 @@ npm run test
 npm --prefix server run typecheck
 npm --prefix server run build
 npm --prefix server test
-npx expo export --platform android --output-dir .expo/admin-verification-validation
+npx expo export --platform android --output-dir .expo/partial-sale-toggle-validation
 git diff --check
 ```
 
@@ -151,3 +151,11 @@ Actor IDs come only from the session. INVALID_OTP and OTP_ATTEMPTS_EXCEEDED expo
 Node retains its auction preflight. Deployed auction and Fixed Price acceptance RPCs now check wall-clock deadlines after row locks. Workspace/marketplace and listing creation paths invoke expiry; no pg_cron extension or cron.job exists. Warnings require an invocation during the last hour, so exact delivery without reads is not guaranteed. No scheduler or push service was added.
 
 Use mocked/injected RPCs and market fetches for application tests; the explicit supabase/tests SQL validations require a transaction ending in ROLLBACK. Never exercise these commands on the retained Farmer2/Buyer1 scenario. Expo export and component tests are not device or live E2E verification. Market historyMany keeps one stored batch read and retains official observations if that read fails.
+
+## Phase 2.0.19 Auction partial-sale policy
+
+Every Auction has an immutable `Allow Partial Sale` setting selected by the Farmer before publishing. It defaults ON. When ON, existing partial-bid/partial-acceptance behavior applies. When OFF, Buyers must bid for the complete Auction lot and the Farmer may accept only the complete lot. Buyer quantity remains visible but non-editable. Fixed Price is unaffected.
+
+The scoped migration `20260921193152_phase_2_0_19_auction_partial_sale.sql` is deployed. Do not replay it. Existing Auctions default ON; published policy changes are rejected by a database trigger. Create, bid and accept RPCs retain service-role-only execution. Auction workspace DTOs require an explicit boolean; missing or malformed policies fail parsing.
+
+The starting Phase 2.0.18 application/database still blocks new bids on `partially_sold` Auctions. This pre-existing re-entry limitation is preserved, not represented as fixed. Existing eligible bid remainder can still be accepted before expiry. See PHASE_2_0_19.md for measured validation and limits.

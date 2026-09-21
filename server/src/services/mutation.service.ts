@@ -28,13 +28,14 @@ export const commands: Record<keyof MutationResults, Command> = {
   createAuction: {
     role: 'farmer', rpc: 'demo_create_auction',
     params: (actor, id, body) => {
-      const input = v.object(body ?? {}, ['batchId', 'quantityKg', 'reservePricePerKg', 'durationHours']);
+      const input = v.object(body ?? {}, ['batchId', 'quantityKg', 'reservePricePerKg', 'durationHours', 'allowPartialSale']);
       return {
         p_farmer_account_id: v.uuid(actor.accountId),
         p_batch_id: v.uuid(input.batchId),
         p_quantity_kg: v.positive(input.quantityKg),
         p_reserve_price_per_kg: v.positive(input.reservePricePerKg),
         p_duration_hours: v.duration(input.durationHours),
+        p_allow_partial_sale: input.allowPartialSale === undefined ? true : v.boolean(input.allowPartialSale),
       };
     },
   },

@@ -2,7 +2,7 @@
 
 ## Product and source of truth
 
-FarmPrism is an implemented agricultural marketplace prototype connecting farmers, buyers and logistics partners. Current phase: [2.0.18 — prototype Buyer verification Admin portal](PHASE_2_0_18.md). The current local Development working tree and latest explicit product decisions are authoritative. Phase files preserve historical implementation and validation records; they do not override current requirements.
+FarmPrism is an implemented agricultural marketplace prototype connecting farmers, buyers and logistics partners. Current phase: [2.0.19 — Auction Allow Partial Sale](PHASE_2_0_19.md). The current local Development working tree and latest explicit product decisions are authoritative. Phase files preserve historical implementation and validation records; they do not override current requirements.
 
 The current screen-behavior/design brief is [the designer screen pack](assets/FarmPrism_Designer_Screen_MDs/INDEX.md), with [master flow](assets/FarmPrism_Designer_Screen_MDs/MASTER_FLOW.md). Preserve this pack. Approved Farmer Home and My Farm visuals remain frozen. Do not infer that every designer brief represents an implemented screen.
 
@@ -143,3 +143,11 @@ The database owner has already revoked anon/authenticated EXECUTE for the five r
 - On an expiry invocation during the last hour, actionable unaccepted bids trigger one idempotent Farmer in-app warning; auctions with no actionable bids get none. No database scheduler was found; exact one-hour delivery is not guaranteed. Expiry with unsold quantity triggers one in-app expiry notification. Deployed demo_expire_marketplace owns creation/deduplication; mobile supports auction_expiring and auction_expired with entity_type = auction, entity_key = auction ID, data.auctionId = auction ID. No push infrastructure.
 - Quality declaration consistency covers produce entering the selling/listing workflow, not all stored inventory. Unlisted grade-null batches are not a trust failure; A/B/C declarations have equal trust meaning. Nullable trust stays backend-controlled and off Farmer Home.
 - Deployed and rollback-tested: demo_generate_pickup_otp, demo_verify_pickup_otp_v2, demo_expire_marketplace and demo_recalculate_trust. Auction and Fixed Price acceptance check clock_timestamp() after row locks; active/partially_sold listings expire with unaccepted request remainder. The old demo_confirm_pickup RPC is denied to all API roles and its owner-call stub raises PICKUP_OTP_REQUIRED. See PHASE_2_0_17.md for security and validation limits.
+
+## Phase 2.0.19 Auction partial-sale policy
+
+Every Auction has an immutable `Allow Partial Sale` setting selected by the Farmer before publishing. It defaults ON. When ON, existing partial-bid/partial-acceptance behavior applies. When OFF, Buyers must bid for the complete Auction lot and the Farmer may accept only the complete lot. Buyer quantity remains visible but non-editable. Fixed Price is unaffected.
+
+The scoped migration `20260921193152_phase_2_0_19_auction_partial_sale.sql` is deployed. Do not replay it. Existing Auctions default ON; published policy changes are rejected by a database trigger. Create, bid and accept RPCs retain service-role-only execution. Auction workspace DTOs require an explicit boolean; missing or malformed policies fail parsing.
+
+The starting Phase 2.0.18 application/database still blocks new bids on `partially_sold` Auctions. This pre-existing re-entry limitation is preserved, not represented as fixed. Existing eligible bid remainder can still be accepted before expiry. See PHASE_2_0_19.md for measured validation and limits.
