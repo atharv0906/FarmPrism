@@ -1,0 +1,102 @@
+# FarmPrism
+
+FarmPrism is an agricultural marketplace prototype with implemented Farmer, Buyer and Logistics workflows. React Native / Expo communicates with the Node/Express TypeScript business API and Supabase, the persisted source of truth and transactional RPC boundary.
+
+Current phase: [2.0.19 — Auction Allow Partial Sale](PHASE_2_0_19.md). The Phase 2.0.17 deployed Pickup OTP, atomic marketplace deadlines, expiry notifications and declaration-scope trust contracts remain unchanged. Device E2E remains unverified for this phase. The preceding live demo completed both Auction and Fixed Price through delivery OTP, final simulated payments, feedback, trust and inventory reconciliation: FP-11332B8B3E and FP-25A03D7831. Phase 2.0.11 fixes logout, makes government market configuration explicit, adds bounded contextual price adjustments and provides a guarded reset CLI.
+
+## Buyer verification Admin portal
+
+The FarmPrism Admin portal is a prototype-only browser tool for Buyer verification. It is not a fourth application role. Buyer verification updates the existing backend verification status, and marketplace participation remains restricted to verified Buyers.
+
+Run the existing server and open http://localhost:3000/admin. Configure ADMIN_USERNAME=admin and ADMIN_PASSWORD=admin in private server/.env; these are also the non-production defaults. **admin/admin is prototype-only and is not suitable for production.** Credentials are checked by Node. Separate in-memory admin sessions expire after eight hours, are revoked on logout and disappear on server restart. The browser stores only the temporary token in sessionStorage.
+
+The portal reads demo_buyer_profiles joined to Buyer-role demo_accounts and updates only verification_status and updated_at. It supports search, status filters, confirmation and retry. Existing verified Buyers stay verified; no demo data or schema changes are required. See the phase report for mocked versus live validation limits.
+
+## Implemented prototype
+
+- Exactly three permanent roles: farmer, buyer, logistics. One login has one role; sign out to change accounts. FPO is Coming Soon only, not a persisted role or Buyer subtype.
+- Nine fixed demo accounts, any six-digit numeric development OTP, server-issued demo sessions, SecureStore persistence and revoked-token rejection.
+- Farmer Home, My Farm, Sell, Insights, Profile, Notifications and secondary selling/transaction screens. Approved Home/My Farm visuals remain frozen; Farmer Home has no Trust Score.
+- Buyer Home, Market, My Bids/Requests, Orders, Profile and transaction screens; Logistics Home, Jobs, Active, History and Profile.
+- Tomato, Onion and Potato only. KG internally; 100 KG = 1 Quintal.
+- Auction (6/12/24 hours, default 24), partial quantities, bid revision/withdrawal and Farmer choice of eligible offer; no auto-highest winner. Fixed Price has a locked Farmer price, 24-hour expiry and quantity/advance requests.
+- Farmer Declared A/B/C quality. Grade C is not untrustworthy; quality declaration consistency applies to produce entering the selling/listing workflow. Unlisted grade-null inventory does not count as a declaration failure.
+- Accepted Buyer/Farmer advance of 10–90%, simulated payments, atomic first-eligible logistics claim, fee agreement, 40%/60% logistics payments, ₹0 platform logistics fee.
+- Farmer-generated Pickup OTP verified by assigned Logistics, real device GPS and labelled development simulation, delivery OTP verification as delivery confirmation, final balances, feedback, backend-controlled trust and notifications.
+
+## Authoritative Farmer reads and onboarding
+
+Home and My Farm now use authenticated Farmer-only Node summaries backed by current physical inventory, profiles, orders and notifications. The mobile snapshot RPC service is removed; approved visuals and mappers are unchanged. My Farm secondary screens and authenticated Add Crop, Add Produce and Edit Farm writes are implemented. Clearing optional farm area saves null; omitted coordinates are preserved.
+
+Mock login uses the account returned by POST /api/demo/session; saved sessions restore through GET /api/demo/me. First login requires explicit confirmation of the assigned role. Remembered roles skip selection. Farmer Submit saves a per-account local onboarding completion marker; returning completed Farmers enter Dashboard. Logout preserves role/onboarding preferences. These local UX markers do not write server profiles or store secrets.
+
+The database owner has revoked anon/authenticated EXECUTE on the five legacy mobile RPCs, retaining service_role. See [Phase 2.0.12](PHASE_2_0_12.md) for signatures and validation.
+
+## Market and price insight
+
+The Node data.gov.in / AGMARKNET adapter normalizes INR/Quintal observations to INR/KG. Official provenance requires normalized official observations; DB/demo fallback remains labelled honestly. Missing market credentials do not block the server.
+
+Market/statistical inputs dominate a deterministic recommendation. Farmer-declared grade, demand and lot size contribute at most ±3% combined; this is not a trained AI or a guaranteed selling price. Optional AI supplies explanation only and cannot override numeric prices.
+
+Farmer sees Current / Min / Max / Suggested / Next 7 Days, primarily in ₹/Quintal, plus a subtle market source label. Raw history, confidence and statistical diagnostics remain internal.
+
+## Local setup
+
+Install root and server dependencies separately, then create private .env files from the tracked examples. Preserve existing local private values.
+
+```powershell
+npm install
+npm --prefix server install
+npm run dev
+```
+
+In another terminal:
+
+```powershell
+npm run dev:mobile
+```
+
+Health: GET http://localhost:3000/health. Android emulator API URL: http://10.0.2.2:3000. See [the development guide](DEVELOPMENT_GUIDE.md) for configuration and validation.
+
+Mobile .env contains public Supabase values and EXPO_PUBLIC_API_URL only. The publishable key takes priority with legacy anon-key fallback. Service-role, MARKET_* and AI_PROVIDER_* credentials belong only in server/.env. Never log keys, raw tokens or OTPs.
+
+## Deliberate demo reset
+
+The development CLI calls only the existing service-role-only demo_reset_prototype_data RPC. It rejects production and requires exact confirmation:
+
+```powershell
+npm --prefix server run reset:demo -- RESET_FARMPRISM_DEMO
+```
+
+This clears demo sessions and transaction evidence and restores the RPC's defined scenario. Run only when intentionally discarding the current demo runtime state. It was not executed during Phase 2.0.11. No reset HTTP/mobile UI exists.
+
+## Scope and documentation
+
+Disputes have backend foundation only, without UI. Real SMS, production payments, FPO implementation, genuine camera/video AI quality, blockchain and production deployment/security hardening remain future work. Do not represent these as implemented or add fake chain hashes/quality certification.
+
+- [Product requirements and demo account roster](PROJECT_REQUIREMENTS.md)
+- [Development guide](DEVELOPMENT_GUIDE.md)
+- [Agent rules](AGENTS.md)
+- [Current designer screen brief](assets/FarmPrism_Designer_Screen_MDs/INDEX.md)
+- [Designer master flow](assets/FarmPrism_Designer_Screen_MDs/MASTER_FLOW.md)
+- [Phase 2.0.11 validation report](PHASE_2_0_11.md)
+
+Preserve the current Development tree and approved visuals. The authorized database migration is deployed; preserve it and avoid unrelated database changes. Do not commit or push.
+
+## Phase 2.0.17 deployed handoff and expiry contract
+
+- Pickup: Buyer pays 40% logistics advance; the order Farmer generates/regenerates a six-digit Pickup OTP only while order = logistics_advance_paid and assigned job = advance_paid. Only assigned Logistics verifies it; verification itself sets order/job = pickup_confirmed and enables tracking. OTP display is component memory only. Delivery OTP remains the delivery confirmation step.
+- The deployed pickup RPCs own hashed storage, 15-minute expiry, five wrong attempts, regeneration resetting attempts, ownership/state validation and event/notification writes. No SMS or extra pickup confirmation step.
+- Accepted allocation is already deducted: a 650 KG batch with a 200 KG order keeps its 450 KG available source remainder during pickup. Only the order allocation travels; mobile performs no subtraction/status write.
+- Auction Option A: 6/12/24 hours, default 24. Open and partially_sold expire at ends_at; unaccepted active/partially-accepted bid remainder goes to history and cannot be accepted. Accepted orders remain valid, no auto-award, unsold remainder is relistable.
+- On an expiry invocation during the last hour, actionable unaccepted bids trigger one idempotent Farmer in-app warning; auctions with no actionable bids get none. No database scheduler was found; exact one-hour delivery is not guaranteed. Expiry with unsold quantity triggers one in-app expiry notification. Deployed demo_expire_marketplace owns creation/deduplication; mobile supports auction_expiring and auction_expired with entity_type = auction, entity_key = auction ID, data.auctionId = auction ID. No push infrastructure.
+- Quality declaration consistency covers produce entering the selling/listing workflow, not all stored inventory. Unlisted grade-null batches are not a trust failure; A/B/C declarations have equal trust meaning. Nullable trust stays backend-controlled and off Farmer Home.
+- Deployed and rollback-tested: demo_generate_pickup_otp, demo_verify_pickup_otp_v2, demo_expire_marketplace and demo_recalculate_trust. Auction and Fixed Price acceptance check clock_timestamp() after row locks; active/partially_sold listings expire with unaccepted request remainder. The old demo_confirm_pickup RPC is denied to all API roles and its owner-call stub raises PICKUP_OTP_REQUIRED. See PHASE_2_0_17.md for security and validation limits.
+
+## Phase 2.0.19 Auction partial-sale policy
+
+Every Auction has an immutable `Allow Partial Sale` setting selected by the Farmer before publishing. It defaults ON. When ON, existing partial-bid/partial-acceptance behavior applies. When OFF, Buyers must bid for the complete Auction lot and the Farmer may accept only the complete lot. Buyer quantity remains visible but non-editable. Fixed Price is unaffected.
+
+The scoped migration `20260921193152_phase_2_0_19_auction_partial_sale.sql` is deployed. Do not replay it. Existing Auctions default ON; published policy changes are rejected by a database trigger. Create, bid and accept RPCs retain service-role-only execution. Auction workspace DTOs require an explicit boolean; missing or malformed policies fail parsing.
+
+The starting Phase 2.0.18 application/database still blocks new bids on `partially_sold` Auctions. This pre-existing re-entry limitation is preserved, not represented as fixed. Existing eligible bid remainder can still be accepted before expiry. See PHASE_2_0_19.md for measured validation and limits.

@@ -1,0 +1,85 @@
+# FarmPrism — Designer Screen Specification Pack
+
+Short per-screen briefs for UI/UX design. Latest product decisions are reflected here.
+
+## Global Rules
+- Android-first; approved Farmer Home/My Farm are the visual master.
+- Persisted roles: Farmer, Buyer, Logistics. FPO = Coming Soon only.
+- Prototype crops: Tomato, Onion, Potato.
+- Farmer nav: Home / My Farm / Sell / Insights / Profile.
+- Buyer nav: Home / Market / My Bids / Orders / Profile.
+- Logistics nav: Home / Jobs / Active / History / Profile.
+- Internal quantity = KG; display Quintals where useful.
+- Quality = Farmer Declared A/B/C; never “AI Verified”.
+- Farmer Price Insight = Current / Min / Max / Suggested / Next 7 Days only.
+- Blockchain, production payment gateway, production SMS OTP and production AI quality are future scope.
+
+## Files
+- `00_Common_Auth/01_Splash.md` — Splash Screen
+- `00_Common_Auth/02_Language_Selection.md` — Language Selection
+- `00_Common_Auth/03_Get_Started.md` — Get Started
+- `00_Common_Auth/04_Login_OTP.md` — Login + OTP
+- `00_Common_Auth/05_Role_Selection.md` — Role Selection
+- `00_Common_Auth/06_Sign_Up.md` — Sign Up / Registration
+- `01_Farmer_Onboarding/01_Personal_Details.md` — Farmer Personal Details
+- `01_Farmer_Onboarding/02_Farm_Details.md` — Farm Details
+- `01_Farmer_Onboarding/03_Review_Profile.md` — Review Farmer Profile
+- `01_Farmer_Onboarding/04_Profile_Submitted.md` — Profile Submitted
+- `02_Farmer_Core/01_Farmer_Home.md` — Farmer Home
+- `02_Farmer_Core/02_My_Farm.md` — My Farm
+- `02_Farmer_Core/03_My_Crops.md` — My Crops
+- `02_Farmer_Core/04_Crop_Details.md` — Crop Details
+- `02_Farmer_Core/05_Add_Edit_Crop.md` — Add / Edit Crop
+- `02_Farmer_Core/06_Available_Produce.md` — Available Produce
+- `02_Farmer_Core/07_Batch_Details.md` — Physical Batch Details
+- `02_Farmer_Core/08_Farm_Activities.md` — Farm Activities
+- `02_Farmer_Core/09_Edit_Farm.md` — Edit Farm
+- `02_Farmer_Core/10_Farm_Location.md` — Farm Location / Map
+- `03_Farmer_Sell/01_Sell_Home.md` — Sell Home
+- `03_Farmer_Sell/02_Select_Batch.md` — Select Batch
+- `03_Farmer_Sell/03_Farmer_Declared_Quality.md` — Farmer Declared Quality
+- `03_Farmer_Sell/04_Price_Insight.md` — Price Insight
+- `03_Farmer_Sell/05_Choose_Selling_Method.md` — Choose Selling Method
+- `03_Farmer_Sell/06_Create_Auction.md` — Create Auction
+- `03_Farmer_Sell/07_Create_Fixed_Price.md` — Create Fixed Price
+- `03_Farmer_Sell/08_Auction_Details.md` — Auction Details
+- `03_Farmer_Sell/09_Fixed_Listing_Details.md` — Fixed Price Listing Details
+- `03_Farmer_Sell/10_Buyer_Offers.md` — Buyer Offers
+- `03_Farmer_Sell/11_Offer_Details.md` — Offer Details
+- `03_Farmer_Sell/12_Purchase_Requests.md` — Purchase Requests
+- `03_Farmer_Sell/13_Purchase_Request_Details.md` — Purchase Request Details
+- `03_Farmer_Sell/14_Selling_History.md` — Selling History
+- `03_Farmer_Sell/15_Farmer_Orders.md` — Farmer Orders
+- `04_Farmer_Insights_Profile/01_Insights_Home.md` — Farmer Insights
+- `04_Farmer_Insights_Profile/02_Market_Prices.md` — Market Prices
+- `04_Farmer_Insights_Profile/03_Crop_Market_Details.md` — Crop Market Details
+- `04_Farmer_Insights_Profile/04_Farmer_Profile.md` — Farmer Profile
+- `04_Farmer_Insights_Profile/05_Farmer_Notifications.md` — Farmer Notifications
+- `05_Buyer/01_Buyer_Home.md` — Buyer Home
+- `05_Buyer/02_Buyer_Market.md` — Buyer Market
+- `05_Buyer/03_Auction_Listing_Details.md` — Buyer Auction Details
+- `05_Buyer/04_Place_Revise_Bid.md` — Place / Revise Bid
+- `05_Buyer/05_Fixed_Listing_Details.md` — Buyer Fixed Price Details
+- `05_Buyer/06_Request_Purchase.md` — Request Purchase
+- `05_Buyer/07_My_Bids_Requests.md` — My Bids / Requests
+- `05_Buyer/08_Buyer_Orders.md` — Buyer Orders
+- `05_Buyer/09_Buyer_Order_Details.md` — Buyer Order Details
+- `05_Buyer/10_Buyer_Delivery_OTP.md` — Buyer Delivery OTP
+- `05_Buyer/11_Buyer_Profile.md` — Buyer Profile
+- `05_Buyer/12_Buyer_Notifications.md` — Buyer Notifications
+- `06_Logistics/01_Logistics_Home.md` — Logistics Home
+- `06_Logistics/02_Available_Jobs.md` — Available Jobs
+- `06_Logistics/03_Job_Details.md` — Logistics Job Details
+- `06_Logistics/04_Propose_Logistics_Fee.md` — Propose Logistics Fee
+- `06_Logistics/05_Active_Delivery.md` — Active Delivery
+- `06_Logistics/06_Tracking.md` — Delivery Tracking
+- `06_Logistics/07_Enter_Delivery_OTP.md` — Enter Delivery OTP
+- `06_Logistics/08_Logistics_History.md` — Logistics History
+- `06_Logistics/09_Logistics_Profile.md` — Logistics Profile
+- `06_Logistics/10_Logistics_Notifications.md` — Logistics Notifications
+- `07_Shared_Transaction/01_Shared_Order_Details.md` — Shared Order Details
+- `07_Shared_Transaction/02_Public_Transaction_Profile.md` — Public Transaction Profile
+- `07_Shared_Transaction/03_Feedback_Rating.md` — Feedback / Rating
+- `07_Shared_Transaction/04_Payment_Action.md` — Simulated Payment Action
+- `07_Shared_Transaction/05_Tracking_View_Farmer_Buyer.md` — Tracking View — Farmer / Buyer
+- `07_Shared_Transaction/06_Transaction_Notifications.md` — Shared Notification Pattern

@@ -1,0 +1,61 @@
+{
+  "farmer": {
+    "id": "farmer_demo_001",
+    "name": "Ramesh Patil"
+  },
+  "listings": [
+    {
+      "id": "listing_tomato_001",
+      "cropName": "Tomato",
+      "quantity": 10,
+      "unit": "Quintals",
+      "status": "active",
+      "offers": [
+        {
+          "buyerName": "Verified Buyer A",
+          "verified": true,
+          "offeredPrice": 2550
+        },
+        {
+          "buyerName": "Verified Buyer B",
+          "verified": true,
+          "offeredPrice": 2500
+        }
+      ]
+    },
+    {
+      "id": "listing_onion_001",
+      "cropName": "Onion",
+      "quantity": 8,
+      "unit": "Quintals",
+      "status": "pending",
+      "offers": [
+        {
+          "buyerName": "Verified Buyer C",
+          "verified": true,
+          "offeredPrice": 1900
+        }
+      ]
+    }
+  ],
+  "marketPrices": [
+    {
+      "cropName": "Tomato",
+      "price": 2400,
+      "unit": "Quintal",
+      "changePct": 3.1
+    },
+    {
+      "cropName": "Onion",
+      "price": 1800,
+      "unit": "Quintal",
+      "changePct": 2.5
+    },
+    {
+      "cropName": "Potato",
+      "price": 2200,
+      "unit": "Quintal",
+      "changePct": 1.8
+    }
+  ]
+}

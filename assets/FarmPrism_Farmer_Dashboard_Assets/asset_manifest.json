@@ -1,0 +1,191 @@
+[
+  {
+    "file": "farmer_dashboard_banner_landscape.png",
+    "width": 2172,
+    "height": 724,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_banner_sprout.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_farm_icon.png",
+    "width": 512,
+    "height": 512,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_hero.png",
+    "width": 1122,
+    "height": 1402,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_hero_background.png",
+    "width": 1774,
+    "height": 887,
+    "mode": "RGB",
+    "transparent": false
+  },
+  {
+    "file": "farmer_dashboard_hero_callout.png",
+    "width": 1619,
+    "height": 971,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_left_leaves.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_listing_icon.png",
+    "width": 512,
+    "height": 512,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_logo.png",
+    "width": 2172,
+    "height": 724,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_market_icon.png",
+    "width": 512,
+    "height": 512,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_nav_home.png",
+    "width": 512,
+    "height": 512,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_nav_insights.png",
+    "width": 512,
+    "height": 512,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_nav_myfarm.png",
+    "width": 512,
+    "height": 512,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_nav_profile.png",
+    "width": 512,
+    "height": 512,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_nav_sell.png",
+    "width": 512,
+    "height": 512,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_notification_icon.png",
+    "width": 512,
+    "height": 512,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_offer_icon.png",
+    "width": 512,
+    "height": 512,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_onion.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_opportunity_icon.png",
+    "width": 512,
+    "height": 512,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_potato.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_quick_action_buyers.png",
+    "width": 512,
+    "height": 512,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_quick_action_orders.png",
+    "width": 512,
+    "height": 512,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_quick_action_plus.png",
+    "width": 512,
+    "height": 512,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_reference_1080x2340.png",
+    "width": 1080,
+    "height": 2340,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_right_leaves.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_rupee_icon.png",
+    "width": 512,
+    "height": 512,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "farmer_dashboard_tomato.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "transparent": true
+  }
+]

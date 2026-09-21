@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FarmPrism Admin · Buyer Verification</title>
+  <link rel="stylesheet" href="/admin/admin.css"><script src="/admin/admin.js" defer></script>
+</head>
+<body>
+  <main>
+    <section id="login" class="login-wrap">
+      <div class="login-card">
+        <div class="brand"><span class="brand-mark" aria-hidden="true">F</span>FarmPrism</div>
+        <p class="eyebrow">A connected agricultural marketplace</p>
+        <h1>Admin Portal</h1><p class="subtitle">Buyer Verification</p>
+        <form id="login-form">
+          <label for="username">Username</label><input id="username" name="username" autocomplete="username" required maxlength="128">
+          <label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="256">
+          <p id="login-error" class="error" role="alert"></p>
+          <button id="sign-in" type="submit">Sign In</button>
+        </form>
+        <p class="footnote">Prototype administration · Authorized access only</p>
+      </div>
+    </section>
+    <section id="dashboard" hidden>
+      <header><div class="brand"><span class="brand-mark" aria-hidden="true">F</span><div>FarmPrism Admin<p class="header-subtitle">Buyer Verification</p></div></div><button id="logout" class="secondary">Logout</button></header>
+      <div class="content">
+        <div class="page-heading"><div><p class="eyebrow">Marketplace access</p><h1>Buyer verification</h1><p class="subtitle">Review buyers and manage their verification status.</p></div><span class="prototype">Prototype portal</span></div>
+        <div id="summary" class="summary" aria-label="Buyer summary"></div>
+        <p id="notice" role="status" aria-live="polite"></p>
+        <section class="panel" aria-label="Buyers">
+          <div class="toolbar"><div><label for="search">Search buyer</label><input id="search" type="search" placeholder="Name, business or phone"></div><div><label for="status">Verification status</label><select id="status"><option value="all">All</option><option value="pending">Pending</option><option value="verified">Verified</option><option value="failed">Failed</option></select></div><button id="refresh" class="secondary">Refresh</button></div>
+          <div id="load-state" class="state" role="status"></div>
+          <div id="load-error" class="state" hidden><p class="error" id="load-error-text" role="alert"></p><button id="retry" class="secondary">Retry</button></div>
+          <div id="table-wrap" class="table-wrap" hidden><table><caption class="sr-only">Buyer verification records</caption><thead><tr><th>Buyer Name</th><th>Phone</th><th>Buyer Type</th><th>Business Name</th><th>Verification Status</th><th>Last Updated</th><th>Action</th></tr></thead><tbody id="buyers"></tbody></table></div>
+        </section>
+        <p class="footnote">Verification controls access to eligible marketplace actions. Other Buyer details remain unchanged.</p>
+      </div>
+    </section>
+  </main>
+  <dialog id="confirmation" aria-labelledby="confirm-title"><h2 id="confirm-title">Verify this buyer?</h2><p id="confirm-buyer"></p><p class="subtitle">This buyer will be marked as verified.</p><p id="confirm-error" class="error" role="alert"></p><div class="dialog-actions"><button id="cancel" class="secondary">Cancel</button><button id="verify">Verify</button></div></dialog>
+</body>
+</html>

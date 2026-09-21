@@ -1,0 +1,65 @@
+[
+  {
+    "file": "login_background_farm_1080x2340.png",
+    "width": 1080,
+    "height": 2340,
+    "mode": "RGB",
+    "transparent": false
+  },
+  {
+    "file": "login_center_leaf_divider.png",
+    "width": 2172,
+    "height": 724,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "login_farmprism_logo.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "login_quote_better_farmers.png",
+    "width": 1086,
+    "height": 1448,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "login_reference_1080x2340.png",
+    "width": 1080,
+    "height": 2340,
+    "mode": "RGB",
+    "transparent": false
+  },
+  {
+    "file": "login_secure_leaf_sprig.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "login_secure_shield.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "login_top_left_leaves.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "transparent": true
+  },
+  {
+    "file": "login_top_right_leaves.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "transparent": true
+  }
+]
