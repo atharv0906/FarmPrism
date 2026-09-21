@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { JsxEmit, ModuleKind, transpileModule } from 'typescript';
 import * as listingState from '../src/services/api/listingState';
+import { validListing } from '../src/services/api/trading.validation';
 import { ApiError } from '../src/services/api/api.client';
 const require = createRequire(import.meta.url);
 function load(file: string, deps: Record<string, any>) {
@@ -62,6 +63,7 @@ function harness(data = workspace()) {
     '../../hooks/useAuth': { useAuth: () => ({ demoApiToken: 'mock-session' }) },
     '../../services/api/mutation.client': { marketplaceMutations: mutations },
     '../../services/api/api.client': { ApiError },
+    '../../services/api/trading.validation': { validListing },
     '../../services/api/trading.client': { tradingClient: { markRead: async (id: string) => calls.push(['read', id]) } },
     '../../components/farmer-dashboard/dashboardAssets': { dashboardAssets: {} },
     '../../components/farmprism-shell/RoleUI': ui, '../../components/farmer-sell/FarmerSellUI': ui,
@@ -76,6 +78,41 @@ function harness(data = workspace()) {
     return tree;
   }, profile: shared.ProfileCard };
 }
+
+test('selling and shared order text hides internal batch codes while preserving crop and order references', () => {
+  // Expand local cards and inspect only displayed text/labels, not internal data props or keys.
+  const visible = (v: any): string => Array.isArray(v) ? v.map(visible).join(' ') : v?.props
+    ? typeof v.type === 'function' ? visible(v.type(v.props))
+      : [v.props.title, v.props.label, v.props.accessibilityLabel, visible(v.props.children)].filter(Boolean).join(' ')
+    : typeof v === 'string' || typeof v === 'number' ? String(v) : '';
+  for (const role of ['farmer', 'buyer', 'logistics']) {
+    const data = workspace(role);
+    data.batches[0].code = 'FPB-32994472AD06422FA45D782389B5DA83';
+    data.orders[0].code = 'FP-ORDER-123';
+    const h = harness(data);
+    const rendered = visible(h.render('OrderScreen'));
+    assert.doesNotMatch(rendered, /FPB-/);
+    assert.match(rendered, /Onion/);
+    assert.match(rendered, /FP-ORDER-123/);
+  }
+  for (const kind of ['auction', 'fixed']) {
+    const data = workspace();
+    data.batches[0].code = 'FPB-32994472AD06422FA45D782389B5DA83';
+    const h = harness(data);
+    for (const name of ['SelectBatchScreen', 'QualityScreen', 'CreateListingScreen']) {
+      const rendered = visible(h.render(name, { batchId: 'batch', kind }));
+      assert.doesNotMatch(rendered, /FPB-/, name);
+      assert.match(rendered, /Onion/, name);
+    }
+    data.items = [{ id: 'listing', batch: data.batches[0], kind, status: kind === 'auction' ? 'open' : 'active', endsAt: future, remainingKg: 100, pricePerKg: 25 }];
+    for (const name of ['SellHomeScreen', 'ItemScreen']) {
+      const rendered = visible(h.render(name, { itemId: 'listing' }));
+      assert.doesNotMatch(rendered, /FPB-/, name);
+      assert.match(rendered, /Onion/, name);
+      assert.match(rendered, kind === 'auction' ? /AUCTION/ : /FIXED PRICE/, name);
+    }
+  }
+});
 
 test('Farmer pickup generation, selectable expiry and regeneration stay in component memory and hide after pickup', async () => {
   const h = harness(), original = JSON.stringify(h.data.batches);

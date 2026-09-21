@@ -54,7 +54,23 @@ test('Add Produce offers only current crops and locks the selected crop from Cro
 test('Available Produce renders sellable batches only and canonical Sell selection', () => {
   const h = harness(); const tree = h.render('AvailableProduceScreen');
   assert.equal(nodes(tree).filter(n => n.props.batch).length, 1);
-  button(tree, 'Sell available').props.onPress(); assert.deepEqual(h.calls[0], ['Sell', { screen: 'SelectBatch', params: { crop: 'Tomato' } }]);
+  button(tree, 'Sell Tomato').props.onPress(); assert.deepEqual(h.calls[0], ['Sell', { screen: 'SelectBatch', params: { crop: 'Tomato' } }]);
+});
+
+test('farm batch cards, details and sell buttons display crops without internal batch codes', () => {
+  const data = farm();
+  data.batches.forEach(b => { b.batchCode = 'FPB-32994472AD06422FA45D782389B5DA83'; });
+  const h = harness(data);
+  const visible = (v: any): string => Array.isArray(v) ? v.map(visible).join(' ') : v?.props
+    ? typeof v.type === 'function' ? visible(v.type(v.props))
+      : [v.props.title, v.props.label, v.props.accessibilityLabel, visible(v.props.children)].filter(Boolean).join(' ')
+    : typeof v === 'string' || typeof v === 'number' ? String(v) : '';
+  for (const name of ['AvailableProduceScreen', 'CropBatchesScreen', 'BatchDetailsScreen']) {
+    const rendered = visible(h.render(name, { batchId: 'available', cropKey: 'tomato' }));
+    assert.doesNotMatch(rendered, /FPB-/, name);
+    assert.match(rendered, /Tomato/, name);
+    assert.match(rendered, /100\s+KG/, name);
+  }
 });
 test('Crop Details uses canonical Sell and Market routes; unavailable crop directs Add Crop', () => {
   const h = harness(); const tree = h.render('CropDetailsScreen', { cropKey: 'tomato' });

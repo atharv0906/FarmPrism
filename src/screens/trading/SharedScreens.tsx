@@ -63,7 +63,7 @@ export function OrderScreen({ route, navigation }: Props<'Order'>) {
   const participants = data?.profiles.filter(p => p.id !== data.me.id && [order?.farmerId, order?.buyerId, job?.logisticsId].includes(p.id)) ?? [];
   return <TradingPage title={order?.code ?? 'Order Details'} hasData={!!state.data} loading={state.loading} error={state.error} mutationError={action.error} retry={() => void state.refresh()}>
     {order ? <>
-      <Card title={order.batch.crop + ' · ' + order.batch.code}><Text style={ui.muted}>{order.quantityKg} KG · {money(order.pricePerKg)}/KG · Total {money(order.total)}</Text>
+      <Card title={order.batch.crop}><Text style={ui.muted}>{order.quantityKg} KG · {money(order.pricePerKg)}/KG · Total {money(order.total)}</Text>
         <Text style={ui.muted}>Farmer advance: {order.advancePercent}% · {order.status}</Text><Text style={ui.muted}>Logistics: {job?.status ?? 'Not assigned'}</Text>
         <Text style={ui.muted}>Logistics fee: {money(job?.fee)} · {job?.feeStatus ?? 'No proposal'}</Text>
         <Badge>{order.status.replaceAll('_', ' ')}</Badge>
