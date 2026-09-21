@@ -2,6 +2,8 @@
 
 ## Current architecture
 
+Current phase: [2.0.18 — prototype Buyer verification Admin portal](PHASE_2_0_18.md). No Phase 2.0.18 auction re-entry fix existed at the starting HEAD; this phase adds only the admin utility described below.
+
 Phase 2.0.17 deploys and validates the database contracts for the unchanged Phase 2.0.16 application. React Native / Expo / TypeScript → Node/Express business API → Supabase. Mobile API integration, Buyer/Logistics screens, demo sessions, marketplace and delivery flows are implemented. Supabase remains the persisted source of truth, real-auth RLS boundary and host of existing transactional/demo RPCs. Node owns authorization and business/integration orchestration.
 
 The current local Development tree is authoritative. Do not reset, revert, checkout, stash, create a branch, commit or push during this phase. Preserve existing user edits and assets. Approved Farmer Home/My Farm are visually frozen; do not broadly redesign Buyer/Logistics. Current screen brief: assets/FarmPrism_Designer_Screen_MDs/INDEX.md and MASTER_FLOW.md.
@@ -54,6 +56,16 @@ The Android emulator reaches the host at EXPO_PUBLIC_API_URL=http://10.0.2.2:300
 
 ## Auth and data boundaries
 
+The FarmPrism Admin portal is a prototype-only browser tool for Buyer verification. It is not a fourth application role. Buyer verification updates the existing backend verification status, and marketplace participation remains restricted to verified Buyers.
+
+Open http://localhost:3000/admin with the existing Node server running. Configure ADMIN_USERNAME=admin and ADMIN_PASSWORD=admin in server/.env; only these two missing entries were appended for this phase, preserving other private values. Matching non-production defaults and server/.env.example entries are provided. admin/admin is prototype-only and is not suitable for production. Production has no implicit credential defaults; this does not make the portal production-ready.
+
+POST /api/admin/login returns a random temporary token and expiresAt. Use Authorization: Bearer with that token for GET /api/admin/buyers?status=all|pending|verified|failed, POST /api/admin/buyers/:accountId/verify and POST /api/admin/logout. Credentials are checked on Node with fixed-length hash comparisons. Session hashes/expiry live only in process memory for eight hours; restart revokes all sessions. Expired sessions are pruned and the map is bounded. No mobile demo-session entries are created. sessionStorage contains only the temporary admin token.
+
+Static HTML/CSS/JS live in server/public/admin and are served by both source and compiled Express entrypoints. Deploy that public directory alongside dist. No frontend build or new dependency is required. The UI uses same-origin Node APIs, textContent for database text, a restrictive CSP and no-store responses. AdminRepository selects explicit fields from demo_buyer_profiles with an inner Buyer-only demo_accounts join; verify writes only status/timestamp after checking that same join. At 1000 returned records it fails rather than silently truncating the prototype list.
+
+No schema/grant/RPC migration or live Buyer mutation is needed. Verify supports failed → verified; no Mark Failed action is implemented. Existing marketplace RPC gates stay unchanged. Application tests inject dependencies; browser transition checks use a separately labelled in-memory localhost fixture, never a fabricated live Buyer. Live reads confirm the actual three verified accounts. No rate limiting, durable/multi-process admin session store, audit trail, MFA or production authentication is claimed.
+
 The nine fixed accounts and three permanent roles are listed in PROJECT_REQUIREMENTS.md. Any six-digit numeric OTP works only in development mock mode. Server-issued tokens are implemented and persist through the existing SecureStore/provider lifecycle. Requests validate the stored hash, expiry, revocation and enabled account. Logout writes revoked_at using IS NULL and a reused token is rejected. Role/account changes require sign-out, not a switcher. FPO remains Coming Soon only.
 
 Never print raw bearer tokens, token hashes, OTPs, market/AI keys or service-role credentials. Use process-memory tokens for targeted live tests. Only the explicitly authorized Phase 2.0.17 database changes and rollback-only validation were permitted; preserve the deployed migration. Business transactions use existing authorized RPCs. Unit tests must use injected/mocked dependencies, never live reset or live government data.
@@ -86,7 +98,7 @@ npm run test
 npm --prefix server run typecheck
 npm --prefix server run build
 npm --prefix server test
-npx expo export --platform android --output-dir .expo/phase-2-0-17-export
+npx expo export --platform android --output-dir .expo/admin-verification-validation
 git diff --check
 ```
 

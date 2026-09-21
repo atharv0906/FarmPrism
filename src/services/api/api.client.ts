@@ -48,7 +48,8 @@ export async function apiRequest<T>(path: string, options: { method?: 'GET' | 'P
     const error = payload && typeof payload === 'object' && 'error' in payload ? payload.error : undefined;
     if (response.status === 401 && resolvedBearerToken === currentDemoApiToken) unauthorized?.();
     const details = payload !== null && typeof payload === 'object' && 'details' in payload ? payload.details : undefined;
-    throw new ApiError(response.status, error?.code ?? 'REQUEST_FAILED', error?.message ?? 'Request failed.', details);
+    const topLevelMessage = payload && typeof payload === 'object' && 'message' in payload && typeof payload.message === 'string' ? payload.message : undefined;
+    throw new ApiError(response.status, error?.code ?? 'REQUEST_FAILED', error?.message ?? topLevelMessage ?? 'Request failed.', details);
   }
 
   return payload as T;

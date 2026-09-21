@@ -2,7 +2,7 @@
 
 ## Product and source of truth
 
-FarmPrism is an implemented agricultural marketplace prototype connecting farmers, buyers and logistics partners. Current phase: [2.0.17 — database completion and handoff](PHASE_2_0_17.md). The current local Development working tree and latest explicit product decisions are authoritative. Phase files preserve historical implementation and validation records; they do not override current requirements.
+FarmPrism is an implemented agricultural marketplace prototype connecting farmers, buyers and logistics partners. Current phase: [2.0.18 — prototype Buyer verification Admin portal](PHASE_2_0_18.md). The current local Development working tree and latest explicit product decisions are authoritative. Phase files preserve historical implementation and validation records; they do not override current requirements.
 
 The current screen-behavior/design brief is [the designer screen pack](assets/FarmPrism_Designer_Screen_MDs/INDEX.md), with [master flow](assets/FarmPrism_Designer_Screen_MDs/MASTER_FLOW.md). Preserve this pack. Approved Farmer Home and My Farm visuals remain frozen. Do not infer that every designer brief represents an implemented screen.
 
@@ -19,6 +19,12 @@ Never expose service-role keys, private keys, market/AI credentials, raw tokens 
 The explicitly authorized Phase 2.0.17 database migration is deployed. Preserve its scoped changes and the existing reset function; do not replay migrations or make unrelated schema/RLS/RPC changes. No commit, push, branch change, reset, revert, stash or Git history manipulation.
 
 ## Roles and authentication
+
+The FarmPrism Admin portal is a prototype-only browser tool for Buyer verification. It is not a fourth application role. Buyer verification updates the existing backend verification status, and marketplace participation remains restricted to verified Buyers.
+
+The existing Node server serves /admin and /api/admin. Node validates prototype credentials and issues separate cryptographically random eight-hour in-memory sessions. The browser may keep only the temporary admin token in sessionStorage; no admin password persistence or privileged browser Supabase access. Logout revokes the token. admin/admin is prototype-only and is not suitable for production.
+
+Buyer verification uses existing demo_buyer_profiles joined to demo_accounts with role_code=buyer. Verify checks account/profile existence and permanent role, changes only verification_status=verified and updated_at, supports retry from failed, and is idempotent for verified Buyers. No reject action, KYC workflow, additional verification flag, schema migration or mobile role is added. Do not make live Buyers pending to populate the portal. The existing bidding RPC verification, quantity and deadline gates remain authoritative and unchanged.
 
 Exactly three persisted roles: farmer, buyer, logistics. One login has one permanent application role. There is no authenticated role switcher. To change account/role, sign out and sign in. FPO is Coming Soon UI only, not a persisted role or Buyer subtype.
 

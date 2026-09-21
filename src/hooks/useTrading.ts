@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from './useAuth';
+import { ApiError } from '../services/api/api.client';
 import { tradingClient } from '../services/api/trading.client';
 import type { TradingWorkspace } from '../services/api/trading.types';
 
@@ -16,7 +17,15 @@ export function useTrading() {
     setLoading(true); setError(null);
     try {
       if (!demoApiToken) throw new Error('Sign in again to start a server session.');
-      const result = await tradingClient.workspace();
+      let result: TradingWorkspace;
+      try {
+        result = await tradingClient.workspace();
+      } catch (firstError) {
+        if (firstError instanceof Error && firstError.message === 'Sign in again to start a server session.') throw firstError;
+        if (firstError instanceof ApiError && firstError.status < 500) throw firstError;
+        await new Promise(resolve => setTimeout(resolve, 250));
+        result = await tradingClient.workspace();
+      }
       if (current === version.current) setResult({ token: demoApiToken, data: result });
     } catch (e) { if (current === version.current) setError(e instanceof Error ? e.message : 'Unable to load data.'); }
     finally { if (current === version.current) setLoading(false); }

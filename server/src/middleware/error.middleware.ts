@@ -3,7 +3,7 @@ import { ApiError } from '../utils/apiError.js';
 import { makeErrorEnvelope } from '../utils/validation.js';
 
 export function notFoundHandler(_req: Request, res: Response) {
-  res.status(404).json({ ok: false, message: 'Not found' });
+  res.status(404).json(makeErrorEnvelope('NOT_FOUND', 'The requested API route was not found.'));
 }
 
 export function errorHandler(error: Error, _req: Request, res: Response, _next: NextFunction) {

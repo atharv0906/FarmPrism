@@ -72,6 +72,7 @@ export function OrderScreen({ route, navigation }: Props<'Order'>) {
           setPickupOtp(null);
           void action.run(() => mutations.generatePickupOtp(order.id, options), result => setPickupOtp(result.data));
         }} />
+        <Text style={ui.muted}>When the logistics partner arrives, generate this OTP and share it with them for pickup verification.</Text>
         {pickupOtp?.orderId === order.id && <Text selectable>Pickup OTP: {Date.parse(pickupOtp.expiresAt) > Date.now() ? pickupOtp.otp : 'Expired'} · Expires: {date(pickupOtp.expiresAt)}. Share this OTP only with the assigned logistics partner when they arrive for pickup.</Text>}</>}
         {buyer && order.status === 'farmer_advance_pending' && <Button title="Pay simulated Farmer advance" disabled={action.pending} onPress={() => action.pay(() => mutations.payFarmerAdvance(order.id, options))} />}
         {buyer && job?.feeStatus === 'proposed' && <><Button title="Accept logistics fee" disabled={action.pending} onPress={() => void action.run(() => mutations.respondLogisticsFee(job.id, { accept: true }, options))} />

@@ -9,6 +9,11 @@
 
 ## Current implementation
 
+- Phase 2.0.18 adds the prototype-only browser Buyer verification portal at /admin on the existing Node server. See PHASE_2_0_18.md; no auction re-entry fix occupied this phase at its starting HEAD.
+- The FarmPrism Admin portal is a prototype-only browser tool for Buyer verification. It is not a fourth application role. Buyer verification updates the existing backend verification status, and marketplace participation remains restricted to verified Buyers.
+- admin/admin is prototype-only and is not suitable for production. Admin auth is a separate eight-hour in-memory session map, with only temporary tokens in browser sessionStorage. Preserve the mobile SecureStore/session lifecycle.
+- Admin reads join demo_buyer_profiles to Buyer-role demo_accounts; verification changes only verification_status and updated_at. No schema change, duplicate flag, fourth role, live Buyer seeding or status downgrade. Preserve the bidding RPC verification gate.
+
 - Phase 2.0.17 completes the deployed database contracts for the unchanged Phase 2.0.16 application. React Native / Expo / TypeScript → Node/Express business API → Supabase.
 - Mobile API integration, server-issued demo sessions and SecureStore session lifecycle are implemented.
 - Farmer Home/My Farm/Sell/Insights/Profile, Buyer screens, Logistics screens and shared transaction/notification/profile flows are implemented.
@@ -36,6 +41,7 @@
 - Never expose service-role keys, market/AI secrets, raw bearer tokens or OTPs in frontend code, EXPO_PUBLIC_* values or logs.
 - Preserve the existing SecureStore/provider token lifecycle; never add ad hoc password/token storage.
 - Keep root/server ignored .env private and unchanged unless an explicitly needed migration is authorized. Tracked .env.example files are blank templates with safe defaults only.
+- Phase 2.0.18 explicitly authorizes only adding ADMIN_USERNAME/ADMIN_PASSWORD prototype settings to server/.env and safe development defaults to its example. All other private values remain unchanged.
 - Government credentials belong only in server/.env. MARKET_API_KEY is canonical; DATA_GOV_IN_API_KEY is deprecated blank/missing-key fallback. Missing market configuration must preserve DB fallback.
 - The reset CLI is development-only, requires exactly RESET_FARMPRISM_DEMO and calls only the existing reset RPC. Do not run live reset automatically or from tests; retain E2E data until the developer deliberately chooses reset.
 - Do not manufacture runtime business data or recreate existing functionality.
@@ -47,7 +53,7 @@
 - Use mocked/injected dependencies for unit tests, never live Supabase reset or live data.gov.in.
 - Run npm run typecheck and npm run test.
 - Run npm --prefix server run typecheck, npm --prefix server run build and npm --prefix server test.
-- Run npx expo export --platform android --output-dir .expo/phase-2-0-17-export and git diff --check.
+- Run npx expo export --platform android --output-dir .expo/admin-verification-validation and git diff --check.
 - Report measured validation and exact live failures honestly. Never claim UI/device verification from API-only checks.
 
 ## Current read/session and Phase 2.0.16 boundaries

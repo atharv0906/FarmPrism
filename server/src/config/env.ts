@@ -4,6 +4,8 @@ import { parseMarketConfig } from './marketConfig.js';
 loadEnv();
 
 export const env = {
+  adminUsername: process.env.ADMIN_USERNAME ?? (process.env.NODE_ENV === 'production' ? '' : 'admin'),
+  adminPassword: process.env.ADMIN_PASSWORD ?? (process.env.NODE_ENV === 'production' ? '' : 'admin'),
   port: Number(process.env.PORT ?? 3000),
   supabaseUrl: process.env.SUPABASE_URL ?? '',
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',

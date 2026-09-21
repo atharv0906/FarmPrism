@@ -1,4 +1,5 @@
 import express from 'express';
+import { registerAdminRoutes } from './routes/admin.routes.js';
 import { registerFarmerInventoryRoutes } from './routes/farmerInventory.routes.js';
 import { registerFarmerSummaryRoutes } from './routes/farmerSummary.routes.js';
 import { registerIntegrationRoutes } from './routes/integration.routes.js';
@@ -31,6 +32,7 @@ export function createApp() {
     next();
   });
   app.use(express.json());
+  registerAdminRoutes(app);
   app.use('/', healthRoutes);
   registerIntegrationRoutes(app);
   registerFarmerSummaryRoutes(app);

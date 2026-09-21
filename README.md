@@ -2,7 +2,15 @@
 
 FarmPrism is an agricultural marketplace prototype with implemented Farmer, Buyer and Logistics workflows. React Native / Expo communicates with the Node/Express TypeScript business API and Supabase, the persisted source of truth and transactional RPC boundary.
 
-Current phase: [2.0.17 — database completion and handoff](PHASE_2_0_17.md). Pickup OTP, atomic marketplace deadlines, expiry notifications and declaration-scope trust are deployed and validated with live rollback-only database tests. Device E2E remains unverified for this phase. The preceding live demo completed both Auction and Fixed Price through delivery OTP, final simulated payments, feedback, trust and inventory reconciliation: FP-11332B8B3E and FP-25A03D7831. Phase 2.0.11 fixes logout, makes government market configuration explicit, adds bounded contextual price adjustments and provides a guarded reset CLI.
+Current phase: [2.0.18 — prototype Buyer verification Admin portal](PHASE_2_0_18.md). The Phase 2.0.17 deployed Pickup OTP, atomic marketplace deadlines, expiry notifications and declaration-scope trust contracts remain unchanged. Device E2E remains unverified for this phase. The preceding live demo completed both Auction and Fixed Price through delivery OTP, final simulated payments, feedback, trust and inventory reconciliation: FP-11332B8B3E and FP-25A03D7831. Phase 2.0.11 fixes logout, makes government market configuration explicit, adds bounded contextual price adjustments and provides a guarded reset CLI.
+
+## Buyer verification Admin portal
+
+The FarmPrism Admin portal is a prototype-only browser tool for Buyer verification. It is not a fourth application role. Buyer verification updates the existing backend verification status, and marketplace participation remains restricted to verified Buyers.
+
+Run the existing server and open http://localhost:3000/admin. Configure ADMIN_USERNAME=admin and ADMIN_PASSWORD=admin in private server/.env; these are also the non-production defaults. **admin/admin is prototype-only and is not suitable for production.** Credentials are checked by Node. Separate in-memory admin sessions expire after eight hours, are revoked on logout and disappear on server restart. The browser stores only the temporary token in sessionStorage.
+
+The portal reads demo_buyer_profiles joined to Buyer-role demo_accounts and updates only verification_status and updated_at. It supports search, status filters, confirmation and retry. Existing verified Buyers stay verified; no demo data or schema changes are required. See the phase report for mocked versus live validation limits.
 
 ## Implemented prototype
 
